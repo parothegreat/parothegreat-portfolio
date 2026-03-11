@@ -1,0 +1,15 @@
+{
+  "name": "alvaro-portfolio",
+  "version": "1.0.0",
+  "description": "Professional portfolio for Moehammad Alvaro Pirata Prayogo",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "astro": "^4.0.0"
+  }
+}
