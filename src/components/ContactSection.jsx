@@ -74,7 +74,7 @@ export default function ContactSection() {
             <motion.h3 className="text-2xl font-bold text-accent-cyan mb-4" variants={itemVariants}>
               Hubungi Saya
             </motion.h3>
-            <motion.p className="text-lg leading-relaxed mb-8 opacity-90" variants={itemVariants}>
+            <motion.p className="text-lg leading-relaxed mb-8 text-slate-700 dark:text-gray-200 opacity-90 dark:opacity-100" variants={itemVariants}>
               Saya terbuka untuk diskusi tentang cybersecurity, networking, atau peluang kolaborasi. Jangan ragu untuk menghubungi!
             </motion.p>
 
@@ -91,7 +91,7 @@ export default function ContactSection() {
                   <span className="text-2xl min-w-max">{method.icon}</span>
                   <div>
                     <p className="font-bold text-accent-cyan text-sm">{method.label}</p>
-                    <p className="text-sm opacity-70">{method.value}</p>
+                    <p className="text-sm text-slate-700 dark:text-gray-400 opacity-70 dark:opacity-90">{method.value}</p>
                   </div>
                 </motion.a>
               ))}
@@ -122,7 +122,7 @@ export default function ContactSection() {
               Open to Work
             </motion.div>
 
-            <motion.p className="text-lg leading-relaxed mb-6 opacity-90" variants={itemVariants}>
+            <motion.p className="text-lg leading-relaxed mb-6 text-slate-700 dark:text-gray-200 opacity-90 dark:opacity-100" variants={itemVariants}>
               Saya sedang mencari peluang di bidang Cybersecurity, Network Engineering, atau System Administration.
             </motion.p>
 
@@ -130,7 +130,7 @@ export default function ContactSection() {
               <p className="font-bold text-accent-cyan mb-4">Area Minat:</p>
               <ul className="space-y-2">
                 {interestAreas.map((area) => (
-                  <li key={area} className="pl-6 relative before:absolute before:left-0 before:content-['→'] before:text-accent-cyan before:font-bold text-sm opacity-80">
+                  <li key={area} className="pl-6 relative before:absolute before:left-0 before:content-['→'] before:text-accent-cyan before:font-bold text-sm text-slate-700 dark:text-gray-300 opacity-80 dark:opacity-100">
                     {area}
                   </li>
                 ))}

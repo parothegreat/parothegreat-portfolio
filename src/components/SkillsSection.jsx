@@ -77,7 +77,7 @@ export default function SkillsSection() {
               </div>
               <ul className="space-y-2">
                 {skillGroup.items.map((item) => (
-                  <li key={item} className="text-sm pb-2 border-b border-gray-200 dark:border-slate-700 last:border-0">
+                  <li key={item} className="text-sm pb-2 border-b border-gray-200 dark:border-slate-700 last:border-0 text-slate-900 dark:text-gray-200">
                     {item}
                   </li>
                 ))}

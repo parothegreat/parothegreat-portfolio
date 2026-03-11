@@ -58,7 +58,7 @@ export default function CertificationsSection() {
           Sertifikasi & Kredensial
         </motion.h2>
         <motion.p
-          className="text-center opacity-70 text-lg mb-12"
+          className="text-center opacity-70 dark:opacity-60 text-lg mb-12 text-slate-700 dark:text-gray-300"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 0.7 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -87,7 +87,7 @@ export default function CertificationsSection() {
                   </div>
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-accent-cyan mb-2">{cert.title}</h3>
-                    <p className="text-sm opacity-70 mb-4">{cert.date}</p>
+                    <p className="text-sm text-slate-700 dark:text-gray-400 opacity-70 dark:opacity-80 mb-4">{cert.date}</p>
                     <a
                       href={cert.credlyLink}
                       target="_blank"

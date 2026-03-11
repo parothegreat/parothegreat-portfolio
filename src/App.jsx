@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navigation from './components/Navigation'
+import BackgroundPattern from './components/BackgroundPattern'
 import HeroSection from './components/HeroSection'
 import AboutSection from './components/AboutSection'
 import SkillsSection from './components/SkillsSection'
@@ -38,14 +39,17 @@ function App() {
 
   return (
     <div className={isDark ? 'dark' : ''}>
-      <Navigation isDark={isDark} toggleDarkMode={toggleDarkMode} />
-      <HeroSection />
-      <AboutSection />
-      <SkillsSection />
-      <CertificationsSection />
-      <ProjectsSection />
-      <ContactSection />
-      <Footer />
+      <BackgroundPattern />
+      <div className="relative z-10">
+        <Navigation isDark={isDark} toggleDarkMode={toggleDarkMode} />
+        <HeroSection />
+        <AboutSection />
+        <SkillsSection />
+        <CertificationsSection />
+        <ProjectsSection />
+        <ContactSection />
+        <Footer />
+      </div>
     </div>
   )
 }

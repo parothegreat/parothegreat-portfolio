@@ -77,7 +77,7 @@ export default function ProjectsSection() {
             >
               <div className="text-4xl mb-4">{project.icon}</div>
               <h3 className="text-lg font-bold text-accent-cyan mb-3">{project.title}</h3>
-              <p className="text-sm leading-relaxed mb-4 opacity-90">{project.description}</p>
+              <p className="text-sm leading-relaxed mb-4 text-slate-700 dark:text-gray-300 opacity-90 dark:opacity-100">{project.description}</p>
               <div className="flex flex-wrap gap-2">
                 {project.tags.map((tag) => (
                   <span

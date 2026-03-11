@@ -61,11 +61,11 @@ export default function AboutSection() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.p className="text-lg leading-relaxed" variants={itemVariants}>
+            <motion.p className="text-lg leading-relaxed text-slate-900 dark:text-gray-100" variants={itemVariants}>
               Saya adalah seorang siswa SMK jurusan Teknik Elektronika Industri yang passionate tentang cybersecurity dan networking. Dengan sertifikasi dari Cisco NetAcad di bidang Network Defense dan Ethical Hacking, saya siap untuk berkembang di dunia cybersecurity.
             </motion.p>
 
-            <motion.p className="text-lg leading-relaxed" variants={itemVariants}>
+            <motion.p className="text-lg leading-relaxed text-slate-900 dark:text-gray-100" variants={itemVariants}>
               Ketertarikan saya dalam Linux, Network Engineering, dan Infrastructure Security mendorong saya untuk terus belajar dan mengembangkan skills di bidang cybersecurity. Saya terbuka untuk peluang kerja di bidang ini.
             </motion.p>
 
@@ -82,8 +82,8 @@ export default function AboutSection() {
                 />
                 <div>
                   <p className="font-bold text-accent-cyan">SMK Mitra Industri MM2100</p>
-                  <p className="text-sm opacity-80">Teknik Elektronika Industri</p>
-                  <p className="text-sm opacity-60">Kabupaten Bekasi, Jawa Barat</p>
+                  <p className="text-sm text-slate-700 dark:text-gray-300 opacity-80 dark:opacity-100">Teknik Elektronika Industri</p>
+                  <p className="text-sm text-slate-600 dark:text-gray-400 opacity-60 dark:opacity-80">Kabupaten Bekasi, Jawa Barat</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -91,16 +91,16 @@ export default function AboutSection() {
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-bold text-accent-cyan mb-4">Fokus & Keahlian</h3>
               <ul className="space-y-3">
-                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold">
+                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold text-slate-900 dark:text-gray-100">
                   <strong>Cybersecurity:</strong> Network Defense, Ethical Hacking, Security Protocols
                 </li>
-                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold">
+                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold text-slate-900 dark:text-gray-100">
                   <strong>Networking:</strong> Network Infrastructure, Configuration, Troubleshooting
                 </li>
-                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold">
+                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold text-slate-900 dark:text-gray-100">
                   <strong>Sistem:</strong> Linux Administration, System Security
                 </li>
-                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold">
+                <li className="pl-6 relative before:absolute before:left-0 before:content-['▸'] before:text-accent-cyan before:font-bold text-slate-900 dark:text-gray-100">
                   <strong>Teknik:</strong> Industrial Electronics, DIY Projects
                 </li>
               </ul>
@@ -127,7 +127,7 @@ export default function AboutSection() {
                 variants={statVariants}
               >
                 <div className="text-4xl font-black text-accent-cyan">{stat.number}</div>
-                <div className="text-sm opacity-80 mt-2">{stat.label}</div>
+                <div className="text-sm text-slate-700 dark:text-gray-300 opacity-80 dark:opacity-100 mt-2">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>

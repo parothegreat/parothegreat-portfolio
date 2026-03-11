@@ -15,9 +15,9 @@ export default function Navigation({ isDark, toggleDarkMode }) {
   return (
     <nav className="fixed top-0 w-full z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 backdrop-blur-sm">
       <div className="container mx-auto px-4 flex items-center justify-between h-16 md:h-20">
-        <div className="flex items-center gap-1 text-2xl font-black">
+        <div className="flex items-center gap-1 text-2xl font-black text-slate-950 dark:text-white">
           <span className="text-accent-cyan">&lt;</span>
-          Alvaro
+          parothegreat
           <span className="text-accent-cyan">/&gt;</span>
         </div>
 
@@ -27,7 +27,7 @@ export default function Navigation({ isDark, toggleDarkMode }) {
             <a
               key={link.label}
               href={link.href}
-              className="text-sm font-semibold hover:text-accent-cyan transition-colors"
+              className="text-sm font-semibold text-slate-950 dark:text-white hover:text-accent-cyan transition-colors"
             >
               {link.label}
             </a>
@@ -54,9 +54,9 @@ export default function Navigation({ isDark, toggleDarkMode }) {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex flex-col gap-1.5 p-2"
           >
-            <span className={`h-0.5 w-6 bg-current transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-            <span className={`h-0.5 w-6 bg-current transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`h-0.5 w-6 bg-current transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            <span className={`h-0.5 w-6 bg-slate-950 dark:bg-white transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+            <span className={`h-0.5 w-6 bg-slate-950 dark:bg-white transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`h-0.5 w-6 bg-slate-950 dark:bg-white transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
           </button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function Navigation({ isDark, toggleDarkMode }) {
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm font-semibold hover:text-accent-cyan transition-colors"
+                className="text-sm font-semibold text-slate-950 dark:text-white hover:text-accent-cyan transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.label}
