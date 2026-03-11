@@ -92,6 +92,13 @@
   </main>
   <footer-component />
   <script>
+    // Type declaration for window
+    declare global {
+      interface Window {
+        toggleDarkMode: () => void;
+      }
+    }
+
     // Dark mode toggle
     const htmlElement = document.documentElement;
     const isDarkMode = localStorage.getItem('darkMode') === 'true' || 
@@ -103,7 +110,7 @@
 
     window.toggleDarkMode = () => {
       const isDark = document.body.classList.toggle('dark-mode');
-      localStorage.setItem('darkMode', isDark);
+      localStorage.setItem('darkMode', isDark ? 'true' : 'false');
     };
   </script>
 </body>
