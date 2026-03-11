@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply transition-all duration-300;
+  }
+
+  body {
+    @apply font-mono bg-white text-slate-900;
+  }
+
+  body.dark {
+    @apply bg-slate-950 text-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-mono font-bold tracking-tighter;
+  }
+
+  h1 {
+    @apply text-5xl font-black;
+  }
+
+  h2 {
+    @apply text-4xl font-black;
+  }
+
+  h3 {
+    @apply text-2xl font-bold;
+  }
+
+  a {
+    @apply text-accent-cyan hover:text-accent-cyan-dark transition-colors;
+  }
+
+  body.dark a {
+    @apply text-accent-cyan;
+  }
+}
+
+/* Gradient Animations */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Global utility classes */
+.container {
+  @apply max-w-6xl mx-auto px-4;
+}
+
+.animate-gradient {
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse 2s infinite;
+}
+
+/* Button styles */
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 px-7 py-2 font-bold border-2 border-accent-cyan rounded-md transition-all duration-300 whitespace-nowrap text-sm;
+  }
+
+  .btn-primary {
+    @apply bg-accent-cyan text-slate-950 border-accent-cyan hover:bg-accent-cyan-dark hover:border-accent-cyan-dark hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-accent-cyan border-accent-cyan hover:bg-accent-cyan hover:text-slate-950 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .btn-accent {
+    @apply bg-accent-cyan/15 text-accent-cyan border-accent-cyan hover:bg-accent-cyan hover:text-slate-950 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-accent-cyan border-accent-cyan hover:bg-accent-cyan/10 hover:border-accent-cyan-dark hover:text-accent-cyan-dark hover:-translate-y-1;
+  }
+
+  .section {
+    @apply py-16 md:py-20;
+  }
+
+  .section-light {
+    @apply bg-white;
+  }
+
+  .section-light.dark {
+    @apply bg-slate-900;
+  }
+
+  .section-card {
+    @apply bg-gray-50;
+  }
+
+  .section-card.dark {
+    @apply bg-slate-900/50;
+  }
+}
