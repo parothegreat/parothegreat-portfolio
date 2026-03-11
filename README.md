@@ -12,14 +12,16 @@ Portfolio profesional untuk menampilkan expertise di bidang Cybersecurity, Netwo
 - ✅ **Projects** - Portfolio project dan pengalaman
 - ✅ **Contact Section** - Open to Work status dan contact information
 - ✅ **Responsive Design** - Mobile-friendly dan profesional
-- ✅ **Fast Performance** - Built with Astro untuk performa optimal
+- ✅ **Fast Performance** - Built with React + Vite untuk performa optimal
 
 ## 📋 Stack Teknologi
 
-- **Framework**: Astro 4.x
+- **Framework**: React 18+ dengan Hooks
+- **Build Tool**: Vite (next-generation frontend tooling)
 - **Styling**: CSS dengan CSS Variables untuk theme switching
+- **Package Manager**: npm
 - **Responsiveness**: Mobile-first design
-- **Performance**: Static site generation
+- **Performance**: SPA dengan optimized bundling
 
 ## 🚀 Quick Start
 
@@ -45,11 +47,11 @@ cd c:\Users\paron\parothegreat-portfolio
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (Vite)
 npm run dev
 ```
 
-Development server akan running di `http://localhost:3000`
+Development server akan running di `http://localhost:5173` (atau port yang ditampilkan di terminal)
 
 ### 3. Build untuk Production
 
@@ -66,14 +68,21 @@ Output akan berada di folder `dist/`
 parothegreat-portfolio/
 ├── src/
 │   ├── components/
-│   │   ├── NavComponent.astro      # Navigation bar dengan dark mode toggle
-│   │   └── FooterComponent.astro   # Footer dengan contact links
-│   ├── layouts/
-│   │   └── Layout.astro            # Main layout wrapper
-│   └── pages/
-│       └── index.astro             # Main portfolio page
-├── astro.config.mjs                # Astro configuration
-├── tsconfig.json                   # TypeScript configuration
+│   │   ├── Navigation.jsx          # Navbar dengan dark mode toggle
+│   │   ├── Hero.jsx                # Hero section dengan CTA buttons
+│   │   ├── About.jsx               # About & profile section
+│   │   ├── Skills.jsx              # Skills showcase
+│   │   ├── Certifications.jsx      # Certifications display
+│   │   ├── Projects.jsx            # Portfolio projects
+│   │   ├── ContactSection.jsx      # Contact form
+│   │   └── Footer.jsx              # Footer dengan social links
+│   ├── App.jsx                     # Root component dengan dark mode state
+│   ├── main.jsx                    # React entry point
+│   └── index.css                   # Global styles & CSS variables
+├── public/                         # Static assets
+│   └── images/                     # Project & profile images
+├── index.html                      # HTML template
+├── vite.config.js                  # Vite configuration
 ├── package.json                    # Project dependencies
 └── README.md                        # This file
 ```
@@ -82,7 +91,7 @@ parothegreat-portfolio/
 
 ### Edit Personal Information
 
-Edit file `src/pages/index.astro` untuk mengubah:
+Edit file `src/components/Hero.jsx`, `src/components/About.jsx`, dan `src/components/Projects.jsx` untuk mengubah:
 - Nama, bio, dan deskripsi
 - Email, LinkedIn, GitHub links
 - Skill categories dan items
@@ -91,19 +100,33 @@ Edit file `src/pages/index.astro` untuk mengubah:
 
 ### Ubah Warna Theme
 
-Edit `src/layouts/Layout.astro` CSS variables di bagian `:root`:
+Edit `src/index.css` CSS variables di bagian `:root`:
 
 ```css
 :root {
   --color-accent: #00d4ff;        /* Warna highlight utama */
   --color-accent-dark: #0099cc;   /* Warna highlight gelap */
+  --color-bg-light: #ffffff;      /* Background terang */
+  --color-bg-dark: #1a1a1a;       /* Background gelap */
   /* ... variabel lainnya ... */
 }
 ```
 
-### Tambah Section Baru
+### Tambah Component Baru
 
-Copy salah satu section di `src/pages/index.astro` dan modifikasi sesuai kebutuhan.
+Buat file baru di `src/components/` dengan nama `NamaComponent.jsx`, lalu import ke `src/App.jsx`:
+
+```jsx
+import NamaComponent from './components/NamaComponent'
+
+export default function App() {
+  return (
+    <div className="app">
+      <NamaComponent />
+    </div>
+  )
+}
+```
 
 ## 📝 Content Sections
 
@@ -153,8 +176,18 @@ Dibagi 4 kategori:
 1. Push code ke GitHub
 2. Go to https://vercel.com
 3. Import project
-4. Auto-detect Astro settings
+4. Auto-detect Vite/React settings
 5. Deploy!
+
+### Deploy ke GitHub Pages
+
+```powershell
+# Build production version
+npm run build
+
+# Deploy dist folder to GitHub Pages
+# (Configure your GitHub repository settings untuk enable Pages)
+```
 
 ## 📱 Browser Support
 
@@ -179,24 +212,40 @@ Get-Process node | Stop-Process -Force
 npm run dev
 ```
 
-**Port 3000 sudah digunakan:**
+**Port 5173 sudah digunakan:**
 ```powershell
-npm run dev -- --port 3001
+npm run dev -- --port 5174
 ```
+
+**Dark mode tidak menyimpan:**
+- Pastikan localStorage tidak disabled di browser
+- Check browser console untuk errors
+- Pastikan index.html ada di root folder
 
 ## 📚 Resources
 
-- [Astro Documentation](https://docs.astro.build)
-- [Cisco NetAcad](https://www.netacad.com)
+- [React Documentation](https://react.dev)
+- [Vite Documentation](https://vitejs.dev)
 - [MDN Web Docs](https://developer.mozilla.org)
+- [Cisco NetAcad](https://www.netacad.com)
+- [CSS Variables Guide](https://developer.mozilla.org/en-US/docs/Web/CSS/--*)
 
 ## 🙋 Next Steps
 
-1. **Personalisasi Content**: Update info pribadi, skill, dan project
-2. **Add Profile Picture**: Buat folder `public/images` dan tambahkan foto
-3. **Custom Domain**: Setup domain di registrar
-4. **Add Blog**: (Optional) Tambah blog section dengan Astro collections
-5. **SEO Optimization**: Update meta tags sesuai kebutuhan
+1. **Install Dependencies**: `npm install`
+2. **Start Dev Server**: `npm run dev` 
+3. **Personalisasi Content**: Update info pribadi, skill, dan project di components
+4. **Add Profile Picture**: Buat folder `public/images` dan tambahkan foto
+5. **Custom Domain**: Setup domain di registrar
+6. **Build & Deploy**: `npm run build` lalu deploy ke Netlify/Vercel
+7. **Test Dark Mode**: Verifikasi dark mode berfungsi dan menyimpan preference
+
+## 💡 Tips
+
+- Gunakan React DevTools extension untuk debugging components
+- Check network tab di browser DevTools untuk verify production build berfungsi optimal
+- Vite HMR (Hot Module Replacement) akan auto-refresh browser saat edit file
+- CSS Variables dapat di-inspect dan di-debug via browser DevTools
 
 ## 📧 Contact Info
 
