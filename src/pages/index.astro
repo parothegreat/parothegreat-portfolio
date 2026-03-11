@@ -366,11 +366,64 @@ import Layout from '../layouts/Layout.astro';
     justify-content: center;
     background: linear-gradient(-45deg, #00d4ff, #0099cc, #00d4ff, #0099cc);
     background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    animation: gradientShift 15s ease infinite, heroFadeIn 0.8s ease-out;
     padding: 4rem 20px;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+  }
+
+  @keyframes heroFadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    0% {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleInPhoto {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @keyframes gradientShift {
@@ -388,7 +441,7 @@ import Layout from '../layouts/Layout.astro';
   body.dark-mode .hero {
     background: linear-gradient(-45deg, #0099cc, #1a1a1a, #00d4ff, #2d2d2d);
     background-size: 400% 400%;
-    animation: gradientShiftDark 15s ease infinite;
+    animation: gradientShift 15s ease infinite, heroFadeIn 0.8s ease-out;
   }
 
   @keyframes gradientShiftDark {
@@ -414,6 +467,7 @@ import Layout from '../layouts/Layout.astro';
 
   .hero-text {
     text-align: left;
+    animation: slideInLeft 0.8s ease-out 0.2s both;
   }
 
   .hero-image {
@@ -421,6 +475,7 @@ import Layout from '../layouts/Layout.astro';
     display: flex;
     justify-content: center;
     align-items: center;
+    animation: slideInRight 0.8s ease-out 0.4s both;
   }
 
   .profile-photo {
@@ -432,7 +487,7 @@ import Layout from '../layouts/Layout.astro';
     box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
     transition: var(--transition);
     object-fit: cover;
-    animation: float 6s ease-in-out infinite;
+    animation: float 6s ease-in-out infinite, scaleInPhoto 0.8s ease-out 0.4s both;
   }
 
   @keyframes float {
@@ -459,6 +514,7 @@ import Layout from '../layouts/Layout.astro';
     background-clip: text;
     font-weight: 800;
     letter-spacing: -1px;
+    animation: slideInUp 0.8s ease-out 0.3s both;
   }
 
   .tagline {
@@ -467,6 +523,7 @@ import Layout from '../layouts/Layout.astro';
     margin-bottom: 0.5rem;
     font-weight: 700;
     letter-spacing: 0.5px;
+    animation: slideInUp 0.8s ease-out 0.4s both;
   }
 
   .subtitle {
@@ -475,6 +532,7 @@ import Layout from '../layouts/Layout.astro';
     margin-bottom: 2rem;
     font-weight: 600;
     line-height: 1.7;
+    animation: slideInUp 0.8s ease-out 0.5s both;
   }
 
   body.dark-mode .subtitle {
@@ -488,6 +546,7 @@ import Layout from '../layouts/Layout.astro';
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-start;
+    animation: slideInUp 0.8s ease-out 0.6s both;
   }
 
   .btn {
