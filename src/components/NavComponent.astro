@@ -1,0 +1,192 @@
+---
+// Navigation component
+---
+
+<nav class="navbar">
+  <div class="container nav-container">
+    <div class="nav-brand">
+      <a href="/">
+        <span class="text-accent">&lt;</span>Alvaro<span class="text-accent">/&gt;</span>
+      </a>
+    </div>
+    
+    <div class="nav-menu">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/#about" class="nav-link">About</a>
+      <a href="/#skills" class="nav-link">Skills</a>
+      <a href="/#certifications" class="nav-link">Sertifikasi</a>
+      <a href="/#projects" class="nav-link">Project</a>
+      <a href="/#contact" class="nav-link">Kontak</a>
+      <button onclick="window.toggleDarkMode()" class="theme-toggle" aria-label="Toggle dark mode">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+    </div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</nav>
+
+<style>
+  .navbar {
+    background-color: var(--color-card-light);
+    border-bottom: 1px solid var(--color-border-light);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: var(--transition);
+  }
+
+  body.dark-mode .navbar {
+    background-color: var(--color-card-dark);
+    border-bottom-color: var(--color-border-dark);
+  }
+
+  .nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 20px;
+  }
+
+  .nav-brand a {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-light);
+  }
+
+  body.dark-mode .nav-brand a {
+    color: var(--color-text-dark);
+  }
+
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .nav-menu {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .nav-link {
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 0.25rem;
+    transition: var(--transition);
+  }
+
+  .nav-link:hover {
+    border-bottom-color: var(--color-accent);
+  }
+
+  .theme-toggle {
+    background: none;
+    border: 2px solid var(--color-accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: var(--transition);
+    position: relative;
+  }
+
+  .theme-toggle:hover {
+    background-color: var(--color-accent);
+  }
+
+  .sun-icon, .moon-icon {
+    position: absolute;
+    opacity: 1;
+    transition: opacity 0.3s;
+  }
+
+  body.dark-mode .sun-icon {
+    opacity: 0;
+  }
+
+  body.dark-mode .moon-icon {
+    opacity: 1;
+  }
+
+  .sun-icon {
+    opacity: 1;
+  }
+
+  .moon-icon {
+    opacity: 0;
+  }
+
+  .menu-toggle {
+    display: none;
+    flex-direction: column;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 5px;
+  }
+
+  .menu-toggle span {
+    width: 25px;
+    height: 3px;
+    background-color: var(--color-text-light);
+    border-radius: 2px;
+    transition: var(--transition);
+  }
+
+  body.dark-mode .menu-toggle span {
+    background-color: var(--color-text-dark);
+  }
+
+  @media (max-width: 768px) {
+    .menu-toggle {
+      display: flex;
+    }
+
+    .nav-menu {
+      display: none;
+      gap: 1rem;
+    }
+
+    .nav-menu.active {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: var(--color-bg-light);
+      padding: 1rem 20px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    body.dark-mode .nav-menu.active {
+      background-color: var(--color-bg-dark);
+      border-bottom-color: var(--color-border-dark);
+    }
+  }
+</style>
+
+<script>
+  const menuToggle = document.getElementById('menuToggle');
+  const navMenu = document.querySelector('.nav-menu');
+
+  menuToggle?.addEventListener('click', () => {
+    navMenu?.classList.toggle('active');
+  });
+
+  // Close menu when clicking on a link
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      navMenu?.classList.remove('active');
+    });
+  });
+</script>
