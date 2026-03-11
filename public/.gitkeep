@@ -1,0 +1,10 @@
+# Placeholder for images and assets
+# Create subdirectories here as needed:
+# - images/
+# - cv/
+# - documents/
+
+To use images:
+1. Create folder: public/images/
+2. Add your photos/images there
+3. Reference in HTML: /images/yourimage.jpg
