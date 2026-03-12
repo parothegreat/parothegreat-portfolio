@@ -468,9 +468,9 @@ function Dither({
   mouseRadius     = 0.3,
   colorNum        = 4,
   pixelSize       = 2,
-  waveAmplitude   = 0.3,
-  waveFrequency   = 3,
-  waveSpeed       = 0.05,
+  waveAmplitude   = 3,
+  waveFrequency   = 10,
+  waveSpeed       = 0.9,
 }) {
   const canvasRef = useRef(null);
   const stateRef  = useRef({ mouse: [0.5, 0.5], time: 0, raf: null, gl: null, prog: null, locs: {} });
@@ -689,7 +689,7 @@ function Hero() {
       }}>
         <span className="mono" style={{ fontSize: "0.68rem", color: C.textMuted, letterSpacing: "0.04em" }}>
           <span style={{ color: C.coral }}># </span>
-          Sysadmin · Network Engineer · Security Analyst — Jakarta, ID
+          Sysadmin · Network Engineer · Security Analyst — Bekasi, ID
         </span>
       </div>
 
@@ -701,7 +701,6 @@ function Hero() {
         zIndex: 2,
       }}>
         <div style={{ width: "1px", height: "44px", background: `linear-gradient(to bottom, transparent, ${C.mint500}55)` }} />
-        <span className="mono" style={{ fontSize: "0.58rem", color: C.textMuted, writingMode: "vertical-rl", letterSpacing: "0.15em" }}>SCROLL</span>
       </div>
 
       {/* Lanyard — center-right optimal position */}
@@ -973,8 +972,7 @@ function Contact() {
 
             {[
               ["Email",       "alvaroprayogo38@gmail.com",          C.mint500],
-              ["Signal",      "@alvaroprayogo",            null],
-              ["Based in",    "Jakarta, Indonesia",        null],
+              ["Based in",    "Bekasi, Indonesia",        null],
               ["PGP Key",     "0xDEAD·BEEF·C0FF·EE42",    C.textMuted],
               ["Response",    "Within 24h",                null],
             ].map(([label, value, accent]) => (
@@ -1093,7 +1091,11 @@ function useScrollReveal() {
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add("vis"); obs.unobserve(e.target); }
+        if (e.isIntersecting) {
+          e.target.classList.add("vis");
+        } else {
+          e.target.classList.remove("vis");
+        }
       });
     }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
     document.querySelectorAll(".reveal,.reveal-left,.reveal-right,.reveal-scale")
