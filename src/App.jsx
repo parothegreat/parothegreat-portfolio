@@ -3,6 +3,11 @@ import {
   lazy, Suspense, memo, useCallback, useMemo 
 } from "react";
 
+// ── EmailJS Config ─────────────────────────────────────────────
+const EMAILJS_SERVICE_ID  = "service_vmsghvn";
+const EMAILJS_TEMPLATE_ID = "template_hsc6m9u";
+const EMAILJS_PUBLIC_KEY  = "sruNPf6oBWFdmDHtA";
+
 // ── Lazy Load Heavy Components ─────────────────────────────────
 const Lanyard = lazy(() => import('./Lanyard'));
 
@@ -543,16 +548,10 @@ const Navbar = memo(({ active, C }) => {
 // ── Optimized Uptime Counter ───────────────────────────────────
 const START_DATE = new Date("2024-09-16T00:00:00");
 
-<<<<<<< HEAD
-// ── Dither WebGL Background ────────────────────────────────────
-function Dither({ waveColor=[0.0,0.898,0.627],disableAnimation=false,enableMouseInteraction=true,mouseRadius=0.3,colorNum=4,pixelSize=10,waveAmplitude=3,waveFrequency=10,waveSpeed=0.9 }) {
-  const canvasRef = useRef(null);
-  const stateRef  = useRef({ mouse:[0.5,0.5],time:0,raf:null,gl:null,prog:null,locs:{} });
-=======
+
 const UptimeCounter = memo(({ C }) => {
   const [uptime, setUptime] = useState({ years:0, months:0, days:0, hours:0, minutes:0, seconds:0 });
   const intervalRef = useRef();
->>>>>>> refs/remotes/origin/main
 
   useEffect(() => {
     const calculate = () => {
@@ -823,7 +822,7 @@ const Hero = memo(({ C }) => {
         <span style={{ fontSize: isMobile ? "0.75rem" : "0.85rem", color:C.textMuted }}>
           <TerminalLine 
             text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
-            delay={800} 
+            delay={1170} 
             color={C.coral} 
             C={C}
           />
@@ -860,17 +859,17 @@ const Hero = memo(({ C }) => {
           boxShadow:`0 0 24px ${C.mint500}10`,
           transition:"background 0.3s ease", maxWidth:"100%",
         }}>
-          <TerminalLine text="whoami" delay={400} C={C} />
+          <TerminalLine text="whoami" delay={1170} C={C} />
           <TerminalLine 
             text="parothegreat -- securing networks, hardening systems, hunting threats" 
-            delay={800} 
+            delay={2000} 
             color={C.mint600} 
             C={C} 
           />
-          <TerminalLine text="uptime --since 2024-09-16" delay={1500} C={C} />
+          <TerminalLine text="uptime --since 2024-09-16" delay={2200} C={C} />
           <TerminalLine 
             text="online since Sep 16 2024 | load avg: high | status: operational-student" 
-            delay={1900} 
+            delay={2500} 
             color={C.mint400} 
             C={C} 
           />
@@ -1167,14 +1166,36 @@ const Skills = memo(({ C }) => {
 // ── Optimized Contact Section ──────────────────────────────────
 const Contact = memo(({ C }) => {
   const [form, setForm] = useState({ name:"", email:"", message:"" });
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const { isMobile } = useTheme();
 
-  const handleSubmit = useCallback(() => {
-    if (form.name && form.email && form.message) {
-      setSent(true);
+  // Load EmailJS SDK once
+  useEffect(() => {
+    if (document.getElementById("emailjs-sdk")) return;
+    const script = document.createElement("script");
+    script.id = "emailjs-sdk";
+    script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+    script.onload = () => window.emailjs?.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    document.head.appendChild(script);
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
+    if (status === "loading") return;
+    setStatus("loading");
+    try {
+      await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        from_name:  form.name,
+        from_email: form.email,
+        message:    form.message,
+        reply_to:   form.email,
+      });
+      setStatus("success");
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      setStatus("error");
     }
-  }, [form]);
+  }, [form, status]);
 
   const handleChange = useCallback((key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -1213,7 +1234,7 @@ const Contact = memo(({ C }) => {
             {[
               ["Email","alvaroprayogo38@gmail.com",C.mint500],
               ["Based in","Bekasi, Indonesia",null],
-              ["PGP Key","0xDEAD·BEEF·C0FF·EE42",C.textMuted],
+              ["PGP Key","0xSH3L·L0WN·3D42·CAF",C.textMuted],
               ["Response","Within 24h",null],
             ].map(([label,value,accent]) => (
               <div key={label} style={{ 
@@ -1254,7 +1275,7 @@ const Contact = memo(({ C }) => {
 
           {/* Right: form */}
           <div className="reveal-right">
-            {sent ? (
+            {status === "success" ? (
               <div style={{ 
                 height:"100%", display:"flex", flexDirection:"column", 
                 justifyContent:"center", alignItems:"center", 
@@ -1297,6 +1318,7 @@ const Contact = memo(({ C }) => {
                       value={form[f.key]} 
                       onChange={e => handleChange(f.key, e.target.value)}
                       autoComplete={f.key === "email" ? "email" : "name"}
+                      disabled={status === "loading"}
                     />
                   </div>
                 ))}
@@ -1312,14 +1334,27 @@ const Contact = memo(({ C }) => {
                     style={{ resize:"none" }} 
                     value={form.message} 
                     onChange={e => handleChange("message", e.target.value)}
+                    disabled={status === "loading"}
                   />
                 </div>
+
+                {status === "error" && (
+                  <p className="mono" style={{ fontSize:"0.68rem", color:C.coral }}>
+                    ✕ transmission failed — try again or email directly
+                  </p>
+                )}
+
                 <button 
                   className="btn-primary" 
                   onClick={handleSubmit} 
-                  style={{ alignSelf:"flex-start" }}
+                  style={{ 
+                    alignSelf:"flex-start",
+                    opacity: status === "loading" ? 0.6 : 1,
+                    cursor: status === "loading" ? "not-allowed" : "pointer",
+                  }}
+                  disabled={status === "loading"}
                 >
-                  ./send_message.sh →
+                  {status === "loading" ? "transmitting..." : "./send_message.sh →"}
                 </button>
               </div>
             )}
