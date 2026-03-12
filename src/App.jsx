@@ -50,7 +50,7 @@ const PROJECTS = [
 const SKILLS = [
   {
     category: "Network Eng.",
-    items: ["Cisco / Juniper", "BGP / OSPF / EIGRP", "VLAN & VxLAN", "SD-WAN", "Wireshark"],
+    items: ["Cisco", "BGP / OSPF / EIGRP", "VLAN & VxLAN", "SD-WAN", "Wireshark"],
     accent: C.blue,
   },
   {
@@ -60,7 +60,7 @@ const SKILLS = [
   },
   {
     category: "Sysadmin",
-    items: ["Linux (RHEL/Debian)", "Windows Server", "Active Directory", "Ansible", "Bash / Python"],
+    items: ["Linux (RHEL/Debian)", "Ubuntu Server", "Active Directory", "Ansible", "Bash / Python"],
     accent: C.mint500,
   },
   {
@@ -331,7 +331,7 @@ function Navbar({ active }) {
         {/* Logo */}
         <div className="mono" style={{ fontSize: "0.9rem", color: C.textPri, display: "flex", alignItems: "center", gap: "0.4rem" }}>
           <span style={{ color: C.mint500 }}>[</span>
-          Alvaro Prayogo
+          parothegreat
           <span style={{ color: C.coral }}>~</span>
           <span style={{ color: C.mint500 }}>]</span>
           <span style={{ color: C.textMuted, fontSize: "0.7rem" }}>#</span>
@@ -739,7 +739,7 @@ function Hero() {
           <TerminalLine text="whoami" delay={600} />
           <TerminalLine text="parothegreat -- securing networks, hardening systems, hunting threats" delay={1100} color={C.textSec} />
           <TerminalLine text="uptime --since 2024-09-16" delay={2200} />
-          <TerminalLine text="online since Sep 16 2024  |  load avg: high  |  status: operational" delay={2700} color={C.mint400} />
+          <TerminalLine text="online since Sep 16 2024  |  load avg: high  |  status: operational-student" delay={2700} color={C.mint400} />
         </div>
 
         {/* Name + CTA — full width (no grid, Lanyard is absolute) */}
@@ -751,8 +751,8 @@ function Hero() {
             color: C.textPri, letterSpacing: "-0.02em",
             marginBottom: "4rem",
           }}>
-            Alvaro<br />
-            <span style={{ fontStyle: "italic", color: C.mint500 }}>Prayogo</span>
+            Hi, I'm<br />
+            <span style={{ fontStyle: "italic", color: C.mint500 }}>Alvaro Prayogo</span>
           </h1>
 
           <div className="hero-bottom" style={{
