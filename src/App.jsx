@@ -810,7 +810,7 @@ function Hero() {
 
             {/* Photo */}
             <img
-              src="/pfp.jpeg"
+              src="/images/profile/pfp.jpeg"
               alt="Alvaro Prayogo"
               style={{
                 width: "100%",
