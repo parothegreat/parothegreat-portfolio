@@ -45,15 +45,15 @@ const SKILLS = [
 ];
 
 const SOCIAL_LINKS = {
-  "GitHub":   "https://github.com/parothegreat/",
-  "LinkedIn": "https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a/",
+  "GitHub":   "https://github.com/parothegreat/ ",
+  "LinkedIn": "https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a/ ",
 };
 
 const CERTS = [
   { name:"Network Defense", full:"Cisco NetAcad — Network Defense", issuer:"Cisco Networking Academy", color: ACCENT.blue,
-    url:"https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile" },
+    url:"https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile " },
   { name:"Ethical Hacker",  full:"Cisco NetAcad — Ethical Hacker",  issuer:"Cisco Networking Academy", color: ACCENT.coral,
-    url:"https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile" },
+    url:"https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile " },
 ];
 
 // ── Global Styles ──────────────────────────────────────────────
@@ -198,6 +198,7 @@ function GlobalStyles({ C }) {
         .footer-inner { padding:1.5rem !important; flex-direction:column !important; align-items:flex-start !important; gap:1rem !important; }
         .hero-top-tag { left:1.5rem !important; right:1.5rem !important; }
         .hero-top-rule { left:1.5rem !important; right:1.5rem !important; }
+        nav { grid-template-columns: 1fr auto !important; }
       }
       @media (max-width: 560px) {
         .skills-grid { grid-template-columns:1fr !important; }
@@ -246,7 +247,7 @@ function TerminalLine({ text, delay = 0, color, C }) {
     <div className="mono" style={{ fontSize:"0.78rem",color:color||C.textMuted,lineHeight:2 }}>
       <span style={{ color:C.mint500,marginRight:"0.5rem" }}>$</span>
       {displayed}
-      {!done && <span style={{ animation:"blink 0.7s step-end infinite",color:C.mint400 }}>▌</span>}
+      {!done && <span style={{ animation:"blink 0.7s step-end infinite",color:C.mint400 }}>|</span>}
     </div>
   );
 }
@@ -294,21 +295,21 @@ function Navbar({ active, C }) {
     <>
       <nav style={{
         position:"fixed",top:0,left:0,right:0,zIndex:1000,
-        display:"flex",alignItems:"center",justifyContent:"space-between",
+        display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",
         padding:"0 2rem",height:"66px",
         background: scrolled ? C.navBgScr : C.navBg,
         backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
         borderBottom: scrolled ? `1px solid ${C.border}` : `1px solid ${C.mint500}18`,
         transition:"all 0.4s ease",
       }}>
-        {/* Logo */}
-        <div className="mono" style={{ fontSize:"0.9rem",color:C.textPri,display:"flex",alignItems:"center",gap:"0.4rem" }}>
+        {/* Logo - Left */}
+        <div className="mono" style={{ fontSize:"0.9rem",color:C.textPri,display:"flex",alignItems:"center",gap:"0.4rem",justifySelf:"start" }}>
           <span style={{ color:C.mint500 }}>[</span>parothegreat<span style={{ color:C.coral }}>~</span><span style={{ color:C.mint500 }}>]</span>
           <span style={{ color:C.textMuted,fontSize:"0.7rem" }}>#</span>
         </div>
 
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display:"flex",gap:"2.5rem" }}>
+        {/* Desktop nav - Center */}
+        <div className="desktop-nav" style={{ display:"flex",gap:"2.5rem",justifySelf:"center" }}>
           {links.map(l => (
             <button key={l} className={`nav-link ${active===l?"active":""}`} onClick={() => go(l)}>
               {active===l ? `> ${l}` : l}
@@ -316,8 +317,8 @@ function Navbar({ active, C }) {
           ))}
         </div>
 
-        {/* Desktop right */}
-        <div className="desktop-nav" style={{ display:"flex",alignItems:"center",gap:"1rem" }}>
+        {/* Desktop right - Right */}
+        <div className="desktop-nav" style={{ display:"flex",alignItems:"center",gap:"1rem",justifySelf:"end" }}>
           <div style={{ display:"flex",alignItems:"center",gap:"0.6rem" }}>
             <span style={{ width:"7px",height:"7px",borderRadius:"50%",background:C.mint500,display:"inline-block",animation:"pulse-dot 2.5s ease-in-out infinite" }} />
             <span className="mono" style={{ fontSize:"0.68rem",color:C.textMuted }}>available_for_hire</span>
@@ -325,11 +326,10 @@ function Navbar({ active, C }) {
           <ThemeToggle C={C} />
         </div>
 
-        {/* Mobile right */}
-        <div style={{ display:"flex",alignItems:"center",gap:"0.75rem" }}>
-          <div className="desktop-nav" style={{ display:"none" }} />
-          <button className="mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}
-            style={{ display:"none",background:"none",border:"none",flexDirection:"column",gap:"6px",padding:"4px" }}>
+        {/* Mobile toggle - Right (hidden on desktop) */}
+        <div className="mobile-toggle" style={{ display:"none",justifySelf:"end" }}>
+          <button onClick={() => setMobileOpen(!mobileOpen)}
+            style={{ background:"none",border:"none",flexDirection:"column",gap:"6px",padding:"4px",display:"flex" }}>
             {[0,1].map(i => (
               <div key={i} style={{
                 width:"22px",height:"1.5px",background:C.mint400,borderRadius:"2px",transition:"transform 0.3s",
@@ -557,7 +557,7 @@ function Hero({ C }) {
                 fontSize:"0.85rem",lineHeight:1.85,fontWeight:300,color:C.textSec,
                 maxWidth:"270px",borderLeft:`1px solid ${C.border}`,paddingLeft:"1.5rem",
               }}>
-                "Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.""
+                "Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do."
               </p>
               <div className="stat-row" style={{ display:"flex",gap:"2.5rem" }}>
                 <UptimeCounter C={C} />
