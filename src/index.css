@@ -1,3 +1,5 @@
+@import "tw-animate-css";
+@import "@fontsource-variable/geist";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,11 +10,13 @@
   }
 
   body {
-    @apply font-mono bg-white text-slate-900;
+    @apply font-mono text-white;
+    background-color: #0a0e27;
   }
 
   body.dark {
-    @apply bg-slate-950 text-white;
+    @apply text-white;
+    background-color: #050812;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -20,23 +24,115 @@
   }
 
   h1 {
-    @apply text-5xl font-black;
+    @apply text-5xl font-black text-neon-cyan;
   }
 
   h2 {
-    @apply text-4xl font-black;
+    @apply text-4xl font-black text-neon-cyan;
   }
 
   h3 {
-    @apply text-2xl font-bold;
+    @apply text-2xl font-bold text-neon-cyan;
+  }
+
+  p {
+    @apply text-white/90;
   }
 
   a {
-    @apply text-accent-cyan hover:text-accent-cyan-dark transition-colors;
+    @apply text-neon-cyan hover:text-neon-magenta transition-colors;
   }
 
   body.dark a {
-    @apply text-accent-cyan;
+    @apply text-neon-cyan hover:text-neon-magenta;
+  }
+
+  /* Cyberpunk text effect for headings */
+  h1, h2 {
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
+  }
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+  .theme {
+    --font-sans: 'Geist Variable', sans-serif;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Cyberpunk Scan Line Effect */
+@keyframes scanLines {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
   }
 }
 
@@ -96,6 +192,87 @@
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Cyberpunk Styles */
+.cyber-border {
+  @apply border-2 border-neon-cyan;
+  box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2), 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.cyber-border-magenta {
+  @apply border-2 border-neon-magenta;
+  box-shadow: inset 0 0 10px rgba(255, 1, 110, 0.2), 0 0 15px rgba(255, 1, 110, 0.4);
+}
+
+.cyber-border-purple {
+  @apply border-2 border-neon-purple;
+  box-shadow: inset 0 0 10px rgba(179, 0, 255, 0.2), 0 0 15px rgba(179, 0, 255, 0.4);
+}
+
+.cyber-border-green {
+  @apply border-2 border-neon-green;
+  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.2), 0 0 15px rgba(57, 255, 20, 0.4);
+}
+
+.cyber-glow {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), 0 0 40px rgba(0, 240, 255, 0.3);
+}
+
+.cyber-glow-magenta {
+  box-shadow: 0 0 20px rgba(255, 1, 110, 0.5), 0 0 40px rgba(255, 1, 110, 0.3);
+}
+
+.cyber-text-glow {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(0, 240, 255, 0.5);
+  color: #00f0ff;
+}
+
+.cyber-text-glow-magenta {
+  text-shadow: 0 0 10px rgba(255, 1, 110, 0.8), 0 0 20px rgba(255, 1, 110, 0.5);
+  color: #ff006e;
+}
+
+.cyber-text-glow-green {
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.8), 0 0 20px rgba(57, 255, 20, 0.5);
+  color: #39ff14;
+}
+
+.cyber-card {
+  @apply bg-cyber-bg-secondary border-l-2 border-neon-cyan;
+  box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.1), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.cyber-button {
+  @apply px-6 py-3 border-2 border-neon-cyan text-neon-cyan font-mono font-bold tracking-widest uppercase;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  transition: all 300ms ease;
+}
+
+.cyber-button:hover {
+  @apply bg-neon-cyan text-cyber-bg;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.cyber-button-magenta {
+  @apply px-6 py-3 border-2 border-neon-magenta text-neon-magenta font-mono font-bold tracking-widest uppercase;
+  box-shadow: 0 0 15px rgba(255, 1, 110, 0.4);
+}
+
+.cyber-button-magenta:hover {
+  @apply bg-neon-magenta text-cyber-bg;
+  box-shadow: 0 0 30px rgba(255, 1, 110, 0.8), inset 0 0 20px rgba(255, 1, 110, 0.2);
+}
+
+.cyber-grid {
+  background-image: 
+    linear-gradient(0deg, transparent 24%, rgba(0, 240, 255, 0.1) 25%, rgba(0, 240, 255, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 240, 255, 0.1) 75%, rgba(0, 240, 255, 0.1) 76%, transparent 77%, transparent),
+    linear-gradient(90deg, transparent 24%, rgba(0, 240, 255, 0.1) 25%, rgba(0, 240, 255, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 240, 255, 0.1) 75%, rgba(0, 240, 255, 0.1) 76%, transparent 77%, transparent);
+  background-size: 60px 60px;
+}
+
+.cyber-section {
+  @apply relative py-20 border-t-2 border-b-2 border-cyber-border-subtle;
 }
 
 /* Button styles */
