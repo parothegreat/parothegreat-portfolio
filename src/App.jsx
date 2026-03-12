@@ -867,7 +867,7 @@ function Work() {
             Ops that <em>matter</em>
           </h2>
         </div>
-        <span className="mono" style={{ fontSize: "0.72rem", color: C.textMuted }}>2023 — 2024</span>
+        <span className="mono" style={{ fontSize: "0.72rem", color: C.textMuted }}>2024 - 2026</span>
       </div>
 
       <div>
