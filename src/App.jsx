@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ── Brand Tokens ──────────────────────────────────────────────
 const C = {
@@ -59,7 +59,7 @@ const SKILLS = [
   },
   {
     category: "Sysadmin",
-    items: ["Linux (RHEL/Debian)", "Ubuntu Server", "Active Directory", "Ansible", "Bash / Python"],
+    items: ["Linux (RHEL/Debian)", "Windows Server", "Active Directory", "Ansible", "Bash / Python"],
     accent: C.mint500,
   },
   {
@@ -223,6 +223,7 @@ function GlobalStyles() {
         .desktop-nav { display: none !important; }
         .mobile-toggle { display: flex !important; }
         .hero-bottom { flex-direction: column !important; align-items: flex-start !important; gap: 2.5rem !important; }
+        .hero-grid-main { grid-template-columns: 1fr !important; }
         .skills-inner { flex-direction: column !important; gap: 3rem !important; }
         .skills-grid { grid-template-columns: 1fr 1fr !important; }
         .contact-grid { grid-template-columns: 1fr !important; gap: 4rem !important; }
@@ -312,9 +313,10 @@ function Navbar({ active }) {
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 3rem", height: "66px",
-        background: scrolled ? `${C.bgBase}f0` : "transparent",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? `1px solid ${C.border}` : "none",
+        background: scrolled ? `${C.bgBase}e0` : `rgba(10,0,15,0.35)`,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: scrolled ? `1px solid ${C.border}` : `1px solid ${C.mint500}18`,
         transition: "all 0.4s ease",
       }}>
         {/* Logo */}
@@ -447,6 +449,189 @@ function UptimeCounter() {
   );
 }
 
+// ── Dither WebGL Background ───────────────────────────────────
+// Self-contained WebGL dither wave — matches react-bits Dither props API
+// waveColor mapped to brand palette: mint500 tones on dark bgBase
+function Dither({
+  waveColor       = [0.0, 0.898, 0.627],   // mint500 #00E5A0 → [0,0.898,0.627]
+  disableAnimation = false,
+  enableMouseInteraction = true,
+  mouseRadius     = 0.3,
+  colorNum        = 4,
+  pixelSize       = 2,
+  waveAmplitude   = 0.3,
+  waveFrequency   = 3,
+  waveSpeed       = 0.05,
+}) {
+  const canvasRef = useRef(null);
+  const stateRef  = useRef({ mouse: [0.5, 0.5], time: 0, raf: null, gl: null, prog: null, locs: {} });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: true });
+    if (!gl) return;
+    const s = stateRef.current;
+    s.gl = gl;
+
+    const vert = `
+      attribute vec2 a_pos;
+      void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+    `;
+    const frag = `
+      precision mediump float;
+      uniform vec2  u_res;
+      uniform float u_time;
+      uniform vec2  u_mouse;
+      uniform float u_mouseR;
+      uniform vec3  u_waveColor;
+      uniform float u_colorNum;
+      uniform float u_pixelSize;
+      uniform float u_amplitude;
+      uniform float u_frequency;
+
+      // 4x4 Bayer ordered dither matrix
+      float bayer(vec2 p) {
+        int x = int(mod(p.x, 4.0));
+        int y = int(mod(p.y, 4.0));
+        float mat[16];
+        mat[0]=0.0;  mat[1]=8.0;  mat[2]=2.0;  mat[3]=10.0;
+        mat[4]=12.0; mat[5]=4.0;  mat[6]=14.0; mat[7]=6.0;
+        mat[8]=3.0;  mat[9]=11.0; mat[10]=1.0; mat[11]=9.0;
+        mat[12]=15.0;mat[13]=7.0; mat[14]=13.0;mat[15]=5.0;
+        int idx = y * 4 + x;
+        float v = 0.0;
+        if(idx==0)  v=mat[0];  else if(idx==1)  v=mat[1];
+        else if(idx==2)  v=mat[2];  else if(idx==3)  v=mat[3];
+        else if(idx==4)  v=mat[4];  else if(idx==5)  v=mat[5];
+        else if(idx==6)  v=mat[6];  else if(idx==7)  v=mat[7];
+        else if(idx==8)  v=mat[8];  else if(idx==9)  v=mat[9];
+        else if(idx==10) v=mat[10]; else if(idx==11) v=mat[11];
+        else if(idx==12) v=mat[12]; else if(idx==13) v=mat[13];
+        else if(idx==14) v=mat[14]; else v=mat[15];
+        return v / 16.0;
+      }
+
+      void main() {
+        // Pixelate UV
+        vec2 pxUV = floor(gl_FragCoord.xy / u_pixelSize) * u_pixelSize;
+        vec2 uv   = pxUV / u_res;
+
+        // Wave field: layered sin waves
+        float wave = 0.0;
+        wave += sin(uv.x * u_frequency * 6.2831 + u_time) * u_amplitude;
+        wave += sin(uv.y * u_frequency * 4.7124 + u_time * 0.7) * u_amplitude * 0.6;
+        wave += sin((uv.x + uv.y) * u_frequency * 3.1415 + u_time * 1.3) * u_amplitude * 0.4;
+        float brightness = 0.5 + wave * 0.5;
+
+        // Mouse ripple influence
+        float dist = length(uv - u_mouse);
+        float ripple = smoothstep(u_mouseR, 0.0, dist);
+        brightness = mix(brightness, 1.0, ripple * 0.35);
+
+        // Ordered dither quantization
+        float threshold = bayer(gl_FragCoord.xy / u_pixelSize);
+        float steps = u_colorNum - 1.0;
+        float quantized = floor(brightness * steps + threshold) / steps;
+        quantized = clamp(quantized, 0.0, 1.0);
+
+        // Map to color: bgBase → waveColor
+        vec3 dark  = vec3(0.039, 0.0, 0.059);   // #0A000F
+        vec3 color = mix(dark, u_waveColor, quantized);
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const compile = (type, src) => {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src); gl.compileShader(sh);
+      return sh;
+    };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    s.prog = prog;
+
+    // Fullscreen quad
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "a_pos");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    s.locs = {
+      res:      gl.getUniformLocation(prog, "u_res"),
+      time:     gl.getUniformLocation(prog, "u_time"),
+      mouse:    gl.getUniformLocation(prog, "u_mouse"),
+      mouseR:   gl.getUniformLocation(prog, "u_mouseR"),
+      waveColor:gl.getUniformLocation(prog, "u_waveColor"),
+      colorNum: gl.getUniformLocation(prog, "u_colorNum"),
+      pixelSize:gl.getUniformLocation(prog, "u_pixelSize"),
+      amplitude:gl.getUniformLocation(prog, "u_amplitude"),
+      frequency:gl.getUniformLocation(prog, "u_frequency"),
+    };
+
+    // Resize handler
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    // Mouse handler
+    const onMouse = (e) => {
+      const r = canvas.getBoundingClientRect();
+      s.mouse = [
+        (e.clientX - r.left) / r.width,
+        1.0 - (e.clientY - r.top)  / r.height,
+      ];
+    };
+    if (enableMouseInteraction) canvas.addEventListener("mousemove", onMouse);
+
+    // Render loop
+    const render = () => {
+      if (!disableAnimation) s.time += waveSpeed;
+      const { locs } = s;
+      gl.uniform2f(locs.res,       canvas.width, canvas.height);
+      gl.uniform1f(locs.time,      s.time);
+      gl.uniform2f(locs.mouse,     s.mouse[0], s.mouse[1]);
+      gl.uniform1f(locs.mouseR,    mouseRadius);
+      gl.uniform3f(locs.waveColor, waveColor[0], waveColor[1], waveColor[2]);
+      gl.uniform1f(locs.colorNum,  colorNum);
+      gl.uniform1f(locs.pixelSize, pixelSize);
+      gl.uniform1f(locs.amplitude, waveAmplitude);
+      gl.uniform1f(locs.frequency, waveFrequency);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      s.raf = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      cancelAnimationFrame(s.raf);
+      ro.disconnect();
+      if (enableMouseInteraction) canvas.removeEventListener("mousemove", onMouse);
+      gl.deleteProgram(prog);
+    };
+  }, [waveColor, disableAnimation, enableMouseInteraction, mouseRadius, colorNum, pixelSize, waveAmplitude, waveFrequency, waveSpeed]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "absolute", inset: 0,
+        width: "100%", height: "100%",
+        display: "block", zIndex: 0,
+      }}
+    />
+  );
+}
+
 // ── Hero ──────────────────────────────────────────────────────
 function Hero() {
   const [ready, setReady] = useState(false);
@@ -458,27 +643,40 @@ function Hero() {
       display: "flex", flexDirection: "column", justifyContent: "flex-end",
       padding: "0 3rem 5rem", position: "relative", overflow: "hidden",
     }}>
-      {/* Ambient glows */}
+      {/* Dither WebGL background — brand palette mint500 on bgBase */}
+      <Dither
+        waveColor={[0.0, 0.898, 0.627]}
+        disableAnimation={false}
+        enableMouseInteraction={true}
+        mouseRadius={0.3}
+        colorNum={4}
+        pixelSize={2}
+        waveAmplitude={0.3}
+        waveFrequency={3}
+        waveSpeed={0.05}
+      />
+      {/* Dark overlay so text stays readable */}
       <div style={{
-        position: "absolute", top: "-10%", right: "-5%",
-        width: "50vw", height: "50vw", maxWidth: "650px",
-        background: `radial-gradient(ellipse, ${C.mint500}0c 0%, transparent 65%)`,
-        borderRadius: "50%", filter: "blur(90px)", pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "0", left: "-10%",
-        width: "40vw", height: "40vw", maxWidth: "500px",
-        background: `radial-gradient(ellipse, ${C.coral}08 0%, transparent 65%)`,
-        borderRadius: "50%", filter: "blur(70px)", pointerEvents: "none",
+        position: "absolute", inset: 0, zIndex: 1,
+        background: `linear-gradient(to top, ${C.bgBase}f5 0%, ${C.bgBase}99 40%, ${C.bgBase}55 70%, transparent 100%)`,
+        pointerEvents: "none",
       }} />
 
       {/* Top rule */}
-      <div style={{ position: "absolute", top: "66px", left: "3rem", right: "3rem", height: "1px", background: C.border }} />
+      <div style={{ position: "absolute", top: "66px", left: "3rem", right: "3rem", height: "1px", background: C.border, zIndex: 2 }} />
 
       {/* Location + role tag */}
       <div style={{
         position: "absolute", top: "calc(66px + 2.5rem)", left: "3rem",
         animation: ready ? "fadeIn 1s ease 0.4s both" : "none", opacity: 0,
+        zIndex: 2,
+        display: "inline-block",
+        padding: "0.35rem 0.9rem",
+        background: "rgba(10,0,15,0.5)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        border: `1px solid ${C.mint500}25`,
+        borderRadius: "4px",
       }}>
         <span className="mono" style={{ fontSize: "0.68rem", color: C.textMuted, letterSpacing: "0.04em" }}>
           <span style={{ color: C.coral }}># </span>
@@ -491,6 +689,7 @@ function Hero() {
         position: "absolute", bottom: "2.5rem", right: "3rem",
         display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem",
         animation: ready ? "fadeIn 1s ease 1.5s both" : "none", opacity: 0,
+        zIndex: 2,
       }}>
         <div style={{ width: "1px", height: "44px", background: `linear-gradient(to bottom, transparent, ${C.mint500}55)` }} />
         <span className="mono" style={{ fontSize: "0.58rem", color: C.textMuted, writingMode: "vertical-rl", letterSpacing: "0.15em" }}>SCROLL</span>
@@ -501,58 +700,154 @@ function Hero() {
         opacity: ready ? 1 : 0,
         transform: ready ? "translateY(0)" : "translateY(28px)",
         transition: "opacity 0.9s ease 0.2s, transform 1s cubic-bezier(0.16,1,0.3,1) 0.2s",
+        position: "relative", zIndex: 2,
       }}>
-        {/* Terminal lines */}
-        <div style={{ marginBottom: "2.5rem" }}>
+        {/* Terminal lines — glassmorphism blur box */}
+        <div style={{
+          marginBottom: "2.5rem",
+          display: "inline-block",
+          padding: "1rem 1.5rem",
+          background: `rgba(10, 0, 15, 0.55)`,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: `1px solid ${C.mint500}30`,
+          borderRadius: "6px",
+          boxShadow: `0 0 24px ${C.mint500}10`,
+        }}>
           <TerminalLine text="whoami" delay={600} />
           <TerminalLine text="parothegreat -- securing networks, hardening systems, hunting threats" delay={1100} color={C.textSec} />
           <TerminalLine text="uptime --since 2024-09-16" delay={2200} />
           <TerminalLine text="online since Sep 16 2024  |  load avg: high  |  status: operational" delay={2700} color={C.mint400} />
         </div>
 
-        <h1 style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: "clamp(3.8rem, 9.5vw, 8.5rem)",
-          lineHeight: 0.88, fontWeight: 400,
-          color: C.textPri, letterSpacing: "-0.02em",
-          marginBottom: "4rem",
-        }}>
-          Alvaro<br />
-          <span style={{ fontStyle: "italic", color: C.mint500 }}>Prayogo</span>
-        </h1>
+        {/* 2-column layout: left = text, right = Lanyard */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 420px",
+          gap: "2rem",
+          alignItems: "flex-end",
+        }}
+          className="hero-grid-main">
 
-        <div className="hero-bottom" style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          borderTop: `1px solid ${C.border}`, paddingTop: "2.5rem", gap: "3rem",
-        }}>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <button className="btn-primary"
-              onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}>
-              View Work ↓
-            </button>
-            <button className="btn-ghost"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
-              Get in Touch
-            </button>
-          </div>
-
-          <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-end" }}>
-            <p style={{
-              fontSize: "0.85rem", lineHeight: 1.85, fontWeight: 300, color: C.textSec,
-              maxWidth: "270px", borderLeft: `1px solid ${C.border}`, paddingLeft: "1.5rem",
+          {/* ── Left: text content ── */}
+          <div>
+            <h1 style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: "clamp(3.8rem, 9.5vw, 8.5rem)",
+              lineHeight: 0.88, fontWeight: 400,
+              color: C.textPri, letterSpacing: "-0.02em",
+              marginBottom: "4rem",
             }}>
-              Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.
-            </p>
-            <div className="stat-row" style={{ display: "flex", gap: "2.5rem" }}>
-              <UptimeCounter />
-              {[["30+", "Networks"], ["2", "Certs"]].map(([n, l]) => (
-                <div key={l} style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: C.mint500, lineHeight: 1 }}>{n}</div>
-                  <div className="mono" style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem" }}>{l}</div>
+              Alvaro<br />
+              <span style={{ fontStyle: "italic", color: C.mint500 }}>Prayogo</span>
+            </h1>
+
+            <div className="hero-bottom" style={{
+              display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+              borderTop: `1px solid ${C.border}`, paddingTop: "2.5rem", gap: "3rem",
+            }}>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <button className="btn-primary"
+                  onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}>
+                  View Work ↓
+                </button>
+                <button className="btn-ghost"
+                  onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
+                  Get in Touch
+                </button>
+              </div>
+
+              <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-end" }}>
+                <p style={{
+                  fontSize: "0.85rem", lineHeight: 1.85, fontWeight: 300, color: C.textSec,
+                  maxWidth: "270px", borderLeft: `1px solid ${C.border}`, paddingLeft: "1.5rem",
+                }}>
+                  Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.
+                </p>
+                <div className="stat-row" style={{ display: "flex", gap: "2.5rem" }}>
+                  <UptimeCounter />
+                  {[["30+", "Networks"], ["2", "Certs"]].map(([n, l]) => (
+                    <div key={l} style={{ textAlign: "right" }}>
+                      <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: C.mint500, lineHeight: 1 }}>{n}</div>
+                      <div className="mono" style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem" }}>{l}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
+
+          {/* ── Right: Profile photo ── */}
+          <div style={{
+            height: "520px",
+            position: "relative",
+            zIndex: 3,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+          }}>
+            {/* Glow behind photo */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(ellipse at center 60%, ${C.mint500}18 0%, transparent 70%)`,
+              filter: "blur(30px)",
+              zIndex: 0,
+            }} />
+
+            {/* Corner accents */}
+            {[
+              { top: 0, left: 0, borderTop: `1px solid ${C.mint500}`, borderLeft: `1px solid ${C.mint500}` },
+              { top: 0, right: 0, borderTop: `1px solid ${C.coral}`, borderRight: `1px solid ${C.coral}` },
+              { bottom: 0, left: 0, borderBottom: `1px solid ${C.coral}`, borderLeft: `1px solid ${C.coral}` },
+              { bottom: 0, right: 0, borderBottom: `1px solid ${C.mint500}`, borderRight: `1px solid ${C.mint500}` },
+            ].map((s, i) => (
+              <div key={i} style={{
+                position: "absolute", width: "24px", height: "24px",
+                zIndex: 2, ...s,
+              }} />
+            ))}
+
+            {/* Photo */}
+            <img
+              src="/pfp.jpeg"
+              alt="Alvaro Prayogo"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center top",
+                display: "block",
+                position: "relative",
+                zIndex: 1,
+                filter: "grayscale(15%) contrast(1.05)",
+                maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
+              }}
+            />
+
+            {/* Scan line overlay on photo */}
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 2,
+              background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px)",
+              pointerEvents: "none",
+            }} />
+
+            {/* Bottom label */}
+            <div style={{
+              position: "absolute", bottom: "1rem", left: "1rem",
+              zIndex: 3,
+              padding: "0.3rem 0.7rem",
+              background: "rgba(10,0,15,0.7)",
+              backdropFilter: "blur(8px)",
+              border: `1px solid ${C.mint500}30`,
+            }}>
+              <span className="mono" style={{ fontSize: "0.6rem", color: C.mint500, letterSpacing: "0.12em" }}>
+                paro@thegreat
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
