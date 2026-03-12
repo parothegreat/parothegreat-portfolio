@@ -59,7 +59,7 @@ const SKILLS = [
   },
   {
     category: "Sysadmin",
-    items: ["Linux (RHEL/Debian)", "Windows Server", "Active Directory", "Ansible", "Bash / Python"],
+    items: ["Linux (RHEL/Debian)", "Ubuntu Server", "Active Directory", "Ansible", "Bash / Python"],
     accent: C.mint500,
   },
   {
