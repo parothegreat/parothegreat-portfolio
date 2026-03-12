@@ -736,7 +736,7 @@ function Footer() {
     }}>
       <span className="mono" style={{ fontSize: "0.78rem", color: C.textMuted }}>
         <span style={{ color: C.mint500 }}>[</span>
-        alvaroprayogo
+        paro@thegreat
         <span style={{ color: C.coral }}>:~</span>
         <span style={{ color: C.mint500 }}>]</span>
         <span style={{ color: C.textMuted }}>$</span>
