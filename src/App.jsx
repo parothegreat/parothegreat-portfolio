@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Lanyard from './Lanyard';
 
 // ── Brand Tokens ──────────────────────────────────────────────
 const C = {
@@ -114,6 +115,14 @@ function GlobalStyles() {
         to   { opacity: 1; transform: translateY(0); }
       }
       @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+      .reveal       { opacity:0; transform:translateY(36px); transition:opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+      .reveal-left  { opacity:0; transform:translateX(-28px); transition:opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+      .reveal-right { opacity:0; transform:translateX(28px);  transition:opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+      .reveal-scale { opacity:0; transform:scale(.93);         transition:opacity .65s cubic-bezier(.16,1,.3,1), transform .65s cubic-bezier(.16,1,.3,1); }
+      .reveal.vis, .reveal-left.vis, .reveal-right.vis { opacity:1; transform:translate(0,0); }
+      .reveal-scale.vis { opacity:1; transform:scale(1); }
+      .d1{transition-delay:.08s} .d2{transition-delay:.16s} .d3{transition-delay:.24s} .d4{transition-delay:.32s} .d5{transition-delay:.40s}
       @keyframes pulse-dot {
         0%,100% { opacity:1; box-shadow: 0 0 0 0 ${C.mint500}55; }
         50%      { opacity:.6; box-shadow: 0 0 0 6px ${C.mint500}00; }
@@ -695,6 +704,20 @@ function Hero() {
         <span className="mono" style={{ fontSize: "0.58rem", color: C.textMuted, writingMode: "vertical-rl", letterSpacing: "0.15em" }}>SCROLL</span>
       </div>
 
+      {/* Lanyard — center-right optimal position */}
+      <div style={{
+        position: "absolute",
+        top: "35%",
+        right: "12rem",
+        transform: "translateY(-50%)",
+        width: "400px",
+        height: "600px",
+        zIndex: 3,
+        pointerEvents: "all",
+      }}>
+        <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+      </div>
+
       {/* Main content */}
       <div style={{
         opacity: ready ? 1 : 0,
@@ -720,135 +743,54 @@ function Hero() {
           <TerminalLine text="online since Sep 16 2024  |  load avg: high  |  status: operational" delay={2700} color={C.mint400} />
         </div>
 
-        {/* 2-column layout: left = text, right = Lanyard */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 420px",
-          gap: "2rem",
-          alignItems: "flex-end",
-        }}
-          className="hero-grid-main">
-
-          {/* ── Left: text content ── */}
-          <div>
-            <h1 style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(3.8rem, 9.5vw, 8.5rem)",
-              lineHeight: 0.88, fontWeight: 400,
-              color: C.textPri, letterSpacing: "-0.02em",
-              marginBottom: "4rem",
-            }}>
-              Alvaro<br />
-              <span style={{ fontStyle: "italic", color: C.mint500 }}>Prayogo</span>
-            </h1>
-
-            <div className="hero-bottom" style={{
-              display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-              borderTop: `1px solid ${C.border}`, paddingTop: "2.5rem", gap: "3rem",
-            }}>
-              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                <button className="btn-primary"
-                  onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}>
-                  View Work ↓
-                </button>
-                <button className="btn-ghost"
-                  onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
-                  Get in Touch
-                </button>
-              </div>
-
-              <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-end" }}>
-                <p style={{
-                  fontSize: "0.85rem", lineHeight: 1.85, fontWeight: 300, color: C.textSec,
-                  maxWidth: "270px", borderLeft: `1px solid ${C.border}`, paddingLeft: "1.5rem",
-                }}>
-                  Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.
-                </p>
-                <div className="stat-row" style={{ display: "flex", gap: "2.5rem" }}>
-                  <UptimeCounter />
-                  {[["30+", "Networks"], ["2", "Certs"]].map(([n, l]) => (
-                    <div key={l} style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: C.mint500, lineHeight: 1 }}>{n}</div>
-                      <div className="mono" style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem" }}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right: Profile photo ── */}
-          <div style={{
-            height: "520px",
-            position: "relative",
-            zIndex: 3,
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
+        {/* Name + CTA — full width (no grid, Lanyard is absolute) */}
+        <div>
+          <h1 style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "clamp(3.8rem, 9.5vw, 8.5rem)",
+            lineHeight: 0.88, fontWeight: 400,
+            color: C.textPri, letterSpacing: "-0.02em",
+            marginBottom: "4rem",
           }}>
-            {/* Glow behind photo */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: `radial-gradient(ellipse at center 60%, ${C.mint500}18 0%, transparent 70%)`,
-              filter: "blur(30px)",
-              zIndex: 0,
-            }} />
+            Alvaro<br />
+            <span style={{ fontStyle: "italic", color: C.mint500 }}>Prayogo</span>
+          </h1>
 
-            {/* Corner accents */}
-            {[
-              { top: 0, left: 0, borderTop: `1px solid ${C.mint500}`, borderLeft: `1px solid ${C.mint500}` },
-              { top: 0, right: 0, borderTop: `1px solid ${C.coral}`, borderRight: `1px solid ${C.coral}` },
-              { bottom: 0, left: 0, borderBottom: `1px solid ${C.coral}`, borderLeft: `1px solid ${C.coral}` },
-              { bottom: 0, right: 0, borderBottom: `1px solid ${C.mint500}`, borderRight: `1px solid ${C.mint500}` },
-            ].map((s, i) => (
-              <div key={i} style={{
-                position: "absolute", width: "24px", height: "24px",
-                zIndex: 2, ...s,
-              }} />
-            ))}
+          <div className="hero-bottom" style={{
+            display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+            borderTop: `1px solid ${C.border}`, paddingTop: "2.5rem", gap: "3rem",
+          }}>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button className="btn-primary"
+                onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}>
+                View Work ↓
+              </button>
+              <button className="btn-ghost"
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
+                Get in Touch
+              </button>
+            </div>
 
-            {/* Photo */}
-            <img
-              src="/images/profile/pfp.jpeg"
-              alt="Alvaro Prayogo"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center top",
-                display: "block",
-                position: "relative",
-                zIndex: 1,
-                filter: "grayscale(15%) contrast(1.05)",
-                maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
-              }}
-            />
-
-            {/* Scan line overlay on photo */}
-            <div style={{
-              position: "absolute", inset: 0, zIndex: 2,
-              background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px)",
-              pointerEvents: "none",
-            }} />
-
-            {/* Bottom label */}
-            <div style={{
-              position: "absolute", bottom: "1rem", left: "1rem",
-              zIndex: 3,
-              padding: "0.3rem 0.7rem",
-              background: "rgba(10,0,15,0.7)",
-              backdropFilter: "blur(8px)",
-              border: `1px solid ${C.mint500}30`,
-            }}>
-              <span className="mono" style={{ fontSize: "0.6rem", color: C.mint500, letterSpacing: "0.12em" }}>
-                paro@thegreat
-              </span>
+            <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-end" }}>
+              <p style={{
+                fontSize: "0.85rem", lineHeight: 1.85, fontWeight: 300, color: C.textSec,
+                maxWidth: "270px", borderLeft: `1px solid ${C.border}`, paddingLeft: "1.5rem",
+              }}>
+                Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.
+              </p>
+              <div className="stat-row" style={{ display: "flex", gap: "2.5rem" }}>
+                <UptimeCounter />
+                {[["30+", "Networks"], ["2", "Certs"]].map(([n, l]) => (
+                  <div key={l} style={{ textAlign: "right" }}>
+                    <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: C.mint500, lineHeight: 1 }}>{n}</div>
+                    <div className="mono" style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem" }}>{l}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
         </div>
+
       </div>
     </section>
   );
@@ -858,7 +800,7 @@ function Hero() {
 function Work() {
   return (
     <section id="work" className="section-pad" style={{ padding: "8rem 3rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "4rem", flexWrap: "wrap", gap: "1rem" }}>
+      <div className="reveal" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "4rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <p className="mono" style={{ fontSize: "0.68rem", color: C.mint500, marginBottom: "0.6rem" }}>
             // selected_engagements
@@ -867,12 +809,12 @@ function Work() {
             Ops that <em>matter</em>
           </h2>
         </div>
-        <span className="mono" style={{ fontSize: "0.72rem", color: C.textMuted }}>2024 - 2026</span>
+        <span className="mono" style={{ fontSize: "0.72rem", color: C.textMuted }}>2024 — 2026</span>
       </div>
 
       <div>
-        {PROJECTS.map((p) => (
-          <div key={p.id} className="project-row">
+        {PROJECTS.map((p, i) => (
+          <div key={p.id} className={`project-row reveal d${Math.min(i+1,5)}`}>
             <div className="mono" style={{ fontStyle: "normal", fontSize: "0.8rem", color: p.accent, paddingTop: "0.25rem" }}>
               {p.id}
             </div>
@@ -911,7 +853,7 @@ function Skills() {
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div className="skills-inner" style={{ display: "flex", gap: "6rem", alignItems: "flex-start" }}>
           {/* Left */}
-          <div style={{ flex: "0 0 260px" }}>
+          <div className="reveal-left" style={{ flex: "0 0 260px" }}>
             <p className="mono" style={{ fontSize: "0.68rem", color: C.mint500, marginBottom: "0.6rem" }}>
               // capabilities
             </p>
@@ -940,8 +882,8 @@ function Skills() {
           <div className="skills-grid" style={{
             flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2.5rem",
           }}>
-            {SKILLS.map(group => (
-              <div key={group.category}>
+            {SKILLS.map((group, i) => (
+              <div key={group.category} className={`reveal d${i+1}`}>
                 <p className="mono" style={{
                   fontSize: "0.63rem", textTransform: "uppercase", letterSpacing: "0.1em",
                   color: group.accent, marginBottom: "1.25rem", opacity: 0.9,
@@ -959,7 +901,7 @@ function Skills() {
         </div>
 
         {/* Certifications */}
-        <div style={{ marginTop: "6rem" }}>
+        <div className="reveal" style={{ marginTop: "6rem" }}>
           <p className="mono" style={{ fontSize: "0.68rem", color: C.mint500, marginBottom: "0.6rem" }}>
             // certifications
           </p>
@@ -970,13 +912,13 @@ function Skills() {
             Credentials & <em>Certs</em>
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}>
-            {CERTS.map(cert => (
+            {CERTS.map((cert, i) => (
               <a
                 key={cert.name}
                 href={cert.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="cert-card"
+                className={`cert-card reveal-scale d${i+1}`}
                 style={{
                   "--cert-color": cert.color,
                   textDecoration: "none",
@@ -1015,7 +957,7 @@ function Contact() {
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8rem" }}>
           {/* Left */}
-          <div>
+          <div className="reveal-left">
             <p className="mono" style={{ fontSize: "0.68rem", color: C.mint500, marginBottom: "0.6rem" }}>
               // initiate_contact
             </p>
@@ -1061,7 +1003,7 @@ function Contact() {
           </div>
 
           {/* Right: form */}
-          <div>
+          <div className="reveal-right">
             {sent ? (
               <div style={{
                 height: "100%", display: "flex", flexDirection: "column",
@@ -1146,6 +1088,20 @@ function Footer() {
   );
 }
 
+// ── Scroll Reveal ─────────────────────────────────────────────
+function useScrollReveal() {
+  useEffect(() => {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add("vis"); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+    document.querySelectorAll(".reveal,.reveal-left,.reveal-right,.reveal-scale")
+      .forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  });
+}
+
 // ── Scroll Spy ────────────────────────────────────────────────
 function useScrollSpy() {
   const [active, setActive] = useState("Home");
@@ -1170,6 +1126,7 @@ function useScrollSpy() {
 // ── App ───────────────────────────────────────────────────────
 export default function Portfolio() {
   const active = useScrollSpy();
+  useScrollReveal();
   return (
     <>
       <GlobalStyles />
