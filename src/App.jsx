@@ -462,7 +462,7 @@ function UptimeCounter() {
 // Self-contained WebGL dither wave — matches react-bits Dither props API
 // waveColor mapped to brand palette: mint500 tones on dark bgBase
 function Dither({
-  waveColor       = [0.0, 0.898, 0.627],   // mint500 #00E5A0 → [0,0.898,0.627]
+  waveColor       = [0.0, 0.898, 0.627],   
   disableAnimation = false,
   enableMouseInteraction = true,
   mouseRadius     = 0.3,
