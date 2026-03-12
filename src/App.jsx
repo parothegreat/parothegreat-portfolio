@@ -819,7 +819,7 @@ const Hero = memo(({ C }) => {
         border:`1px solid ${C.mint500}25`, borderRadius:"4px",
         transition:"background 0.3s ease",
       }}>
-        <span style={{ fontSize: isMobile ? "0.75rem" : "0.85rem", color:C.textMuted }}>
+        <span style={{ fontSize: isMobile ? "0.75" : "1.4rem", color:C.textMuted }}>
           <TerminalLine 
             text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
             delay={1170} 

@@ -69,7 +69,7 @@ export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], 
   );
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = true }) {
   const band = useRef(),
     fixed = useRef(),
     j1 = useRef(),
