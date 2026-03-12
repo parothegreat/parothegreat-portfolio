@@ -25,3 +25,9 @@ dist/
 
 # Testing
 coverage/
+
+#images
+*.png
+*.jpg
+*.jpeg
+
