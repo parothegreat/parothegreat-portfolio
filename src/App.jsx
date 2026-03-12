@@ -383,9 +383,9 @@ function UptimeCounter({ C }) {
 }
 
 // ── Dither WebGL Background ────────────────────────────────────
-function Dither({ waveColor=[0.0,0.898,0.627],disableAnimation=false,enableMouseInteraction=true,mouseRadius=0.3,colorNum=4,pixelSize=2,waveAmplitude=3,waveFrequency=10,waveSpeed=0.9 }) {
+function Dither({ waveColor=[0.0,0.898,0.627],disableAnimation=false,enableMouseInteraction=true,mouseRadius=0.3,colorNum=4,pixelSize=10,waveAmplitude=3,waveFrequency=10,waveSpeed=0.9 }) {
   const canvasRef = useRef(null);
-  const stateRef  = useRef({ mouse:[0.5,0.5],time:0,raf:null,gl:null,prog:null,locs:{} });
+  const stateRef  = useRef({ mouse:[1,1],time:0,raf:null,gl:null,prog:null,locs:{} });
 
   useEffect(() => {
     const canvas = canvasRef.current;
