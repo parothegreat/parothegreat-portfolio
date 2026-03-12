@@ -69,13 +69,26 @@ const SKILLS = [
   },
 ];
 
+const SOCIAL_LINKS = {
+  "GitHub":   "https://github.com/parothegreat/",
+  "LinkedIn": "https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a/",
+};
+
 const CERTS = [
-  { name: "OSCP", full: "Offensive Security Certified Professional", color: C.coral },
-  { name: "CCNP", full: "Cisco Certified Network Professional",      color: C.blue },
-  { name: "CEH",  full: "Certified Ethical Hacker",                  color: C.violet },
-  { name: "RHCE", full: "Red Hat Certified Engineer",                 color: C.amber },
-  { name: "CompTIA Security+", full: "CompTIA Security+",            color: C.mint500 },
-  { name: "AWS SAA", full: "AWS Solutions Architect Associate",      color: C.lime },
+  {
+    name: "Network Defense",
+    full: "Cisco NetAcad — Network Defense",
+    issuer: "Cisco Networking Academy",
+    color: C.blue,
+    url: "https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile",
+  },
+  {
+    name: "Ethical Hacker",
+    full: "Cisco NetAcad — Ethical Hacker",
+    issuer: "Cisco Networking Academy",
+    color: C.coral,
+    url: "https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile",
+  },
 ];
 
 // ── Global Styles ─────────────────────────────────────────────
@@ -369,6 +382,71 @@ function Navbar({ active }) {
   );
 }
 
+// ── Uptime Counter ────────────────────────────────────────────
+const START_DATE = new Date("2024-09-16T00:00:00");
+
+function getUptime() {
+  const now = new Date();
+  const diff = now - START_DATE;
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const seconds = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const totalHours = Math.floor(totalMinutes / 60);
+  const hours = totalHours % 24;
+  const totalDays = Math.floor(totalHours / 24);
+  const days = totalDays % 30;
+  const totalMonths = Math.floor(totalDays / 30);
+  const months = totalMonths % 12;
+  const years = Math.floor(totalMonths / 12);
+
+  return { years, months, days, hours, minutes, seconds, totalDays };
+}
+
+function UptimeCounter() {
+  const [uptime, setUptime] = useState(getUptime());
+
+  useEffect(() => {
+    const iv = setInterval(() => setUptime(getUptime()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  // Primary display: biggest unit that's non-zero
+  const primaryValue = uptime.years > 0
+    ? `${uptime.years}y ${uptime.months}m`
+    : uptime.months > 0
+    ? `${uptime.months}m ${uptime.days}d`
+    : `${uptime.days}d`;
+
+  return (
+    <div style={{ textAlign: "right" }}>
+      {/* Primary: years/months */}
+      <div style={{
+        fontFamily: "'DM Serif Display', serif",
+        fontSize: "2rem", color: C.mint500, lineHeight: 1,
+      }}>
+        {primaryValue}
+      </div>
+      <div className="mono" style={{
+        fontSize: "0.58rem", letterSpacing: "0.1em",
+        textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem",
+      }}>
+        Uptime
+      </div>
+      {/* Live ticker: HH:MM:SS */}
+      <div className="mono" style={{
+        fontSize: "0.6rem", color: C.mint500, opacity: 0.5,
+        marginTop: "0.3rem", letterSpacing: "0.05em",
+      }}>
+        {pad(uptime.hours)}:{pad(uptime.minutes)}:{pad(uptime.seconds)}
+      </div>
+    </div>
+  );
+}
+
 // ── Hero ──────────────────────────────────────────────────────
 function Hero() {
   const [ready, setReady] = useState(false);
@@ -428,8 +506,8 @@ function Hero() {
         <div style={{ marginBottom: "2.5rem" }}>
           <TerminalLine text="whoami" delay={600} />
           <TerminalLine text="parothegreat -- securing networks, hardening systems, hunting threats" delay={1100} color={C.textSec} />
-          <TerminalLine text="uptime --years 3" delay={2200} />
-          <TerminalLine text="5y 3m 12d  |  load avg: high  |  status: operational" delay={2700} color={C.mint400} />
+          <TerminalLine text="uptime --since 2024-09-16" delay={2200} />
+          <TerminalLine text="online since Sep 16 2024  |  load avg: high  |  status: operational" delay={2700} color={C.mint400} />
         </div>
 
         <h1 style={{
@@ -466,7 +544,8 @@ function Hero() {
               Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do.
             </p>
             <div className="stat-row" style={{ display: "flex", gap: "2.5rem" }}>
-              {[["5+", "Yrs Exp"], ["30+", "Networks"], ["6", "Certs"]].map(([n, l]) => (
+              <UptimeCounter />
+              {[["30+", "Networks"], ["2", "Certs"]].map(([n, l]) => (
                 <div key={l} style={{ textAlign: "right" }}>
                   <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: C.mint500, lineHeight: 1 }}>{n}</div>
                   <div className="mono" style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, marginTop: "0.25rem" }}>{l}</div>
@@ -595,18 +674,32 @@ function Skills() {
           }}>
             Credentials & <em>Certs</em>
           </h3>
-          <div className="certs-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}>
             {CERTS.map(cert => (
-              <div
+              <a
                 key={cert.name}
+                href={cert.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="cert-card"
-                style={{ "--cert-color": cert.color }}
+                style={{
+                  "--cert-color": cert.color,
+                  textDecoration: "none",
+                  display: "block",
+                }}
               >
-                <div className="mono" style={{ fontSize: "1rem", fontWeight: 500, color: cert.color, marginBottom: "0.4rem" }}>
+                {/* Cisco NetAcad badge label */}
+                <div className="mono" style={{ fontSize: "0.6rem", color: cert.color, opacity: 0.7, marginBottom: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  {cert.issuer}
+                </div>
+                <div className="mono" style={{ fontSize: "1.1rem", fontWeight: 500, color: cert.color, marginBottom: "0.35rem" }}>
                   {cert.name}
                 </div>
-                <div style={{ fontSize: "0.78rem", color: C.textMuted, fontWeight: 300 }}>{cert.full}</div>
-              </div>
+                <div style={{ fontSize: "0.78rem", color: C.textMuted, fontWeight: 300, marginBottom: "1rem" }}>{cert.full}</div>
+                <div className="mono" style={{ fontSize: "0.62rem", color: cert.color, opacity: 0.6, letterSpacing: "0.08em" }}>
+                  View on Credly →
+                </div>
+              </a>
             ))}
           </div>
         </div>
@@ -658,16 +751,16 @@ function Contact() {
             ))}
 
             {/* Social / platform links */}
-            <div style={{ display: "flex", gap: "1.5rem", marginTop: "2.5rem" }}>
-              {["GitHub", "LinkedIn", "HackTheBox", "TryHackMe"].map(s => (
-                <button key={s} style={{
-                  background: "none", border: "none",
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
+              {Object.entries(SOCIAL_LINKS).map(([label, url]) => (
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.65rem", color: C.textMuted, transition: "color 0.2s",
+                  fontSize: "0.65rem", color: C.textMuted,
+                  textDecoration: "none", transition: "color 0.2s",
                 }}
                   onMouseEnter={e => e.target.style.color = C.mint400}
                   onMouseLeave={e => e.target.style.color = C.textMuted}
-                >{s}</button>
+                >{label}</a>
               ))}
             </div>
           </div>
@@ -742,15 +835,15 @@ function Footer() {
         <span style={{ color: C.textMuted }}>$</span>
       </span>
       <div style={{ display: "flex", gap: "2rem" }}>
-        {["GitHub", "LinkedIn", "HackTheBox", "TryHackMe"].map(s => (
-          <button key={s} style={{
-            background: "none", border: "none",
+        {Object.entries(SOCIAL_LINKS).map(([label, url]) => (
+          <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.65rem", color: C.textMuted, transition: "color 0.2s",
+            fontSize: "0.65rem", color: C.textMuted,
+            textDecoration: "none", transition: "color 0.2s",
           }}
             onMouseEnter={e => e.target.style.color = C.mint400}
             onMouseLeave={e => e.target.style.color = C.textMuted}
-          >{s}</button>
+          >{label}</a>
         ))}
       </div>
       <span className="mono" style={{ fontSize: "0.68rem", color: C.textMuted }}>© {new Date().getFullYear()}</span>
