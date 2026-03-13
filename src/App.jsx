@@ -3,11 +3,6 @@ import {
   lazy, Suspense, memo, useCallback, useMemo 
 } from "react";
 
-// ── EmailJS Config ─────────────────────────────────────────────
-const EMAILJS_SERVICE_ID  = "service_vmsghvn";
-const EMAILJS_TEMPLATE_ID = "template_hsc6m9u";
-const EMAILJS_PUBLIC_KEY  = "sruNPf6oBWFdmDHtA";
-
 // ── Lazy Load Heavy Components ─────────────────────────────────
 const Lanyard = lazy(() => import('./Lanyard'));
 
@@ -64,18 +59,18 @@ const makeTokens = (isDark) => isDark ? {
 
 // ── Data Constants ─────────────────────────────────────────────
 const PROJECTS = [
-  { id:"01", title:"InfraOps Stack", category:"Infrastructure Automation & DevOps", 
-    desc:"Designed and deployed a production-ready IT Work Order & Helpdesk platform using containerized microservices.",
-    tags:["Go", "Rust", "Docker", "Nginx", "PostgreSQL", "Linux"], year:"2025", accent: ACCENT.coral },
+  { id:"01", title:"SentinelNet", category:"Network Security & Monitoring", 
+    desc:"Enterprise-grade IDS/IPS deployment across 3 data centers. Reduced threat detection time from 4h to 8min using Suricata rules + custom SIEM correlation logic.",
+    tags:["Suricata","Splunk","pfSense"], year:"2024", accent: ACCENT.coral },
   { id:"02", title:"VaultOps", category:"Infrastructure Hardening", 
     desc:"Zero-trust architecture rollout for 200-node corporate network. Implemented microsegmentation, PAM, and automated compliance scanning aligned to CIS Benchmarks.",
-    tags:["HashiCorp Vault","Ansible","CIS"], year:"2025", accent: ACCENT.mint500 },
+    tags:["HashiCorp Vault","Ansible","CIS"], year:"2024", accent: ACCENT.mint500 },
   { id:"03", title:"PhantomNet Lab", category:"Penetration Testing", 
     desc:"Full red team engagement simulating APT lateral movement. Identified 14 critical CVEs across Windows AD environment. Delivered remediation roadmap adopted by client.",
-    tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2026", accent: ACCENT.violet },
-  { id:"04", title:"NetLab Architecture", category:"Network Engineering", 
-    desc:"Designed a hybrid enterprise network topology with VLAN segmentation and multi-site routing simulation. Configured BGP peering and OSPF area design to optimize traffic flow and redundancy.",
-    tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2026", accent: ACCENT.blue },
+    tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2023", accent: ACCENT.violet },
+  { id:"04", title:"CoreFabric", category:"Network Engineering", 
+    desc:"Designed and deployed BGP/OSPF multi-site WAN for ISP with 40Gbps backbone. Automated provisioning via Netmiko/NAPALM, cutting config time by 70%.",
+    tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2023", accent: ACCENT.blue },
 ];
 
 const SKILLS = [
@@ -91,12 +86,22 @@ const SOCIAL_LINKS = {
 };
 
 const CERTS = [
-  { name:"Network Defense", full:"Cisco NetAcad — Network Defense", 
-    issuer:"Cisco Networking Academy", color: ACCENT.blue,
-    url:"https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile" },
-  { name:"Ethical Hacker", full:"Cisco NetAcad — Ethical Hacker", 
-    issuer:"Cisco Networking Academy", color: ACCENT.coral,
-    url:"https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile" },
+  {
+    name:      "Network Defense",
+    full:      "Cisco NetAcad — Network Defense",
+    issuer:    "Cisco Networking Academy",
+    color:     ACCENT.blue,
+    credlyUrl: "https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile",
+    pdfUrl:    "/certs/network-defense.pdf",
+  },
+  {
+    name:      "Ethical Hacker",
+    full:      "Cisco NetAcad — Ethical Hacker",
+    issuer:    "Cisco Networking Academy",
+    color:     ACCENT.coral,
+    credlyUrl: "https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile",
+    pdfUrl:    "/certs/ethical-hacker.pdf",
+  },
 ];
 
 // ── Optimized Global Styles ────────────────────────────────────
@@ -819,7 +824,7 @@ const Hero = memo(({ C }) => {
         border:`1px solid ${C.mint500}25`, borderRadius:"4px",
         transition:"background 0.3s ease",
       }}>
-        <span style={{ fontSize: isMobile ? "0.75" : "1.4rem", color:C.textMuted }}>
+        <span style={{ fontSize: isMobile ? "0.75rem" : "0.85rem", color:C.textMuted }}>
           <TerminalLine 
             text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
             delay={1170} 
@@ -1124,13 +1129,10 @@ const Skills = memo(({ C }) => {
             gap:"1rem" 
           }}>
             {CERTS.map((cert, i) => (
-              <a 
-                key={cert.name} 
-                href={cert.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <div
+                key={cert.name}
                 className={`cert-card reveal-scale d${i+1}`}
-                style={{ "--cert-color": cert.color, textDecoration:"none", display:"block" }}
+                style={{ "--cert-color": cert.color }}
               >
                 <div className="mono" style={{ 
                   fontSize:"0.55rem", color:cert.color, opacity:0.7, 
@@ -1145,16 +1147,51 @@ const Skills = memo(({ C }) => {
                   {cert.name}
                 </div>
                 <div style={{ 
-                  fontSize:"0.75rem", color:C.textMuted, fontWeight:300, marginBottom:"0.75rem" 
+                  fontSize:"0.75rem", color:C.textMuted, fontWeight:300, marginBottom:"1rem" 
                 }}>
                   {cert.full}
                 </div>
-                <div className="mono" style={{ 
-                  fontSize:"0.6rem", color:cert.color, opacity:0.6, letterSpacing:"0.08em" 
-                }}>
-                  View on Credly →
+                {/* Action buttons */}
+                <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
+                  <a
+                    href={cert.credlyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mono"
+                    style={{
+                      fontSize:"0.6rem", color:cert.color, opacity:0.7,
+                      letterSpacing:"0.08em", textDecoration:"none",
+                      border:`1px solid ${cert.color}40`,
+                      padding:"0.3rem 0.65rem", borderRadius:"3px",
+                      transition:"opacity 0.2s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    Verify on Credly ↗
+                  </a>
+                  {cert.pdfUrl && (
+                    <a
+                      href={cert.pdfUrl}
+                      download
+                      className="mono"
+                      style={{
+                        fontSize:"0.6rem", color:C.textMuted, opacity:0.6,
+                        letterSpacing:"0.08em", textDecoration:"none",
+                        border:`1px solid ${C.border}`,
+                        padding:"0.3rem 0.65rem", borderRadius:"3px",
+                        transition:"opacity 0.2s, color 0.2s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.color=cert.color; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity="0.6"; e.currentTarget.style.color=C.textMuted; }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      ./download.sh ↓
+                    </a>
+                  )}
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         </div>
@@ -1166,36 +1203,14 @@ const Skills = memo(({ C }) => {
 // ── Optimized Contact Section ──────────────────────────────────
 const Contact = memo(({ C }) => {
   const [form, setForm] = useState({ name:"", email:"", message:"" });
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [sent, setSent] = useState(false);
   const { isMobile } = useTheme();
 
-  // Load EmailJS SDK once
-  useEffect(() => {
-    if (document.getElementById("emailjs-sdk")) return;
-    const script = document.createElement("script");
-    script.id = "emailjs-sdk";
-    script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
-    script.onload = () => window.emailjs?.init({ publicKey: EMAILJS_PUBLIC_KEY });
-    document.head.appendChild(script);
-  }, []);
-
-  const handleSubmit = useCallback(async () => {
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
-    if (status === "loading") return;
-    setStatus("loading");
-    try {
-      await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        from_name:  form.name,
-        from_email: form.email,
-        message:    form.message,
-        reply_to:   form.email,
-      });
-      setStatus("success");
-    } catch (err) {
-      console.error("EmailJS error:", err);
-      setStatus("error");
+  const handleSubmit = useCallback(() => {
+    if (form.name && form.email && form.message) {
+      setSent(true);
     }
-  }, [form, status]);
+  }, [form]);
 
   const handleChange = useCallback((key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -1275,7 +1290,7 @@ const Contact = memo(({ C }) => {
 
           {/* Right: form */}
           <div className="reveal-right">
-            {status === "success" ? (
+            {sent ? (
               <div style={{ 
                 height:"100%", display:"flex", flexDirection:"column", 
                 justifyContent:"center", alignItems:"center", 
@@ -1318,7 +1333,6 @@ const Contact = memo(({ C }) => {
                       value={form[f.key]} 
                       onChange={e => handleChange(f.key, e.target.value)}
                       autoComplete={f.key === "email" ? "email" : "name"}
-                      disabled={status === "loading"}
                     />
                   </div>
                 ))}
@@ -1334,27 +1348,14 @@ const Contact = memo(({ C }) => {
                     style={{ resize:"none" }} 
                     value={form.message} 
                     onChange={e => handleChange("message", e.target.value)}
-                    disabled={status === "loading"}
                   />
                 </div>
-
-                {status === "error" && (
-                  <p className="mono" style={{ fontSize:"0.68rem", color:C.coral }}>
-                    ✕ transmission failed — try again or email directly
-                  </p>
-                )}
-
                 <button 
                   className="btn-primary" 
                   onClick={handleSubmit} 
-                  style={{ 
-                    alignSelf:"flex-start",
-                    opacity: status === "loading" ? 0.6 : 1,
-                    cursor: status === "loading" ? "not-allowed" : "pointer",
-                  }}
-                  disabled={status === "loading"}
+                  style={{ alignSelf:"flex-start" }}
                 >
-                  {status === "loading" ? "transmitting..." : "./send_message.sh →"}
+                  ./send_message.sh →
                 </button>
               </div>
             )}
