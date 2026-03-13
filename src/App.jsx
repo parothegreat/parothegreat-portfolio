@@ -1125,9 +1125,9 @@ const Skills = memo(({ C }) => {
           <h3 style={{ 
             fontFamily:"'DM Serif Display',serif", 
             fontSize: isMobile ? "1.5rem" : "clamp(1.4rem, 2vw, 1.8rem)",
-            color:C.textPri, fontWeight:400, marginBottom:"1.5rem" 
+            color:C.textPri, fontWeight:500, marginBottom:"1.5rem" 
           }}>
-            Credentials & <em>Certs</em>
+            Credentials & <em>Certs</em> (more upcoming)
           </h3>
           <div className="certs-grid" style={{ 
             display:"grid", 
