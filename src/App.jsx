@@ -64,17 +64,17 @@ const makeTokens = (isDark) => isDark ? {
 
 // ── Data Constants ─────────────────────────────────────────────
 const PROJECTS = [
-  { id:"01", title:"SentinelNet", category:"Network Security & Monitoring", 
-    desc:"Enterprise-grade IDS/IPS deployment across 3 data centers. Reduced threat detection time from 4h to 8min using Suricata rules + custom SIEM correlation logic.",
-    tags:["Suricata","Splunk","pfSense"], year:"2025", accent: ACCENT.coral },
+  { id:"01", title:"InfraOps Stack", category:"Infrastructure Automation & DevOps", 
+    desc:"Designed and deployed a production-ready IT Work Order & Helpdesk platform using containerized microservices.",
+    tags:["Go", "Rust", "Docker", "Nginx", "PostgreSQL", "Linux"], year:"2025", accent: ACCENT.coral },
   { id:"02", title:"VaultOps", category:"Infrastructure Hardening", 
     desc:"Zero-trust architecture rollout for 200-node corporate network. Implemented microsegmentation, PAM, and automated compliance scanning aligned to CIS Benchmarks.",
     tags:["HashiCorp Vault","Ansible","CIS"], year:"2025", accent: ACCENT.mint500 },
   { id:"03", title:"PhantomNet Lab", category:"Penetration Testing", 
     desc:"Full red team engagement simulating APT lateral movement. Identified 14 critical CVEs across Windows AD environment. Delivered remediation roadmap adopted by client.",
     tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2026", accent: ACCENT.violet },
-  { id:"04", title:"CoreFabric", category:"Network Engineering", 
-    desc:"Designed and deployed BGP/OSPF multi-site WAN for ISP with 40Gbps backbone. Automated provisioning via Netmiko/NAPALM, cutting config time by 70%.",
+  { id:"04", title:"NetLab Architecture", category:"Network Engineering", 
+    desc:"Designed a hybrid enterprise network topology with VLAN segmentation and multi-site routing simulation. Configured BGP peering and OSPF area design to optimize traffic flow and redundancy.",
     tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2026", accent: ACCENT.blue },
 ];
 
