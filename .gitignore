@@ -26,7 +26,6 @@ dist/
 coverage/
 
 #images
-*.png
 *.jpg
 *.jpeg
 *.pdf
