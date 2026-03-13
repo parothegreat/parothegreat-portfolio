@@ -71,6 +71,12 @@ const PROJECTS = [
   { id:"04", title:"CoreFabric", category:"Network Engineering", 
     desc:"Designed and deployed BGP/OSPF multi-site WAN for ISP with 40Gbps backbone. Automated provisioning via Netmiko/NAPALM, cutting config time by 70%.",
     tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2023", accent: ACCENT.blue },
+  { id:"05", title:"Linux Server Ops Lab", category:"System Administration",
+    desc:"Maintained and deployed Linux server environments for testing infrastructure, services, and network configurations. Covers service management, reverse proxy, database deployment, and server hardening practices.",
+    tags:["Linux","Nginx","Bash","MySQL"], year:"2024", accent: ACCENT.amber },
+  { id:"06", title:"InfraOps Platform", category:"Infrastructure & DevOps Engineering",
+    desc:"Designed and deployed a production-ready IT Work Order & Helpdesk platform with containerized services and reverse proxy architecture. Features a Go/Gin backend API, Rust/Axum time-tracking microservice, and host-based MySQL.",
+    tags:["Go","Rust","Docker","Nginx","MySQL","Linux"], year:"2025", accent: ACCENT.lime },
 ];
 
 const SKILLS = [
@@ -931,7 +937,7 @@ const Hero = memo(({ C }) => {
                 flexWrap:"wrap"
               }}>
                 <UptimeCounter C={C} />
-                {[["4","Projects"],["2","Certs"]].map(([n,l]) => (
+                {[["6","Projects"],["2","Certs"]].map(([n,l]) => (
                   <div key={l} style={{ textAlign: isMobile ? "left" : "right" }}>
                     <div style={{ 
                       fontFamily:"'DM Serif Display',serif", 
