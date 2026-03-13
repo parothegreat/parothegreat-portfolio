@@ -931,7 +931,7 @@ const Hero = memo(({ C }) => {
                 flexWrap:"wrap"
               }}>
                 <UptimeCounter C={C} />
-                {[["30+","Networks"],["2","Certs"]].map(([n,l]) => (
+                {[["4","Projects"],["2","Certs"]].map(([n,l]) => (
                   <div key={l} style={{ textAlign: isMobile ? "left" : "right" }}>
                     <div style={{ 
                       fontFamily:"'DM Serif Display',serif", 
