@@ -94,7 +94,7 @@ const SOCIAL_LINKS = {
 const CERTS = [
   {
     name:      "Network Defense",
-    full:      "Cisco NetAcad — Network Defense",
+    full:      "Cisco — Network Defense",
     issuer:    "Cisco Networking Academy",
     color:     ACCENT.blue,
     credlyUrl: "https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile",
@@ -102,7 +102,7 @@ const CERTS = [
   },
   {
     name:      "Ethical Hacker",
-    full:      "Cisco NetAcad — Ethical Hacker",
+    full:      "Cisco — Ethical Hacker",
     issuer:    "Cisco Networking Academy",
     color:     ACCENT.coral,
     credlyUrl: "https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile",
