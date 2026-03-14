@@ -169,6 +169,8 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       a { touch-action: manipulation; }
 
       @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes bootExit { 0%{opacity:1} 100%{opacity:0} }
+      @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
       @keyframes pulse-dot {
         0%,100%{opacity:1;box-shadow:0 0 0 0 ${C.mint500}55}
@@ -396,6 +398,135 @@ const ThemeToggle = memo(({ C }) => {
   );
 });
 
+
+// ── Boot Screen ────────────────────────────────────────────────
+const BootScreen = memo(({ onDone }) => {
+  const [phase, setPhase] = useState(0);
+  const [exiting, setExiting] = useState(false);
+
+  const LINES = [
+    { t:"PORTFOLIO-OS v1.0  ·  parothegreat", c:"#fff" },
+    { t:"Checking hardware integrity.......... OK", c:"#555" },
+    { t:"Loading network modules.............. OK", c:"#555" },
+    { t:"Mounting encrypted volumes........... OK", c:"#555" },
+    { t:"Starting security daemon............. OK", c:"#555" },
+    { t:"[ paro@thegreat ] — system ready", c:"#00E5A0" },
+  ];
+
+  const skip = useCallback(() => {
+    setExiting(true);
+    setTimeout(onDone, 450);
+  }, [onDone]);
+
+  useEffect(() => {
+    const delays = [0, 280, 580, 860, 1120, 1380];
+    const timers = delays.map((d, i) =>
+      setTimeout(() => setPhase(p => Math.max(p, i + 1)), d)
+    );
+    const autoExit = setTimeout(skip, 2200);
+    window.addEventListener("keydown", skip, { once: true });
+    window.addEventListener("pointerdown", skip, { once: true });
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(autoExit);
+      window.removeEventListener("keydown", skip);
+      window.removeEventListener("pointerdown", skip);
+    };
+  }, [skip]);
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:99999,
+      background:"#000",
+      display:"flex", flexDirection:"column", justifyContent:"center",
+      padding:"0 clamp(1.5rem, 10vw, 9rem)",
+      opacity: exiting ? 0 : 1,
+      transition: exiting ? "opacity 0.45s ease" : "none",
+      pointerEvents: exiting ? "none" : "auto",
+    }}>
+      {/* ASCII header block */}
+      <div style={{marginBottom:"2.5rem"}}>
+        <pre style={{
+          fontFamily:"'JetBrains Mono',monospace",
+          fontSize:"clamp(0.45rem,1.1vw,0.58rem)",
+          color:"#00E5A0", opacity:0.25, lineHeight:1.2,
+          margin:0, letterSpacing:"0.04em",
+          userSelect:"none",
+        }}>{`██████╗  █████╗ ██████╗  ██████╗
+██╔══██╗██╔══██╗██╔══██╗██╔═══██╗
+██████╔╝███████║██████╔╝██║   ██║
+██╔═══╝ ██╔══██║██╔══██╗██║   ██║
+██║     ██║  ██║██║  ██║╚██████╔╝
+╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝`}</pre>
+        <div style={{
+          fontFamily:"'JetBrains Mono',monospace",
+          fontSize:"clamp(0.62rem,1.6vw,0.8rem)",
+          color:"#fff", letterSpacing:"0.06em",
+          marginTop:"0.85rem", fontWeight:500,
+        }}>
+          Network Engineer · Security Analyst · Sysadmin
+        </div>
+      </div>
+
+      {/* Boot lines */}
+      <div style={{display:"flex", flexDirection:"column", gap:"0.38rem"}}>
+        {LINES.map((l, i) => (
+          <div key={i} style={{
+            fontFamily:"'JetBrains Mono',monospace",
+            fontSize:"clamp(0.58rem,1.4vw,0.7rem)",
+            letterSpacing:"0.04em",
+            color: l.c,
+            opacity: phase > i ? 1 : 0,
+            transform: phase > i ? "none" : "translateY(4px)",
+            transition:"opacity 0.22s ease, transform 0.22s ease",
+          }}>
+            {i < LINES.length - 1
+              ? <><span style={{color:"#2a2a2a"}}>$ </span>{l.t}</>
+              : <span style={{color:"#00E5A0", fontWeight:500}}>{l.t}</span>
+            }
+          </div>
+        ))}
+      </div>
+
+      {/* Skip hint */}
+      <div style={{
+        position:"absolute", bottom:"2rem",
+        left:"clamp(1.5rem,10vw,9rem)",
+        fontFamily:"'JetBrains Mono',monospace",
+        fontSize:"0.55rem", color:"#222",
+        letterSpacing:"0.1em",
+      }}>
+        PRESS ANY KEY TO SKIP
+      </div>
+    </div>
+  );
+});
+
+// ── Theme Flash Overlay ─────────────────────────────────────────
+const ThemeFlash = memo(({ isDark }) => {
+  const [flash, setFlash] = useState(false);
+  const prev = useRef(null);
+
+  useEffect(() => {
+    if (prev.current === null) { prev.current = isDark; return; }
+    if (prev.current !== isDark) {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 380);
+      prev.current = isDark;
+      return () => clearTimeout(t);
+    }
+  }, [isDark]);
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:9997, pointerEvents:"none",
+      background: isDark ? "#000" : "#fff",
+      opacity: flash ? 0.12 : 0,
+      transition: flash ? "opacity 0.06s ease" : "opacity 0.32s ease",
+    }} />
+  );
+});
+
 // ── Optimized Navbar with Touch Support ────────────────────────
 const Navbar = memo(({ active, C }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -447,76 +578,102 @@ const Navbar = memo(({ active, C }) => {
       <nav style={{
         position:"fixed", top:0, left:0, right:0, zIndex:1000,
         display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center",
-        padding:"0 1.5rem", height: scrolled ? "56px" : "64px",
+        padding:"0 2rem", height: scrolled ? "54px" : "68px",
         background: scrolled ? C.navBgScr : C.navBg,
-        backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
-        borderBottom: scrolled ? `1px solid ${C.border}` : `1px solid ${C.mint500}18`,
-        transition:"all 0.3s ease",
+        backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
+        borderBottom:`1px solid ${scrolled ? C.border : C.mint500+"1a"}`,
+        transition:"height 0.35s cubic-bezier(.16,1,.3,1), background 0.3s, border-color 0.3s",
       }}>
         {/* Logo */}
-        <div className="mono gpu-accelerated" style={{ 
-          fontSize:"0.85rem", color:C.textPri, display:"flex", 
-          alignItems:"center", gap:"0.3rem", justifySelf:"start" 
+        <div className="mono" style={{
+          fontSize:"0.82rem", display:"flex", alignItems:"center",
+          gap:"0.25rem", justifySelf:"start", letterSpacing:"0.01em",
         }}>
-          <span style={{ color:C.mint500 }}>[</span>
-          parothegreat
-          <span style={{ color:C.coral }}>~</span>
-          <span style={{ color:C.mint500 }}>]</span>
-          <span style={{ color:C.textMuted, fontSize:"0.65rem" }}>#</span>
+          <span style={{color:C.mint500, fontWeight:500}}>[</span>
+          <span style={{color:C.textSec}}>paro</span>
+          <span style={{color:C.coral}}>@</span>
+          <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
+          <span style={{color:C.mint500, fontWeight:500}}>]</span>
+          <span style={{
+            color:C.mint500, fontSize:"0.75rem", marginLeft:"3px",
+            animation:"blink 1.2s step-end infinite",
+          }}>█</span>
         </div>
 
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display:"flex", gap:"2rem", justifySelf:"center" }}>
+        {/* Desktop nav — underline indicator */}
+        <div className="desktop-nav" style={{display:"flex", gap:"0", justifySelf:"center"}}>
           {links.map(l => (
-            <button 
-              key={l} 
-              className={`nav-link ${active===l?"active":""}`} 
-              onClick={() => go(l)}
-            >
-              {active===l ? `> ${l}` : l}
+            <button key={l} onClick={() => go(l)} style={{
+              fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
+              letterSpacing:"0.07em", textTransform:"uppercase",
+              background:"none", border:"none",
+              padding:"0.5rem 1.1rem", position:"relative",
+              color: active===l ? C.mint400 : C.textMuted,
+              transition:"color 0.2s", cursor:"pointer",
+            }}>
+              {l}
+              <span style={{
+                position:"absolute", bottom:"-1px", left:"50%",
+                transform: active===l ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
+                transformOrigin:"center",
+                width:"28px", height:"2px",
+                background:C.mint500,
+                borderRadius:"1px",
+                boxShadow: active===l ? `0 0 8px ${C.mint500}90` : "none",
+                transition:"transform 0.25s cubic-bezier(.16,1,.3,1), box-shadow 0.25s",
+                display:"block",
+              }} />
             </button>
           ))}
         </div>
 
         {/* Desktop right */}
-        <div className="desktop-nav" style={{ 
-          display:"flex", alignItems:"center", gap:"1rem", justifySelf:"end" 
+        <div className="desktop-nav" style={{
+          display:"flex", alignItems:"center", gap:"0.75rem", justifySelf:"end"
         }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-            <span style={{ 
-              width:"6px", height:"6px", borderRadius:"50%", 
+          <div style={{
+            display:"flex", alignItems:"center", gap:"0.5rem",
+            padding:"0.28rem 0.7rem",
+            border:`1px solid ${C.mint500}28`,
+            borderRadius:"20px", background:`${C.mint500}0a`,
+          }}>
+            <span style={{
+              width:"5px", height:"5px", borderRadius:"50%",
               background:C.mint500, display:"inline-block",
-              animation: "pulse-dot 2.5s ease-in-out infinite" 
+              animation:"pulse-dot 2.5s ease-in-out infinite",
             }} />
-            <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
+            <span className="mono" style={{
+              fontSize:"0.6rem", color:C.mint500, opacity:0.85, letterSpacing:"0.05em"
+            }}>
               available_for_hire
             </span>
           </div>
           <ThemeToggle C={C} />
         </div>
 
-        {/* Mobile toggle */}
-        <div className="mobile-toggle" style={{ display:"none", justifySelf:"end" }}>
-          <button 
-            onClick={toggleMobile}
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-            style={{ 
-              background:"none", border:"none", flexDirection:"column", 
-              gap:"5px", padding:"8px", display:"flex", touchAction: "manipulation",
-              minWidth: "44px", minHeight: "44px", alignItems: "center", justifyContent: "center"
+        {/* Mobile right */}
+        <div className="mobile-toggle" style={{
+          display:"none", justifySelf:"end", alignItems:"center", gap:"0.5rem"
+        }}>
+          <ThemeToggle C={C} />
+          <button onClick={toggleMobile} aria-label="Toggle menu" aria-expanded={mobileOpen}
+            style={{
+              background:"none", border:"none", flexDirection:"column",
+              gap:"5px", padding:"8px", display:"flex", touchAction:"manipulation",
+              minWidth:"44px", minHeight:"44px", alignItems:"center", justifyContent:"center",
             }}
           >
             <span style={{
-              width:"22px", height:"2px", background:C.mint400, borderRadius:"2px",
-              transition:"transform 0.3s, opacity 0.3s",
-              transform: mobileOpen ? "rotate(45deg) translate(5px, 5px)" : "none",
+              display:"block", width:"20px", height:"1.5px",
+              background:C.mint400, borderRadius:"2px",
+              transition:"transform 0.3s",
+              transform: mobileOpen ? "rotate(45deg) translate(4.5px,4.5px)" : "none",
             }} />
             <span style={{
-              width:"22px", height:"2px", background:C.mint400, borderRadius:"2px",
-              transition:"transform 0.3s, opacity 0.3s",
-              transform: mobileOpen ? "rotate(-45deg) translate(5px, -5px)" : "none",
-              opacity: mobileOpen ? 1 : 1,
+              display:"block", width:"20px", height:"1.5px",
+              background:C.mint400, borderRadius:"2px",
+              transition:"transform 0.3s",
+              transform: mobileOpen ? "rotate(-45deg) translate(4.5px,-4.5px)" : "none",
             }} />
           </button>
         </div>
@@ -525,31 +682,41 @@ const Navbar = memo(({ active, C }) => {
       {/* Mobile overlay */}
       <div style={{
         position:"fixed", inset:0, zIndex:999, background:C.mobileMenuBg,
-        display:"flex", flexDirection:"column", alignItems:"center", 
-        justifyContent:"center", gap:"2rem", paddingTop: "60px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+        justifyContent:"center", gap:"1.5rem", paddingTop:"60px",
         opacity: mobileOpen ? 1 : 0,
         visibility: mobileOpen ? "visible" : "hidden",
         transition:"opacity 0.3s ease, visibility 0.3s ease",
-        touchAction: "none",
+        touchAction:"none",
       }}>
+        <p className="mono" style={{
+          fontSize:"0.6rem", color:C.mint500, opacity:0.5,
+          letterSpacing:"0.15em", marginBottom:"0.5rem",
+        }}>// navigate</p>
         {links.map((l, i) => (
-          <button 
-            key={l} 
-            onClick={() => go(l)} 
-            style={{
-              background:"none", border:"none", fontFamily:"'DM Serif Display',serif",
-              fontSize:"2.2rem", color:C.textPri, fontWeight:400,
-              opacity: mobileOpen ? 1 : 0,
-              transform: mobileOpen ? "translateY(0)" : "translateY(20px)",
-              transition: `all 0.3s ease ${i * 0.05}s`,
-              padding: "0.5rem 1rem",
-            }}
-          >
+          <button key={l} onClick={() => go(l)} style={{
+            background:"none", border:"none",
+            fontFamily:"'DM Serif Display',serif",
+            fontSize:"2.2rem",
+            color: active===l ? C.mint400 : C.textPri,
+            fontWeight:400,
+            opacity: mobileOpen ? 1 : 0,
+            transform: mobileOpen ? "translateY(0)" : "translateY(16px)",
+            transition:`opacity 0.3s ease ${i*0.06}s, transform 0.3s ease ${i*0.06}s, color 0.2s`,
+            padding:"0.35rem 1rem",
+          }}>
             {l}
           </button>
         ))}
-        <div style={{ marginTop: "1rem" }}>
-          <ThemeToggle C={C} />
+        <div style={{marginTop:"0.75rem", display:"flex", gap:"1.5rem"}}>
+          {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
+            <a key={label} href={url} target="_blank" rel="noopener noreferrer"
+              className="mono" style={{
+                fontSize:"0.65rem", color:C.textMuted, textDecoration:"none", padding:"0.35rem 0"
+              }}>
+              {label}
+            </a>
+          ))}
         </div>
       </div>
     </>
@@ -963,76 +1130,143 @@ const Hero = memo(({ C }) => {
   );
 });
 
-// ── Optimized Work Section ─────────────────────────────────────
+// ── Work Section ──────────────────────────────────────────────
 const Work = memo(({ C }) => {
   const { isMobile } = useTheme();
-  
+  const [hovered, setHovered] = useState(null);
+
   return (
-    <section id="work" className="work-section" style={{ 
-      padding: isMobile ? "4rem 1rem" : "6rem 3rem", 
-      maxWidth:"1200px", margin:"0 auto" 
+    <section id="work" className="work-section" style={{
+      padding: isMobile ? "4rem 1rem" : "6rem 3rem",
+      maxWidth:"1200px", margin:"0 auto"
     }}>
-      <div className="reveal" style={{ 
-        display:"flex", justifyContent:"space-between", 
+      {/* Header */}
+      <div className="reveal" style={{
+        display:"flex", justifyContent:"space-between",
         alignItems:"flex-end", marginBottom: isMobile ? "2rem" : "3rem",
-        flexWrap:"wrap", gap:"1rem" 
+        flexWrap:"wrap", gap:"1rem"
       }}>
         <div>
-          <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem" }}>
+          <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em"}}>
             // selected_engagements
           </p>
-          <h2 style={{ 
-            fontFamily:"'DM Serif Display',serif", 
+          <h2 style={{
+            fontFamily:"'DM Serif Display',serif",
             fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 3vw, 2.5rem)",
-            color:C.textPri, fontWeight:400 
+            color:C.textPri, fontWeight:400
           }}>
             Ops that <em>matter</em>
           </h2>
         </div>
-        <span className="mono" style={{ fontSize:"0.7rem", color:C.textMuted }}>2024 — 2026</span>
+        <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
+          <span className="mono" style={{
+            fontSize:"0.6rem", color:C.textMuted, padding:"0.22rem 0.6rem",
+            border:`1px solid ${C.border}`, borderRadius:"3px", letterSpacing:"0.06em",
+          }}>
+            {PROJECTS.length} projects
+          </span>
+          <span className="mono" style={{fontSize:"0.68rem", color:C.textMuted}}>2023 — 2025</span>
+        </div>
       </div>
-      
+
+      {/* Column header row — desktop only */}
+      {!isMobile && (
+        <div style={{
+          display:"grid", gridTemplateColumns:"52px 1fr 1fr auto",
+          gap:"2rem", padding:"0 1.5rem 0.6rem",
+          marginBottom:0,
+          borderBottom:`1px solid ${C.border}`,
+        }}>
+          {["#", "Project", "Description", "Stack"].map(h => (
+            <span key={h} className="mono" style={{
+              fontSize:"0.56rem", color:C.textMuted,
+              textTransform:"uppercase", letterSpacing:"0.14em", opacity:0.5,
+            }}>
+              {h}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Project rows */}
       <div>
         {PROJECTS.map((p, i) => (
-          <div 
-            key={p.id} 
+          <div
+            key={p.id}
             className={`project-row reveal d${Math.min(i+1,5)}`}
-            style={{ cursor: isMobile ? "pointer" : "default" }}
+            onMouseEnter={() => setHovered(p.id)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              cursor:"default",
+              background: hovered===p.id ? `${p.accent}08` : "transparent",
+              transition:"background 0.2s",
+              position:"relative",
+            }}
           >
-            <div className="mono" style={{ 
-              fontSize:"0.75rem", color:p.accent, paddingTop:"0.2rem" 
+            {/* Accent left bar on hover */}
+            <div style={{
+              position:"absolute", left:0, top:"0.5rem", bottom:"0.5rem",
+              width:"2px", borderRadius:"2px",
+              background: hovered===p.id ? p.accent : "transparent",
+              transition:"background 0.2s",
+            }} />
+
+            {/* ID */}
+            <div className="mono" style={{
+              fontSize:"0.72rem", color:p.accent,
+              fontWeight:500, paddingTop:"0.2rem", paddingLeft:"0.75rem",
             }}>
               {p.id}
             </div>
+
+            {/* Title + category */}
             <div>
-              <h3 style={{ 
-                fontFamily:"'DM Serif Display',serif", 
-                fontSize: isMobile ? "1.1rem" : "clamp(1.2rem, 2vw, 1.6rem)",
-                fontWeight:400, color:C.textPri, marginBottom:"0.2rem" 
+              <h3 style={{
+                fontFamily:"'DM Serif Display',serif",
+                fontSize: isMobile ? "1.05rem" : "clamp(1.1rem, 2vw, 1.35rem)",
+                fontWeight:400, color:C.textPri, marginBottom:"0.3rem", lineHeight:1.2,
               }}>
                 {p.title}
               </h3>
-              <p className="mono" style={{ fontSize:"0.65rem", color:p.accent, opacity:0.8 }}>
-                {p.category}
-              </p>
+              <div style={{display:"flex", alignItems:"center", gap:"0.45rem"}}>
+                <span style={{
+                  display:"inline-block", width:"5px", height:"5px",
+                  borderRadius:"1px", background:p.accent, flexShrink:0,
+                }} />
+                <p className="mono" style={{
+                  fontSize:"0.6rem", color:p.accent, opacity:0.85,
+                }}>
+                  {p.category}
+                </p>
+              </div>
             </div>
-            <p className="proj-desc" style={{ 
-              fontSize:"0.8rem", lineHeight:1.7, fontWeight:300, 
-              color:C.textSec, maxWidth:"360px" 
+
+            {/* Description */}
+            <p className="proj-desc" style={{
+              fontSize:"0.82rem", lineHeight:1.75, fontWeight:300,
+              color:C.textSec, maxWidth:"380px",
             }}>
               {p.desc}
             </p>
-            <div className="proj-meta" style={{ textAlign:"right" }}>
-              <div className="mono" style={{ 
-                fontSize:"0.65rem", color:C.textMuted, marginBottom:"0.5rem" 
+
+            {/* Year + tags */}
+            <div className="proj-meta" style={{textAlign:"right"}}>
+              <div className="mono" style={{
+                fontSize:"0.62rem", color:C.textMuted,
+                marginBottom:"0.5rem", opacity:0.6,
               }}>
                 {p.year}
               </div>
-              <div style={{ 
-                display:"flex", flexDirection:"column", gap:"0.3rem", 
-                alignItems:"flex-end" 
-              }}>
-                {p.tags.map(t => <span key={t} className="tag-pill">{t}</span>)}
+              <div style={{display:"flex", flexDirection:"column", gap:"0.28rem", alignItems:"flex-end"}}>
+                {p.tags.map(t => (
+                  <span key={t} className="tag-pill" style={{
+                    borderColor: hovered===p.id ? `${p.accent}55` : C.border,
+                    color: hovered===p.id ? p.accent : C.textMuted,
+                    transition:"color 0.2s, border-color 0.2s",
+                  }}>
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -1042,80 +1276,146 @@ const Work = memo(({ C }) => {
   );
 });
 
-// ── Optimized Skills Section ───────────────────────────────────
+// ── Skills Section ────────────────────────────────────────────
 const Skills = memo(({ C }) => {
   const { isMobile } = useTheme();
-  
+  const [activeFilter, setActiveFilter] = useState(null);
+
   return (
-    <section id="skills" className="skills-section" style={{ 
-      padding: isMobile ? "4rem 1rem" : "6rem 3rem", 
-      borderTop:`1px solid ${C.border}` 
+    <section id="skills" className="skills-section" style={{
+      padding: isMobile ? "4rem 1rem" : "6rem 3rem",
+      borderTop:`1px solid ${C.border}`
     }}>
-      <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
-        <div className="skills-inner" style={{ 
-          display:"flex", gap: isMobile ? "2rem" : "4rem", 
-          alignItems:"flex-start",
-          flexDirection: isMobile ? "column" : "row"
+      <div style={{maxWidth:"1200px", margin:"0 auto"}}>
+
+        {/* Section header */}
+        <div className="reveal" style={{
+          display:"flex", justifyContent:"space-between",
+          alignItems:"flex-end", flexWrap:"wrap", gap:"1rem",
+          marginBottom: isMobile ? "2.5rem" : "3rem",
         }}>
-          <div className="reveal-left skills-left" style={{ 
-            flex: isMobile ? "none" : "0 0 240px",
-            width: isMobile ? "100%" : "auto"
-          }}>
-            <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem" }}>
+          <div>
+            <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em"}}>
               // capabilities
             </p>
-            <h2 style={{ 
-              fontFamily:"'DM Serif Display',serif", 
+            <h2 style={{
+              fontFamily:"'DM Serif Display',serif",
               fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 2.5vw, 2.4rem)",
-              color:C.textPri, fontWeight:400, lineHeight:1.15, marginBottom:"1.5rem" 
+              color:C.textPri, fontWeight:400, lineHeight:1.15,
             }}>
-              Tools &<br /><em>Expertise</em>
+              Tools & <em>Expertise</em>
             </h2>
-            <p style={{ 
-              fontSize:"0.85rem", lineHeight:1.7, fontWeight:300, color:C.textSec 
-            }}>
-              From configuring Cisco ASA to running Metasploit modules — I operate across the full security and networking stack.
-            </p>
-            <div style={{ 
-              marginTop:"2rem", display:"flex", flexDirection:"column", gap:"0.5rem" 
-            }}>
-              {SKILLS.map(s => (
-                <div key={s.category} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                  <div style={{ 
-                    width:"6px", height:"6px", borderRadius:"2px", 
-                    background:s.accent, flexShrink:0 
-                  }} />
-                  <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
-                    {s.category}
-                  </span>
-                </div>
-              ))}
-            </div>
           </div>
-
-          <div className="skills-grid" style={{ 
-            flex:1, display:"grid", 
-            gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", 
-            gap: isMobile ? "1.5rem" : "2rem" 
+          <p style={{
+            fontSize:"0.82rem", lineHeight:1.65, fontWeight:300,
+            color:C.textSec, maxWidth:"300px",
           }}>
-            {SKILLS.map((group, i) => (
-              <div key={group.category} className={`reveal d${i+1}`}>
-                <p className="mono" style={{ 
-                  fontSize:"0.6rem", textTransform:"uppercase", 
-                  letterSpacing:"0.1em", color:group.accent, 
-                  marginBottom:"1rem", opacity:0.9 
+            From Cisco ASA configs to Metasploit modules — operating across the full security and networking stack.
+          </p>
+        </div>
+
+        {/* Filter pills */}
+        <div style={{
+          display:"flex", gap:"0.5rem", flexWrap:"wrap",
+          marginBottom: isMobile ? "2rem" : "2.5rem",
+        }}>
+          {SKILLS.map(s => {
+            const on = activeFilter === s.category;
+            return (
+              <button key={s.category}
+                onClick={() => setActiveFilter(on ? null : s.category)}
+                className="mono"
+                style={{
+                  fontSize:"0.6rem", letterSpacing:"0.08em", textTransform:"uppercase",
+                  padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
+                  border:`1px solid ${on ? s.accent : C.border}`,
+                  background: on ? `${s.accent}14` : "transparent",
+                  color: on ? s.accent : C.textMuted,
+                  transition:"all 0.2s", display:"flex", alignItems:"center", gap:"0.4rem",
                 }}>
-                  {group.category}
-                </p>
-                <div style={{ display:"flex", flexDirection:"column" }}>
-                  {group.items.map(item => (
-                    <span key={item} className="skill-item">{item}</span>
+                <span style={{
+                  width:"5px", height:"5px", borderRadius:"1px",
+                  background: on ? s.accent : C.textMuted,
+                  flexShrink:0, transition:"background 0.2s",
+                }} />
+                {s.category}
+              </button>
+            );
+          })}
+          {activeFilter && (
+            <button onClick={() => setActiveFilter(null)}
+              className="mono"
+              style={{
+                fontSize:"0.6rem", letterSpacing:"0.08em",
+                padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
+                border:`1px solid ${C.border}`,
+                background:"transparent", color:C.textMuted,
+                transition:"all 0.2s",
+              }}>
+              ✕ clear
+            </button>
+          )}
+        </div>
+
+        {/* Skill columns */}
+        <div className="skills-grid" style={{
+          display:"grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
+          gap: isMobile ? "1.5rem" : "0",
+        }}>
+          {SKILLS.map((group, i) => {
+            const dimmed = activeFilter && activeFilter !== group.category;
+            return (
+              <div key={group.category} className={`reveal d${i+1}`} style={{
+                borderLeft: !isMobile && i > 0 ? `1px solid ${C.border}` : "none",
+                paddingLeft: !isMobile && i > 0 ? "2rem" : 0,
+                paddingRight: !isMobile && i < SKILLS.length-1 ? "2rem" : 0,
+                opacity: dimmed ? 0.28 : 1,
+                transition:"opacity 0.25s",
+              }}>
+                {/* Category heading */}
+                <div style={{
+                  display:"flex", alignItems:"center", gap:"0.5rem",
+                  borderBottom:`2px solid ${group.accent}`,
+                  paddingBottom:"0.75rem", marginBottom:"0.85rem",
+                }}>
+                  <span style={{
+                    width:"7px", height:"7px", borderRadius:"2px",
+                    background:group.accent, flexShrink:0,
+                  }} />
+                  <p className="mono" style={{
+                    fontSize:"0.62rem", textTransform:"uppercase",
+                    letterSpacing:"0.1em", color:group.accent, fontWeight:500,
+                  }}>
+                    {group.category}
+                  </p>
+                </div>
+
+                {/* Items */}
+                <div style={{display:"flex", flexDirection:"column"}}>
+                  {group.items.map((item) => (
+                    <div key={item} style={{
+                      display:"flex", alignItems:"center", gap:"0.55rem",
+                      padding:"0.5rem 0",
+                      borderBottom:`1px solid ${C.border}`,
+                    }}>
+                      <span style={{
+                        width:"3px", height:"3px", borderRadius:"50%",
+                        background:group.accent, opacity:0.55, flexShrink:0,
+                      }} />
+                      <span className="mono" style={{
+                        fontSize:"0.78rem", fontWeight:300, color:C.textSec,
+                      }}>
+                        {item}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
         {/* Certifications */}
         <div className="reveal" style={{ marginTop: isMobile ? "3rem" : "5rem" }}>
@@ -1201,7 +1501,6 @@ const Skills = memo(({ C }) => {
             ))}
           </div>
         </div>
-      </div>
     </section>
   );
 });
@@ -1486,22 +1785,25 @@ function useScrollSpy() {
 // ── Main App Component ─────────────────────────────────────────
 export default function Portfolio() {
   const [isDark, setIsDark] = useState(true);
+  const [booted, setBooted] = useState(false);
   const { isMobile, isTouch } = useMobileDetect();
   const C = useMemo(() => makeTokens(isDark), [isDark]);
   const toggle = useCallback(() => setIsDark(d => !d), []);
   const active = useScrollSpy();
-  
+
   useScrollReveal();
 
-  const themeValue = useMemo(() => ({ 
-    isDark, 
-    toggle, 
-    isMobile 
+  const themeValue = useMemo(() => ({
+    isDark,
+    toggle,
+    isMobile
   }), [isDark, toggle, isMobile]);
 
   return (
     <ThemeCtx.Provider value={themeValue}>
       <GlobalStyles C={C} isMobile={isMobile} />
+      {!booted && <BootScreen onDone={() => setBooted(true)} />}
+      <ThemeFlash isDark={isDark} />
       <Overlays C={C} />
       <Navbar active={active} C={C} />
       <Hero C={C} />
