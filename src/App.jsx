@@ -49,12 +49,33 @@ const makeTokens = (isDark) => isDark ? {
   heroOverlay: "linear-gradient(to top,#0A000Ff5 0%,#0A000F99 40%,#0A000F55 70%,transparent 100%)",
   mobileMenuBg: "#0A000F", ...ACCENT,
 } : {
-  bgBase: "#F2F4F8", bgCard: "#FFFFFF", bgCard2: "#E8ECF2", 
-  border: "#D0D7E3", textPri: "#111827", textSec: "#4B5563", 
-  textMuted: "#9CA3AF", navBg: "rgba(242,244,248,0.75)", 
-  navBgScr: "#F2F4F8ee", overlayBg: "rgba(242,244,248,0.70)",
-  heroOverlay: "linear-gradient(to top,#F2F4F8f8 0%,#F2F4F8cc 40%,#F2F4F866 70%,transparent 100%)",
-  mobileMenuBg: "#F2F4F8", ...ACCENT,
+  // ── Light mode backgrounds — warm off-white, not flat grey ──
+  bgBase:  "#F7F5F0",   // warm parchment
+  bgCard:  "#FFFFFF",
+  bgCard2: "#EEF0EC",   // subtle sage tint
+  border:  "#D6DAD2",
+
+  // ── Light mode text — ink tones, not pure black ──
+  textPri:  "#1A1F1C",  // deep forest ink
+  textSec:  "#4A5550",  // muted sage
+  textMuted:"#8A9690",  // soft grey-green
+
+  // ── Nav / overlay ──
+  navBg:       "rgba(247,245,240,0.80)",
+  navBgScr:    "#F7F5F0f0",
+  overlayBg:   "rgba(247,245,240,0.75)",
+  heroOverlay: "linear-gradient(to top,#F7F5F0fa 0%,#F7F5F0cc 40%,#F7F5F066 70%,transparent 100%)",
+  mobileMenuBg:"#F7F5F0",
+
+  // ── Accents — darker, more saturated for readability on light bg ──
+  mint500: "#007A54",   // deep emerald  (was #00E5A0 — too neon)
+  mint400: "#009966",   // mid emerald
+  mint600: "#005C3F",   // darker emerald
+  lime:    "#6B8A00",   // olive (was #C8F135 — invisible on white)
+  coral:   "#C0392B",   // deep red-coral (was #FF6B6B — washed out)
+  amber:   "#B8620A",   // burnt amber (was #FFB830 — too bright)
+  violet:  "#5B3FA8",   // rich indigo (was #A788FA — too pale)
+  blue:    "#0066CC",   // strong blue  (was #00A3FF — too light)
 };
 
 // ── Data Constants ─────────────────────────────────────────────
@@ -415,7 +436,7 @@ const BootScreen = memo(({ onDone }) => {
 
   const skip = useCallback(() => {
     setExiting(true);
-    setTimeout(onDone, 450);
+    setTimeout(onDone, 1000);
   }, [onDone]);
 
   useEffect(() => {
