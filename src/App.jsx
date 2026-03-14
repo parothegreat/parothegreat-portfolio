@@ -780,7 +780,7 @@ const Navbar = memo(({ active, C }) => {
         )}
       </nav>
 
-      {/* ── Mobile menu overlay ── */}
+      {/* ── Mobile full-screen overlay (below navbar) ── */}
       {isMobile && (
         <div style={{
           position:"fixed",
@@ -788,63 +788,42 @@ const Navbar = memo(({ active, C }) => {
           zIndex:1002,
           background:C.mobileMenuBg,
           display:"flex", flexDirection:"column",
-          alignItems:"flex-start", justifyContent:"flex-start",
-          padding:"2.5rem 2rem",
+          alignItems:"center", justifyContent:"center",
+          gap:"1.25rem",
           opacity: mobileOpen ? 1 : 0,
           visibility: mobileOpen ? "visible" : "hidden",
           pointerEvents: mobileOpen ? "auto" : "none",
           transition:"opacity 0.28s ease, visibility 0.28s ease",
-          overflowY:"auto",
         }}>
-
-          {/* label */}
           <p className="mono" style={{
-            fontSize:"0.58rem", color:C.mint500, opacity:0.45,
-            letterSpacing:"0.18em", marginBottom:"2rem",
-            textTransform:"uppercase",
+            fontSize:"0.6rem", color:C.mint500, opacity:0.5,
+            letterSpacing:"0.15em", marginBottom:"0.25rem",
           }}>// navigate</p>
 
-          {/* Nav links */}
           {links.map((l, i) => (
             <button key={l} onClick={() => go(l)} style={{
               background:"none", border:"none", cursor:"pointer",
               fontFamily:"'DM Serif Display',serif",
-              fontSize:"clamp(2rem,10vw,2.8rem)", fontWeight:400,
+              fontSize:"2.4rem", fontWeight:400,
               color: active===l ? C.mint400 : C.textPri,
               opacity: mobileOpen ? 1 : 0,
-              transform: mobileOpen ? "translateX(0)" : "translateX(-20px)",
-              transition:`opacity 0.3s ease ${i*0.07+0.05}s, transform 0.3s ease ${i*0.07+0.05}s, color 0.2s`,
-              padding:"0.25rem 0",
+              transform: mobileOpen ? "translateY(0)" : "translateY(12px)",
+              transition:`opacity 0.28s ease ${i*0.05+0.05}s, transform 0.28s ease ${i*0.05+0.05}s, color 0.2s`,
+              padding:"0.25rem 1.5rem",
               lineHeight:1.2,
-              textAlign:"left",
-              display:"flex", alignItems:"center", gap:"0.75rem",
-              width:"100%",
             }}>
-              <span className="mono" style={{
-                fontSize:"0.6rem", color:C.mint500, opacity:0.4,
-                minWidth:"1.5rem",
-              }}>0{i+1}.</span>
               {l}
             </button>
           ))}
 
-          {/* Divider + socials */}
-          <div style={{
-            width:"100%", height:"1px", background:C.border,
-            margin:"2rem 0 1.5rem",
-            opacity: mobileOpen ? 1 : 0,
-            transition:"opacity 0.3s ease 0.32s",
-          }} />
-          <div style={{display:"flex", gap:"1.5rem"}}>
-            {Object.entries(SOCIAL_LINKS).map(([label, url], i) => (
+          <div style={{marginTop:"1rem", display:"flex", gap:"2rem"}}>
+            {Object.entries(SOCIAL_LINKS).map(([label, url]) => (
               <a key={label} href={url} target="_blank" rel="noopener noreferrer"
                 className="mono" style={{
                   fontSize:"0.65rem", color:C.textMuted,
-                  textDecoration:"none", letterSpacing:"0.05em",
-                  opacity: mobileOpen ? 1 : 0,
-                  transition:`opacity 0.3s ease ${i*0.06+0.36}s`,
+                  textDecoration:"none", padding:"0.35rem 0",
                 }}>
-                {label} ↗
+                {label}
               </a>
             ))}
           </div>
@@ -1984,16 +1963,16 @@ export default function Portfolio() {
       <GlobalStyles C={C} isMobile={isMobile} />
       {!booted && <BootScreen onDone={() => setBooted(true)} />}
       <ThemeFlash isDark={isDark} />
-      {/* Page content fades + rises in after boot */}
+
+      {/* Navbar always outside transform wrapper — fixed positioning must not have transform ancestors */}
+      <Navbar active={active} C={C} />
+
+      {/* Page content fades in after boot — opacity only, NO transform (would break position:fixed children) */}
       <div style={{
         opacity: booted ? 1 : 0,
-        transform: booted ? "translateY(0)" : "translateY(14px)",
-        transition: booted
-          ? "opacity 0.7s cubic-bezier(.16,1,.3,1) 0.1s, transform 0.8s cubic-bezier(.16,1,.3,1) 0.1s"
-          : "none",
+        transition: booted ? "opacity 0.8s cubic-bezier(.16,1,.3,1) 0.1s" : "none",
       }}>
         <Overlays C={C} />
-        <Navbar active={active} C={C} />
         <Hero C={C} />
         <Work C={C} />
         <Skills C={C} />
