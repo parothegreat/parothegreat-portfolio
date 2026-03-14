@@ -1052,7 +1052,7 @@ const Dither = memo(({ waveColor=[0.0,0.898,0.627], isMobile=false }) => {
 });
 
 // ── Linux Terminal Animation ───────────────────────────────────
-const LinuxTerminal = memo(({ C, isMobile }) => {
+const LinuxTerminal = memo(({ C, isMobile, start }) => {
   const SEQUENCE = useMemo(() => [
     {
       cmd: "whoami",
@@ -1087,10 +1087,11 @@ const LinuxTerminal = memo(({ C, isMobile }) => {
   , []);
 
   useEffect(() => {
+    if (!start) return; // wait for boot to finish
     if (skipAnim) { setDone(true); return; }
     timerRef.current = setTimeout(() => setPhase(0), 350);
     return () => clearTimeout(timerRef.current);
-  }, []); // eslint-disable-line
+  }, [start]); // eslint-disable-line
 
   useEffect(() => {
     if (skipAnim || phase < 0 || phase >= SEQUENCE.length) return;
@@ -1220,7 +1221,7 @@ const LinuxTerminal = memo(({ C, isMobile }) => {
 });
 
 // ── Optimized Hero Section ─────────────────────────────────────
-const Hero = memo(({ C }) => {
+const Hero = memo(({ C, booted }) => {
   const [ready, setReady] = useState(false);
   const { isMobile } = useTheme();
 
@@ -1287,7 +1288,7 @@ const Hero = memo(({ C }) => {
       }}>
 
         {/* ── Animated Linux terminal ── */}
-        <LinuxTerminal C={C} isMobile={isMobile} />
+        <LinuxTerminal C={C} isMobile={isMobile} start={booted} />
 
         {/* Name */}
         <div>
@@ -2050,7 +2051,7 @@ export default function Portfolio() {
         transition: booted ? "opacity 0.8s cubic-bezier(.16,1,.3,1) 0.1s" : "none",
       }}>
         <Overlays C={C} />
-        <Hero C={C} />
+        <Hero C={C} booted={booted} />
         <Work C={C} />
         <Skills C={C} />
         <Contact C={C} />
