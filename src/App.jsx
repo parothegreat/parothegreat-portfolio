@@ -1051,6 +1051,174 @@ const Dither = memo(({ waveColor=[0.0,0.898,0.627], isMobile=false }) => {
   return <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", display:"block", zIndex:0 }} />;
 });
 
+// ── Linux Terminal Animation ───────────────────────────────────
+const LinuxTerminal = memo(({ C, isMobile }) => {
+  const SEQUENCE = useMemo(() => [
+    {
+      cmd: "whoami",
+      output: "Sysadmin · Network Engineer · Security Analyst — Bekasi, ID",
+      outputColor: C.coral,
+    },
+    {
+      cmd: "cat role.txt",
+      output: isMobile
+        ? "securing networks · hardening systems · hunting threats"
+        : "parothegreat -- securing networks, hardening systems, hunting threats",
+      outputColor: C.mint600,
+    },
+    {
+      cmd: "uptime --since 2024-09-16",
+      output: isMobile
+        ? "status: operational-student"
+        : "online since Sep 16 2024 | load avg: high | status: operational-student",
+      outputColor: C.mint400,
+    },
+  ], [C, isMobile]);
+
+  // phase: which command is currently being typed (-1 = not started yet)
+  const [phase, setPhase]           = useState(-1);
+  const [typed, setTyped]           = useState(0);
+  const [showOutput, setShowOutput] = useState(false);
+  const [done, setDone]             = useState(false);
+  const timerRef                    = useRef();
+
+  const skipAnim = useMemo(() =>
+    typeof window !== "undefined" && window.matchMedia("(pointer:coarse)").matches
+  , []);
+
+  useEffect(() => {
+    if (skipAnim) { setDone(true); return; }
+    timerRef.current = setTimeout(() => setPhase(0), 350);
+    return () => clearTimeout(timerRef.current);
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (skipAnim || phase < 0 || phase >= SEQUENCE.length) return;
+    setTyped(0);
+    setShowOutput(false);
+    const cmd = SEQUENCE[phase].cmd;
+    let i = 0;
+    const tick = () => {
+      i++;
+      setTyped(i);
+      if (i < cmd.length) {
+        timerRef.current = setTimeout(tick, 36 + Math.random() * 24);
+      } else {
+        timerRef.current = setTimeout(() => {
+          setShowOutput(true);
+          timerRef.current = setTimeout(() => {
+            if (phase + 1 < SEQUENCE.length) setPhase(p => p + 1);
+            else setDone(true);
+          }, 480);
+        }, 170);
+      }
+    };
+    timerRef.current = setTimeout(tick, 36);
+    return () => clearTimeout(timerRef.current);
+  }, [phase]); // eslint-disable-line
+
+  const fz = isMobile ? "0.65rem" : "0.74rem";
+
+  const Prompt = () => (
+    <span style={{userSelect:"none", whiteSpace:"nowrap"}}>
+      <span style={{color:"#27C93F"}}>paro@thegreat</span>
+      <span style={{color:"rgba(255,255,255,0.2)", margin:"0 0.3rem"}}>~</span>
+      <span style={{color:"rgba(255,255,255,0.45)"}}>$</span>
+    </span>
+  );
+
+  return (
+    <div className="hero-terminal" style={{
+      marginBottom: isMobile ? "1.5rem" : "2.5rem",
+      display: isMobile ? "block" : "inline-block",
+      width: isMobile ? "100%" : "auto",
+      minWidth: isMobile ? "auto" : "520px",
+      background:"rgba(0,0,0,0.55)",
+      backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)",
+      border:"1px solid rgba(255,255,255,0.07)",
+      borderRadius:"8px",
+      boxShadow:"0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
+      overflow:"hidden", boxSizing:"border-box",
+    }}>
+
+      {/* Title bar */}
+      <div style={{
+        display:"flex", alignItems:"center", gap:"0.5rem",
+        padding: isMobile ? "0.5rem 0.75rem" : "0.55rem 1rem",
+        background:"rgba(255,255,255,0.04)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)",
+        flexShrink:0,
+      }}>
+        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#FF5F56",display:"inline-block",flexShrink:0}} />
+        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#FFBD2E",display:"inline-block",flexShrink:0}} />
+        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#27C93F",display:"inline-block",flexShrink:0}} />
+        <span className="mono" style={{
+          fontSize:"0.6rem", color:"rgba(255,255,255,0.25)",
+          letterSpacing:"0.08em", marginLeft:"0.5rem", userSelect:"none",
+        }}>paro@thegreat: ~</span>
+      </div>
+
+      {/* Body — all rows always in DOM so height is fixed from the start */}
+      <div style={{padding: isMobile ? "0.85rem 0.9rem" : "1rem 1.25rem"}}>
+        {SEQUENCE.map((entry, idx) => {
+          const isPast   = skipAnim || phase > idx || done;
+          const isActive = !skipAnim && phase === idx;
+          // Text to show for the command (full if past/skip, partial if active, invisible placeholder if not yet)
+          const cmdText  = isPast    ? entry.cmd
+                         : isActive  ? entry.cmd.slice(0, typed)
+                         : " "; // non-breaking space — keeps row height
+          const showOut  = skipAnim || isPast || (isActive && showOutput);
+          // Colour: dim if not yet reached, normal otherwise
+          const cmdColor = (isPast || isActive) ? "rgba(255,255,255,0.75)" : "transparent";
+          const outColor = showOut ? entry.outputColor : "transparent";
+          const promptOpacity = (isPast || isActive || skipAnim) ? 1 : 0.12;
+
+          return (
+            <div key={idx}>
+              {/* Prompt + command — always takes up space */}
+              <div className="mono" style={{fontSize:fz, lineHeight:1.85, color:"rgba(255,255,255,0.35)"}}>
+                <span style={{opacity: promptOpacity, transition:"opacity 0.2s"}}>
+                  <Prompt />
+                </span>
+                <span style={{
+                  marginLeft:"0.5rem",
+                  color: cmdColor,
+                  transition:"color 0.15s",
+                }}>{cmdText}</span>
+                {isActive && !showOutput && (
+                  <span style={{animation:"blink 0.9s step-end infinite", color:C.mint400, marginLeft:"1px"}}>▋</span>
+                )}
+              </div>
+              {/* Output — always takes up space via minHeight, colour fades in */}
+              <div className="mono" style={{
+                fontSize:fz, lineHeight:1.6,
+                color: outColor,
+                paddingLeft:"0.5rem",
+                marginBottom:"0.35rem",
+                wordBreak:"break-word",
+                minHeight: `calc(${fz} * 1.6)`, // reserve space even when invisible
+                transition:"color 0.2s ease",
+              }}>
+                {entry.output}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Final idle prompt — always in DOM */}
+        <div className="mono" style={{fontSize:fz, lineHeight:1.85, color:"rgba(255,255,255,0.35)"}}>
+          <span style={{opacity: done || skipAnim ? 1 : 0.12, transition:"opacity 0.3s"}}>
+            <Prompt />
+          </span>
+          {(done || skipAnim) && (
+            <span style={{animation:"blink 1.1s step-end infinite", color:C.mint400, marginLeft:"0.5rem", fontSize:"0.9em"}}>▋</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 // ── Optimized Hero Section ─────────────────────────────────────
 const Hero = memo(({ C }) => {
   const [ready, setReady] = useState(false);
@@ -1096,30 +1264,6 @@ const Hero = memo(({ C }) => {
         }} />
       )}
 
-      {/* Role tag — desktop: absolute float; mobile: in-flow at top of content */}
-      {!isMobile && (
-        <div className="hero-top-tag" style={{
-          position:"absolute", top:"calc(90px + 5rem)",
-          left:"3rem",
-          animation: ready ? "fadeIn 0.8s ease 0.3s both" : "none",
-          opacity:0, zIndex:2,
-          display:"inline-block", padding:"0.5rem 0.75rem",
-          background:C.overlayBg, backdropFilter:"blur(12px)", 
-          WebkitBackdropFilter:"blur(12px)",
-          border:`1px solid ${C.mint500}25`, borderRadius:"4px",
-          transition:"background 0.3s ease",
-        }}>
-          <span style={{ fontSize:"0.85rem", color:C.textMuted }}>
-            <TerminalLine 
-              text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
-              delay={4300} 
-              color={C.coral} 
-              C={C}
-            />
-          </span>
-        </div>
-      )}
-
       {/* Lanyard - lazy loaded, hidden on mobile */}
       {!isMobile && (
         <div className="lanyard-wrap" style={{
@@ -1142,75 +1286,8 @@ const Hero = memo(({ C }) => {
         paddingTop: isMobile ? "80px" : "0",
       }}>
 
-        {/* Role tag — mobile only, in-flow */}
-        {isMobile && (
-          <div style={{
-            marginBottom:"1.25rem",
-            animation: ready ? "fadeIn 0.8s ease 0.3s both" : "none",
-            opacity:0,
-            display:"inline-block", padding:"0.45rem 0.7rem",
-            background:C.overlayBg, backdropFilter:"blur(12px)", 
-            WebkitBackdropFilter:"blur(12px)",
-            border:`1px solid ${C.mint500}25`, borderRadius:"4px",
-            transition:"background 0.3s ease", maxWidth:"100%",
-          }}>
-            <span style={{ fontSize:"0.72rem", color:C.coral,
-              fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.03em",
-              display:"block", lineHeight:1.5,
-              wordBreak:"break-word",
-            }}>
-              Sysadmin · Network Engineer · Security Analyst — Bekasi, ID
-            </span>
-          </div>
-        )}
-
-        {/* Terminal box */}
-        <div className="hero-terminal" style={{
-          marginBottom: isMobile ? "1.5rem" : "2.5rem",
-          display: isMobile ? "block" : "inline-block",
-          width: isMobile ? "100%" : "auto",
-          padding: isMobile ? "0.75rem 1rem" : "1rem 1.5rem",
-          background:C.overlayBg, backdropFilter:"blur(12px)", 
-          WebkitBackdropFilter:"blur(12px)",
-          border:`1px solid ${C.mint500}30`, borderRadius:"6px", 
-          boxShadow:`0 0 24px ${C.mint500}10`,
-          transition:"background 0.3s ease",
-          boxSizing:"border-box",
-        }}>
-          {isMobile ? (
-            <>
-              <div className="mono" style={{fontSize:"0.65rem",color:C.textMuted,lineHeight:1.7}}>
-                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>whoami
-              </div>
-              <div className="mono" style={{fontSize:"0.65rem",color:C.mint600,lineHeight:1.7,wordBreak:"break-word"}}>
-                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>securing networks · hardening systems · hunting threats
-              </div>
-              <div className="mono" style={{fontSize:"0.65rem",color:C.textMuted,lineHeight:1.7}}>
-                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>uptime --since 2024-09-16
-              </div>
-              <div className="mono" style={{fontSize:"0.65rem",color:C.mint400,lineHeight:1.7}}>
-                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>status: operational-student
-              </div>
-            </>
-          ) : (
-            <>
-              <TerminalLine text="whoami" delay={4300} C={C} />
-              <TerminalLine 
-                text="parothegreat -- securing networks, hardening systems, hunting threats" 
-                delay={4400} 
-                color={C.mint600} 
-                C={C} 
-              />
-              <TerminalLine text="uptime --since 2024-09-16" delay={4600} C={C} />
-              <TerminalLine 
-                text="online since Sep 16 2024 | load avg: high | status: operational-student" 
-                delay={4800} 
-                color={C.mint400} 
-                C={C} 
-              />
-            </>
-          )}
-        </div>
+        {/* ── Animated Linux terminal ── */}
+        <LinuxTerminal C={C} isMobile={isMobile} />
 
         {/* Name */}
         <div>
