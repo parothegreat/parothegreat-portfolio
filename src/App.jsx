@@ -191,6 +191,29 @@ const GlobalStyles = memo(({ C, isMobile }) => {
 
       @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
       @keyframes bootExit { 0%{opacity:1} 100%{opacity:0} }
+      @keyframes crtFlicker {
+        0%{opacity:1} 3%{opacity:0.93} 5%{opacity:1}
+        22%{opacity:1} 23%{opacity:0.95} 24%{opacity:1}
+        60%{opacity:1} 61%{opacity:0.91} 62%{opacity:1} 100%{opacity:1}
+      }
+      @keyframes bootTextIn {
+        0%{opacity:0;letter-spacing:0.6em;filter:blur(6px)}
+        60%{opacity:1;letter-spacing:0.22em;filter:blur(0)}
+        100%{opacity:1;letter-spacing:0.22em;filter:blur(0)}
+      }
+      @keyframes bootLineIn {
+        0%{opacity:0;transform:translateY(6px)}
+        100%{opacity:1;transform:translateY(0)}
+      }
+      @keyframes bootExit1 {
+        0%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+        40%{opacity:1;transform:scale(1.06) translateY(-8px);filter:blur(0)}
+        100%{opacity:0;transform:scale(1.18) translateY(-24px);filter:blur(8px)}
+      }
+      @keyframes pageReveal {
+        0%{opacity:0;transform:translateY(18px)}
+        100%{opacity:1;transform:translateY(0)}
+      }
       @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
       @keyframes pulse-dot {
@@ -281,8 +304,6 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       @media (max-width: 900px) {
         .project-row { grid-template-columns:40px 1fr; gap:0.75rem; padding:1.25rem 1rem; }
         .proj-desc, .proj-meta { display:none; }
-        .desktop-nav { display:none !important; }
-        .mobile-toggle { display:flex !important; }
         .lanyard-wrap { display:none !important; }
         .hero-bottom { flex-direction:column !important; align-items:flex-start !important; gap:1.5rem !important; }
         .hero-bottom-right { border-left:none !important; padding-left:0 !important; flex-direction:column !important; align-items:flex-start !important; gap:1rem !important; }
@@ -292,12 +313,11 @@ const GlobalStyles = memo(({ C, isMobile }) => {
         .contact-grid { grid-template-columns:1fr !important; gap:2.5rem !important; }
         .certs-grid { grid-template-columns:1fr !important; }
         .stat-row { gap:1.5rem !important; flex-wrap:wrap !important; }
-        .hero-section { padding:0 1rem 3rem !important; min-height: auto !important; padding-top: 80px !important; }
+        .hero-section { padding:0 1rem 3rem !important; min-height: auto !important; }
         .work-section { padding:4rem 1rem !important; max-width:100% !important; }
         .skills-section { padding:4rem 1rem !important; }
         .contact-section { padding:4rem 1rem !important; }
         .footer-inner { padding:1rem !important; flex-direction:column !important; align-items:flex-start !important; gap:0.75rem !important; }
-        .hero-top-tag { left:1rem !important; right:1rem !important; top: 80px !important; }
         .hero-top-rule { left:1rem !important; right:1rem !important; }
         nav { grid-template-columns: 1fr auto !important; padding: 0 1rem !important; height: 60px !important; }
         .hero-h1 { font-size: clamp(2.5rem, 12vw, 4rem) !important; margin-bottom: 2rem !important; }
@@ -309,7 +329,7 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       
       @media (max-width: 560px) {
         .skills-grid { grid-template-columns:1fr !important; }
-        .hero-section { padding-top: 70px !important; }
+
         .stat-row > div { text-align: left !important; }
         .hero-bottom-right p { max-width: 100% !important; border-left: none !important; padding-left: 0 !important; }
       }
@@ -422,33 +442,35 @@ const ThemeToggle = memo(({ C }) => {
 
 // ── Boot Screen ────────────────────────────────────────────────
 const BootScreen = memo(({ onDone }) => {
-  const [phase, setPhase] = useState(0);
+  const [phase, setPhase] = useState(0); // 0=title, 1+=lines
   const [exiting, setExiting] = useState(false);
 
   const LINES = [
-    { t:"PORTFOLIO-OS v1.0  ·  parothegreat", c:"#fff" },
-    { t:"Checking hardware integrity.......... OK", c:"#555" },
-    { t:"Loading network modules.............. OK", c:"#555" },
-    { t:"Mounting encrypted volumes........... OK", c:"#555" },
-    { t:"Starting security daemon............. OK", c:"#555" },
-    { t:"[ paro@thegreat ] — system ready", c:"#00E5A0" },
+    { t:"Checking hardware integrity.......... OK" },
+    { t:"Loading network modules.............. OK" },
+    { t:"Mounting encrypted volumes........... OK" },
+    { t:"Starting security daemon............. OK" },
+    { t:"[ paro@thegreat ] — system ready",  accent: true },
   ];
 
   const skip = useCallback(() => {
+    if (exiting) return;
     setExiting(true);
-    setTimeout(onDone, 1000);
-  }, [onDone]);
+    setTimeout(onDone, 900);
+  }, [exiting, onDone]);
 
   useEffect(() => {
-    const delays = [0, 280, 580, 860, 1120, 1380];
-    const timers = delays.map((d, i) =>
-      setTimeout(() => setPhase(p => Math.max(p, i + 1)), d)
+    const delays = [800, 1080, 1340, 1580, 1820];
+    const titleTimer = setTimeout(() => setPhase(1), 300);
+    const lineTimers = delays.map((d, i) =>
+      setTimeout(() => setPhase(p => Math.max(p, i + 2)), d)
     );
-    const autoExit = setTimeout(skip, 2200);
+    const autoExit = setTimeout(skip, 2700);
     window.addEventListener("keydown", skip, { once: true });
     window.addEventListener("pointerdown", skip, { once: true });
     return () => {
-      timers.forEach(clearTimeout);
+      clearTimeout(titleTimer);
+      lineTimers.forEach(clearTimeout);
       clearTimeout(autoExit);
       window.removeEventListener("keydown", skip);
       window.removeEventListener("pointerdown", skip);
@@ -459,63 +481,109 @@ const BootScreen = memo(({ onDone }) => {
     <div style={{
       position:"fixed", inset:0, zIndex:99999,
       background:"#000",
-      display:"flex", flexDirection:"column", justifyContent:"center",
-      padding:"0 clamp(1.5rem, 10vw, 9rem)",
-      opacity: exiting ? 0 : 1,
-      transition: exiting ? "opacity 0.45s ease" : "none",
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+      overflow:"hidden",
+      animation:"crtFlicker 6s infinite",
       pointerEvents: exiting ? "none" : "auto",
     }}>
-      {/* ASCII header block */}
-      <div style={{marginBottom:"2.5rem"}}>
-        <pre style={{
-          fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(0.45rem,1.1vw,0.58rem)",
-          color:"#00E5A0", opacity:0.25, lineHeight:1.2,
-          margin:0, letterSpacing:"0.04em",
-          userSelect:"none",
-        }}>{`██████╗  █████╗ ██████╗  ██████╗
-██╔══██╗██╔══██╗██╔══██╗██╔═══██╗
-██████╔╝███████║██████╔╝██║   ██║
-██╔═══╝ ██╔══██║██╔══██╗██║   ██║
-██║     ██║  ██║██║  ██║╚██████╔╝
-╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝`}</pre>
+
+      {/* CRT scanlines */}
+      <div style={{
+        position:"absolute", inset:0, zIndex:2, pointerEvents:"none",
+        backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px)",
+      }} />
+
+      {/* Moving scan beam */}
+      <div style={{
+        position:"absolute", left:0, right:0, height:"120px", zIndex:3,
+        pointerEvents:"none",
+        background:"linear-gradient(to bottom,transparent,rgba(0,229,160,0.03),transparent)",
+        animation:"scanline 5s linear infinite",
+      }} />
+
+      {/* CRT vignette */}
+      <div style={{
+        position:"absolute", inset:0, zIndex:4, pointerEvents:"none",
+        background:"radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.82) 100%)",
+      }} />
+
+      {/* Content — exits with scale+blur+fade */}
+      <div style={{
+        position:"relative", zIndex:5,
+        display:"flex", flexDirection:"column", alignItems:"center",
+        width:"100%", padding:"0 2rem",
+        animation: exiting
+          ? "bootExit1 0.85s cubic-bezier(.4,0,.2,1) both"
+          : "none",
+      }}>
+
+        {/* PAROTHEGREAT text */}
         <div style={{
           fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(0.62rem,1.6vw,0.8rem)",
-          color:"#fff", letterSpacing:"0.06em",
-          marginTop:"0.85rem", fontWeight:500,
+          fontSize:"clamp(1.2rem, 5vw, 4rem)",
+          fontWeight:500,
+          color:"#00E5A0",
+          letterSpacing:"0.22em",
+          textAlign:"center",
+          textShadow:"0 0 30px #00E5A055, 0 0 60px #00E5A022",
+          userSelect:"none",
+          opacity: phase >= 1 ? 1 : 0,
+          animation: phase >= 1 ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
+          marginBottom:"1.2rem",
+        }}>
+          PAROTHEGREAT
+        </div>
+
+        {/* Subtitle */}
+        <div style={{
+          fontFamily:"'JetBrains Mono',monospace",
+          fontSize:"clamp(0.55rem,1.2vw,0.7rem)",
+          color:"#3a3a3a",
+          letterSpacing:"0.2em",
+          textTransform:"uppercase",
+          marginBottom:"3rem",
+          textAlign:"center",
+          opacity: phase >= 1 ? 1 : 0,
+          transition:"opacity 0.4s ease 0.6s",
         }}>
           Network Engineer · Security Analyst · Sysadmin
         </div>
-      </div>
 
-      {/* Boot lines */}
-      <div style={{display:"flex", flexDirection:"column", gap:"0.38rem"}}>
-        {LINES.map((l, i) => (
-          <div key={i} style={{
-            fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(0.58rem,1.4vw,0.7rem)",
-            letterSpacing:"0.04em",
-            color: l.c,
-            opacity: phase > i ? 1 : 0,
-            transform: phase > i ? "none" : "translateY(4px)",
-            transition:"opacity 0.22s ease, transform 0.22s ease",
-          }}>
-            {i < LINES.length - 1
-              ? <><span style={{color:"#2a2a2a"}}>$ </span>{l.t}</>
-              : <span style={{color:"#00E5A0", fontWeight:500}}>{l.t}</span>
-            }
-          </div>
-        ))}
+        {/* Boot lines */}
+        <div style={{
+          display:"flex", flexDirection:"column", gap:"0.28rem",
+          alignItems:"flex-start",
+          width:"min(440px, 88vw)",
+        }}>
+          {LINES.map((l, i) => (
+            <div key={i} style={{
+              fontFamily:"'JetBrains Mono',monospace",
+              fontSize:"clamp(0.52rem,1.1vw,0.64rem)",
+              letterSpacing:"0.04em",
+              color: l.accent ? "#00E5A0" : "#3a3a3a",
+              textShadow: l.accent ? "0 0 10px #00E5A050" : "none",
+              fontWeight: l.accent ? 500 : 400,
+              opacity: phase >= i + 2 ? 1 : 0,
+              animation: phase >= i + 2
+                ? `bootLineIn 0.25s ease both`
+                : "none",
+            }}>
+              {l.accent
+                ? l.t
+                : <><span style={{color:"#222"}}>$ </span>{l.t}</>
+              }
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Skip hint */}
       <div style={{
-        position:"absolute", bottom:"2rem",
-        left:"clamp(1.5rem,10vw,9rem)",
+        position:"absolute", bottom:"1.75rem",
         fontFamily:"'JetBrains Mono',monospace",
-        fontSize:"0.55rem", color:"#222",
-        letterSpacing:"0.1em",
+        fontSize:"0.5rem", color:"#1c1c1c",
+        letterSpacing:"0.15em", zIndex:5,
       }}>
         PRESS ANY KEY TO SKIP
       </div>
@@ -594,12 +662,18 @@ const Navbar = memo(({ active, C }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileOpen]);
 
+  const navH = scrolled ? "54px" : "68px";
+
   return (
     <>
+      {/* ── Nav bar ── */}
       <nav style={{
-        position:"fixed", top:0, left:0, right:0, zIndex:1000,
-        display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center",
-        padding:"0 2rem", height: scrolled ? "54px" : "68px",
+        position:"fixed", top:0, left:0, right:0,
+        zIndex:1003,
+        display:"flex", alignItems:"center",
+        justifyContent:"space-between",
+        padding: isMobile ? "0 1rem" : "0 2rem",
+        height: isMobile ? "60px" : navH,
         background: scrolled ? C.navBgScr : C.navBg,
         backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
         borderBottom:`1px solid ${scrolled ? C.border : C.mint500+"1a"}`,
@@ -608,7 +682,7 @@ const Navbar = memo(({ active, C }) => {
         {/* Logo */}
         <div className="mono" style={{
           fontSize:"0.82rem", display:"flex", alignItems:"center",
-          gap:"0.25rem", justifySelf:"start", letterSpacing:"0.01em",
+          gap:"0.25rem", letterSpacing:"0.01em",
         }}>
           <span style={{color:C.mint500, fontWeight:500}}>[</span>
           <span style={{color:C.textSec}}>paro</span>
@@ -621,125 +695,161 @@ const Navbar = memo(({ active, C }) => {
           }}>█</span>
         </div>
 
-        {/* Desktop nav — underline indicator */}
-        <div className="desktop-nav" style={{display:"flex", gap:"0", justifySelf:"center"}}>
-          {links.map(l => (
-            <button key={l} onClick={() => go(l)} style={{
-              fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
-              letterSpacing:"0.07em", textTransform:"uppercase",
-              background:"none", border:"none",
-              padding:"0.5rem 1.1rem", position:"relative",
-              color: active===l ? C.mint400 : C.textMuted,
-              transition:"color 0.2s", cursor:"pointer",
+        {/* Desktop centre links */}
+        {!isMobile && (
+          <div style={{display:"flex", gap:"0"}}>
+            {links.map(l => (
+              <button key={l} onClick={() => go(l)} style={{
+                fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
+                letterSpacing:"0.07em", textTransform:"uppercase",
+                background:"none", border:"none",
+                padding:"0.5rem 1.1rem", position:"relative",
+                color: active===l ? C.mint400 : C.textMuted,
+                transition:"color 0.2s", cursor:"pointer",
+              }}>
+                {l}
+                <span style={{
+                  position:"absolute", bottom:"-1px", left:"50%",
+                  transform: active===l ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
+                  transformOrigin:"center",
+                  width:"28px", height:"2px",
+                  background:C.mint500, borderRadius:"1px",
+                  boxShadow: active===l ? `0 0 8px ${C.mint500}90` : "none",
+                  transition:"transform 0.25s cubic-bezier(.16,1,.3,1), box-shadow 0.25s",
+                  display:"block",
+                }} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop right: status pill + theme toggle */}
+        {!isMobile && (
+          <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
+            <div style={{
+              display:"flex", alignItems:"center", gap:"0.5rem",
+              padding:"0.28rem 0.7rem",
+              border:`1px solid ${C.mint500}28`,
+              borderRadius:"20px", background:`${C.mint500}0a`,
             }}>
-              {l}
               <span style={{
-                position:"absolute", bottom:"-1px", left:"50%",
-                transform: active===l ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
-                transformOrigin:"center",
-                width:"28px", height:"2px",
-                background:C.mint500,
-                borderRadius:"1px",
-                boxShadow: active===l ? `0 0 8px ${C.mint500}90` : "none",
-                transition:"transform 0.25s cubic-bezier(.16,1,.3,1), box-shadow 0.25s",
-                display:"block",
+                width:"5px", height:"5px", borderRadius:"50%",
+                background:C.mint500, display:"inline-block",
+                animation:"pulse-dot 2.5s ease-in-out infinite",
+              }} />
+              <span className="mono" style={{
+                fontSize:"0.6rem", color:C.mint500, opacity:0.85, letterSpacing:"0.05em"
+              }}>available_for_hire</span>
+            </div>
+            <ThemeToggle C={C} />
+          </div>
+        )}
+
+        {/* Mobile right: theme toggle + hamburger */}
+        {isMobile && (
+          <div style={{display:"flex", alignItems:"center", gap:"0.25rem"}}>
+            <ThemeToggle C={C} />
+            <button
+              onClick={toggleMobile}
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              style={{
+                background:"none", border:"none",
+                display:"flex", flexDirection:"column",
+                gap:"5px", padding:"8px",
+                touchAction:"manipulation",
+                minWidth:"44px", minHeight:"44px",
+                alignItems:"center", justifyContent:"center",
+                cursor:"pointer",
+              }}
+            >
+              <span style={{
+                display:"block", width:"20px", height:"1.5px",
+                background:C.mint400, borderRadius:"2px",
+                transition:"transform 0.3s",
+                transform: mobileOpen ? "rotate(45deg) translate(4.5px,4.5px)" : "none",
+              }} />
+              <span style={{
+                display:"block", width:"20px", height:"1.5px",
+                background:C.mint400, borderRadius:"2px",
+                transition:"transform 0.3s",
+                transform: mobileOpen ? "rotate(-45deg) translate(4.5px,-4.5px)" : "none",
               }} />
             </button>
-          ))}
-        </div>
-
-        {/* Desktop right */}
-        <div className="desktop-nav" style={{
-          display:"flex", alignItems:"center", gap:"0.75rem", justifySelf:"end"
-        }}>
-          <div style={{
-            display:"flex", alignItems:"center", gap:"0.5rem",
-            padding:"0.28rem 0.7rem",
-            border:`1px solid ${C.mint500}28`,
-            borderRadius:"20px", background:`${C.mint500}0a`,
-          }}>
-            <span style={{
-              width:"5px", height:"5px", borderRadius:"50%",
-              background:C.mint500, display:"inline-block",
-              animation:"pulse-dot 2.5s ease-in-out infinite",
-            }} />
-            <span className="mono" style={{
-              fontSize:"0.6rem", color:C.mint500, opacity:0.85, letterSpacing:"0.05em"
-            }}>
-              available_for_hire
-            </span>
           </div>
-          <ThemeToggle C={C} />
-        </div>
-
-        {/* Mobile right */}
-        <div className="mobile-toggle" style={{
-          display:"none", justifySelf:"end", alignItems:"center", gap:"0.5rem"
-        }}>
-          <ThemeToggle C={C} />
-          <button onClick={toggleMobile} aria-label="Toggle menu" aria-expanded={mobileOpen}
-            style={{
-              background:"none", border:"none", flexDirection:"column",
-              gap:"5px", padding:"8px", display:"flex", touchAction:"manipulation",
-              minWidth:"44px", minHeight:"44px", alignItems:"center", justifyContent:"center",
-            }}
-          >
-            <span style={{
-              display:"block", width:"20px", height:"1.5px",
-              background:C.mint400, borderRadius:"2px",
-              transition:"transform 0.3s",
-              transform: mobileOpen ? "rotate(45deg) translate(4.5px,4.5px)" : "none",
-            }} />
-            <span style={{
-              display:"block", width:"20px", height:"1.5px",
-              background:C.mint400, borderRadius:"2px",
-              transition:"transform 0.3s",
-              transform: mobileOpen ? "rotate(-45deg) translate(4.5px,-4.5px)" : "none",
-            }} />
-          </button>
-        </div>
+        )}
       </nav>
 
-      {/* Mobile overlay */}
-      <div style={{
-        position:"fixed", inset:0, zIndex:999, background:C.mobileMenuBg,
-        display:"flex", flexDirection:"column", alignItems:"center",
-        justifyContent:"center", gap:"1.5rem", paddingTop:"60px",
-        opacity: mobileOpen ? 1 : 0,
-        visibility: mobileOpen ? "visible" : "hidden",
-        transition:"opacity 0.3s ease, visibility 0.3s ease",
-        touchAction:"none",
-      }}>
-        <p className="mono" style={{
-          fontSize:"0.6rem", color:C.mint500, opacity:0.5,
-          letterSpacing:"0.15em", marginBottom:"0.5rem",
-        }}>// navigate</p>
-        {links.map((l, i) => (
-          <button key={l} onClick={() => go(l)} style={{
-            background:"none", border:"none",
-            fontFamily:"'DM Serif Display',serif",
-            fontSize:"2.2rem",
-            color: active===l ? C.mint400 : C.textPri,
-            fontWeight:400,
-            opacity: mobileOpen ? 1 : 0,
-            transform: mobileOpen ? "translateY(0)" : "translateY(16px)",
-            transition:`opacity 0.3s ease ${i*0.06}s, transform 0.3s ease ${i*0.06}s, color 0.2s`,
-            padding:"0.35rem 1rem",
-          }}>
-            {l}
-          </button>
-        ))}
-        <div style={{marginTop:"0.75rem", display:"flex", gap:"1.5rem"}}>
-          {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
-            <a key={label} href={url} target="_blank" rel="noopener noreferrer"
-              className="mono" style={{
-                fontSize:"0.65rem", color:C.textMuted, textDecoration:"none", padding:"0.35rem 0"
-              }}>
-              {label}
-            </a>
+      {/* ── Mobile menu overlay ── */}
+      {isMobile && (
+        <div style={{
+          position:"fixed",
+          top:"60px", left:0, right:0, bottom:0,
+          zIndex:1002,
+          background:C.mobileMenuBg,
+          display:"flex", flexDirection:"column",
+          alignItems:"flex-start", justifyContent:"flex-start",
+          padding:"2.5rem 2rem",
+          opacity: mobileOpen ? 1 : 0,
+          visibility: mobileOpen ? "visible" : "hidden",
+          pointerEvents: mobileOpen ? "auto" : "none",
+          transition:"opacity 0.28s ease, visibility 0.28s ease",
+          overflowY:"auto",
+        }}>
+
+          {/* label */}
+          <p className="mono" style={{
+            fontSize:"0.58rem", color:C.mint500, opacity:0.45,
+            letterSpacing:"0.18em", marginBottom:"2rem",
+            textTransform:"uppercase",
+          }}>// navigate</p>
+
+          {/* Nav links */}
+          {links.map((l, i) => (
+            <button key={l} onClick={() => go(l)} style={{
+              background:"none", border:"none", cursor:"pointer",
+              fontFamily:"'DM Serif Display',serif",
+              fontSize:"clamp(2rem,10vw,2.8rem)", fontWeight:400,
+              color: active===l ? C.mint400 : C.textPri,
+              opacity: mobileOpen ? 1 : 0,
+              transform: mobileOpen ? "translateX(0)" : "translateX(-20px)",
+              transition:`opacity 0.3s ease ${i*0.07+0.05}s, transform 0.3s ease ${i*0.07+0.05}s, color 0.2s`,
+              padding:"0.25rem 0",
+              lineHeight:1.2,
+              textAlign:"left",
+              display:"flex", alignItems:"center", gap:"0.75rem",
+              width:"100%",
+            }}>
+              <span className="mono" style={{
+                fontSize:"0.6rem", color:C.mint500, opacity:0.4,
+                minWidth:"1.5rem",
+              }}>0{i+1}.</span>
+              {l}
+            </button>
           ))}
+
+          {/* Divider + socials */}
+          <div style={{
+            width:"100%", height:"1px", background:C.border,
+            margin:"2rem 0 1.5rem",
+            opacity: mobileOpen ? 1 : 0,
+            transition:"opacity 0.3s ease 0.32s",
+          }} />
+          <div style={{display:"flex", gap:"1.5rem"}}>
+            {Object.entries(SOCIAL_LINKS).map(([label, url], i) => (
+              <a key={label} href={url} target="_blank" rel="noopener noreferrer"
+                className="mono" style={{
+                  fontSize:"0.65rem", color:C.textMuted,
+                  textDecoration:"none", letterSpacing:"0.05em",
+                  opacity: mobileOpen ? 1 : 0,
+                  transition:`opacity 0.3s ease ${i*0.06+0.36}s`,
+                }}>
+                {label} ↗
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 });
@@ -983,8 +1093,9 @@ const Hero = memo(({ C }) => {
   return (
     <section id="home" className="hero-section gpu-accelerated" style={{
       minHeight: isMobile ? "auto" : "100vh", 
-      display:"flex", flexDirection:"column", justifyContent:"flex-end",
-      padding: isMobile ? "80px 1rem 3rem" : "0 3rem 5rem", 
+      display:"flex", flexDirection:"column",
+      justifyContent: isMobile ? "flex-start" : "flex-end",
+      padding: isMobile ? "0 1rem 3rem" : "0 3rem 5rem", 
       position:"relative", overflow:"hidden",
     }}>
       {/* Dither BG - disabled on mobile */}
@@ -997,36 +1108,38 @@ const Hero = memo(({ C }) => {
         transition:"background 0.3s ease" 
       }} />
 
-      {/* Top rule */}
-      <div className="hero-top-rule" style={{ 
-        position:"absolute", top: isMobile ? "60px" : "66px", 
-        left: isMobile ? "1rem" : "3rem", 
-        right: isMobile ? "1rem" : "3rem",
-        height:"1px", background:C.border, zIndex:2 
-      }} />
+      {/* Top rule — desktop only absolute, mobile hidden */}
+      {!isMobile && (
+        <div className="hero-top-rule" style={{ 
+          position:"absolute", top:"66px",
+          left:"3rem", right:"3rem",
+          height:"1px", background:C.border, zIndex:2 
+        }} />
+      )}
 
-      {/* Role tag */}
-      <div className="hero-top-tag" style={{
-        position:"absolute", top: isMobile ? "90px" : "calc(90px + 5rem)",
-        left: isMobile ? "1rem" : "3rem",
-        right: isMobile ? "1rem" : "auto",
-        animation: ready ? "fadeIn 0.8s ease 0.3s both" : "none",
-        opacity:0, zIndex:2,
-        display:"inline-block", padding:"0.5rem 0.75rem",
-        background:C.overlayBg, backdropFilter:"blur(12px)", 
-        WebkitBackdropFilter:"blur(12px)",
-        border:`1px solid ${C.mint500}25`, borderRadius:"4px",
-        transition:"background 0.3s ease",
-      }}>
-        <span style={{ fontSize: isMobile ? "0.75rem" : "0.85rem", color:C.textMuted }}>
-          <TerminalLine 
-            text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
-            delay={1170} 
-            color={C.coral} 
-            C={C}
-          />
-        </span>
-      </div>
+      {/* Role tag — desktop: absolute float; mobile: in-flow at top of content */}
+      {!isMobile && (
+        <div className="hero-top-tag" style={{
+          position:"absolute", top:"calc(90px + 5rem)",
+          left:"3rem",
+          animation: ready ? "fadeIn 0.8s ease 0.3s both" : "none",
+          opacity:0, zIndex:2,
+          display:"inline-block", padding:"0.5rem 0.75rem",
+          background:C.overlayBg, backdropFilter:"blur(12px)", 
+          WebkitBackdropFilter:"blur(12px)",
+          border:`1px solid ${C.mint500}25`, borderRadius:"4px",
+          transition:"background 0.3s ease",
+        }}>
+          <span style={{ fontSize:"0.85rem", color:C.textMuted }}>
+            <TerminalLine 
+              text="Sysadmin · Network Engineer · Security Analyst — Bekasi, ID" 
+              delay={4300} 
+              color={C.coral} 
+              C={C}
+            />
+          </span>
+        </div>
+      )}
 
       {/* Lanyard - lazy loaded, hidden on mobile */}
       {!isMobile && (
@@ -1047,31 +1160,77 @@ const Hero = memo(({ C }) => {
         transform: ready ? "translateY(0)" : "translateY(20px)",
         transition:"opacity 0.7s ease 0.15s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s",
         position:"relative", zIndex:2,
+        paddingTop: isMobile ? "80px" : "0",
       }}>
+
+        {/* Role tag — mobile only, in-flow */}
+        {isMobile && (
+          <div style={{
+            marginBottom:"1.25rem",
+            animation: ready ? "fadeIn 0.8s ease 0.3s both" : "none",
+            opacity:0,
+            display:"inline-block", padding:"0.45rem 0.7rem",
+            background:C.overlayBg, backdropFilter:"blur(12px)", 
+            WebkitBackdropFilter:"blur(12px)",
+            border:`1px solid ${C.mint500}25`, borderRadius:"4px",
+            transition:"background 0.3s ease", maxWidth:"100%",
+          }}>
+            <span style={{ fontSize:"0.72rem", color:C.coral,
+              fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.03em",
+              display:"block", lineHeight:1.5,
+              wordBreak:"break-word",
+            }}>
+              Sysadmin · Network Engineer · Security Analyst — Bekasi, ID
+            </span>
+          </div>
+        )}
+
         {/* Terminal box */}
         <div className="hero-terminal" style={{
           marginBottom: isMobile ? "1.5rem" : "2.5rem",
-          display:"inline-block", padding: isMobile ? "0.75rem 1rem" : "1rem 1.5rem",
+          display: isMobile ? "block" : "inline-block",
+          width: isMobile ? "100%" : "auto",
+          padding: isMobile ? "0.75rem 1rem" : "1rem 1.5rem",
           background:C.overlayBg, backdropFilter:"blur(12px)", 
           WebkitBackdropFilter:"blur(12px)",
           border:`1px solid ${C.mint500}30`, borderRadius:"6px", 
           boxShadow:`0 0 24px ${C.mint500}10`,
-          transition:"background 0.3s ease", maxWidth:"100%",
+          transition:"background 0.3s ease",
+          boxSizing:"border-box",
         }}>
-          <TerminalLine text="whoami" delay={1170} C={C} />
-          <TerminalLine 
-            text="parothegreat -- securing networks, hardening systems, hunting threats" 
-            delay={2000} 
-            color={C.mint600} 
-            C={C} 
-          />
-          <TerminalLine text="uptime --since 2024-09-16" delay={2200} C={C} />
-          <TerminalLine 
-            text="online since Sep 16 2024 | load avg: high | status: operational-student" 
-            delay={2500} 
-            color={C.mint400} 
-            C={C} 
-          />
+          {isMobile ? (
+            <>
+              <div className="mono" style={{fontSize:"0.65rem",color:C.textMuted,lineHeight:1.7}}>
+                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>whoami
+              </div>
+              <div className="mono" style={{fontSize:"0.65rem",color:C.mint600,lineHeight:1.7,wordBreak:"break-word"}}>
+                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>securing networks · hardening systems · hunting threats
+              </div>
+              <div className="mono" style={{fontSize:"0.65rem",color:C.textMuted,lineHeight:1.7}}>
+                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>uptime --since 2024-09-16
+              </div>
+              <div className="mono" style={{fontSize:"0.65rem",color:C.mint400,lineHeight:1.7}}>
+                <span style={{color:C.mint500,marginRight:"0.4rem"}}>$</span>status: operational-student
+              </div>
+            </>
+          ) : (
+            <>
+              <TerminalLine text="whoami" delay={4300} C={C} />
+              <TerminalLine 
+                text="parothegreat -- securing networks, hardening systems, hunting threats" 
+                delay={4400} 
+                color={C.mint600} 
+                C={C} 
+              />
+              <TerminalLine text="uptime --since 2024-09-16" delay={4600} C={C} />
+              <TerminalLine 
+                text="online since Sep 16 2024 | load avg: high | status: operational-student" 
+                delay={4800} 
+                color={C.mint400} 
+                C={C} 
+              />
+            </>
+          )}
         </div>
 
         {/* Name */}
@@ -1825,13 +1984,22 @@ export default function Portfolio() {
       <GlobalStyles C={C} isMobile={isMobile} />
       {!booted && <BootScreen onDone={() => setBooted(true)} />}
       <ThemeFlash isDark={isDark} />
-      <Overlays C={C} />
-      <Navbar active={active} C={C} />
-      <Hero C={C} />
-      <Work C={C} />
-      <Skills C={C} />
-      <Contact C={C} />
-      <Footer C={C} />
+      {/* Page content fades + rises in after boot */}
+      <div style={{
+        opacity: booted ? 1 : 0,
+        transform: booted ? "translateY(0)" : "translateY(14px)",
+        transition: booted
+          ? "opacity 0.7s cubic-bezier(.16,1,.3,1) 0.1s, transform 0.8s cubic-bezier(.16,1,.3,1) 0.1s"
+          : "none",
+      }}>
+        <Overlays C={C} />
+        <Navbar active={active} C={C} />
+        <Hero C={C} />
+        <Work C={C} />
+        <Skills C={C} />
+        <Contact C={C} />
+        <Footer C={C} />
+      </div>
     </ThemeCtx.Provider>
   );
 }
