@@ -1,7 +1,8 @@
 import { 
-  useState, useEffect, useRef, createContext, useContext, 
+  useState, useEffect, useLayoutEffect, useRef, createContext, useContext, 
   lazy, Suspense, memo, useCallback, useMemo 
 } from "react";
+import { gsap } from "gsap";
 
 // ── Lazy Load Heavy Components ─────────────────────────────────
 const Lanyard = lazy(() => import('./Lanyard'));
@@ -616,10 +617,396 @@ const ThemeFlash = memo(({ isDark }) => {
   );
 });
 
+
+// ── StaggeredMenu (inline — no Tailwind, wired to design tokens) ─
+const StaggeredMenu = memo(({
+  C,
+  position = "right",
+  items = [],
+  socialItems = [],
+  displaySocials = true,
+  displayItemNumbering = true,
+  menuButtonColor,
+  openMenuButtonColor,
+  changeMenuColorOnOpen = true,
+  accentColor,
+  onMenuOpen,
+  onMenuClose,
+  onItemClick,
+}) => {
+  const [open, setOpen]         = useState(false);
+  const openRef                 = useRef(false);
+  const panelRef                = useRef(null);
+  const preLayersRef            = useRef(null);
+  const preLayerElsRef          = useRef([]);
+  const plusHRef                = useRef(null);
+  const plusVRef                = useRef(null);
+  const iconRef                 = useRef(null);
+  const textInnerRef            = useRef(null);
+  const toggleBtnRef            = useRef(null);
+  const openTlRef               = useRef(null);
+  const closeTweenRef           = useRef(null);
+  const spinTweenRef            = useRef(null);
+  const textCycleAnimRef        = useRef(null);
+  const colorTweenRef           = useRef(null);
+  const busyRef                 = useRef(false);
+  const itemEntranceTweenRef    = useRef(null);
+  const [textLines, setTextLines] = useState(["Menu","Close"]);
+
+  const btnColor  = menuButtonColor  || C.textPri;
+  const btnOpenColor = openMenuButtonColor || C.textPri;
+  const accent    = accentColor || C.mint500;
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const panel     = panelRef.current;
+      const preContainer = preLayersRef.current;
+      const plusH = plusHRef.current;
+      const plusV = plusVRef.current;
+      const icon  = iconRef.current;
+      const textInner = textInnerRef.current;
+      if (!panel || !plusH || !plusV || !icon || !textInner) return;
+
+      let preLayers = [];
+      if (preContainer) preLayers = Array.from(preContainer.querySelectorAll(".sm2-prelayer"));
+      preLayerElsRef.current = preLayers;
+
+      const offscreen = position === "left" ? -100 : 100;
+      gsap.set([panel, ...preLayers], { xPercent: offscreen });
+      gsap.set(plusH,  { transformOrigin:"50% 50%", rotate:0 });
+      gsap.set(plusV,  { transformOrigin:"50% 50%", rotate:90 });
+      gsap.set(icon,   { rotate:0, transformOrigin:"50% 50%" });
+      gsap.set(textInner, { yPercent:0 });
+      if (toggleBtnRef.current) gsap.set(toggleBtnRef.current, { color: btnColor });
+    });
+    return () => ctx.revert();
+  }, [btnColor, position]);
+
+  const buildOpenTimeline = useCallback(() => {
+    const panel  = panelRef.current;
+    const layers = preLayerElsRef.current;
+    if (!panel) return null;
+    openTlRef.current?.kill();
+    closeTweenRef.current?.kill();
+    closeTweenRef.current = null;
+    itemEntranceTweenRef.current?.kill();
+
+    const itemEls    = Array.from(panel.querySelectorAll(".sm2-itemLabel"));
+    const numberEls  = Array.from(panel.querySelectorAll(".sm2-list[data-numbering] .sm2-item"));
+    const socialTitle = panel.querySelector(".sm2-socials-title");
+    const socialLinks = Array.from(panel.querySelectorAll(".sm2-socials-link"));
+
+    const layerStates = layers.map(el => ({ el, start: Number(gsap.getProperty(el, "xPercent")) }));
+    const panelStart  = Number(gsap.getProperty(panel, "xPercent"));
+
+    if (itemEls.length)  gsap.set(itemEls, { yPercent:140, rotate:10 });
+    if (numberEls.length) gsap.set(numberEls, { "--sm2-num-opacity":0 });
+    if (socialTitle)     gsap.set(socialTitle, { opacity:0 });
+    if (socialLinks.length) gsap.set(socialLinks, { y:25, opacity:0 });
+
+    const tl = gsap.timeline({ paused:true });
+    layerStates.forEach((ls, i) => {
+      tl.fromTo(ls.el, { xPercent:ls.start }, { xPercent:0, duration:0.5, ease:"power4.out" }, i*0.07);
+    });
+    const lastTime       = layerStates.length ? (layerStates.length-1)*0.07 : 0;
+    const panelInsertTime = lastTime + (layerStates.length ? 0.08 : 0);
+    const panelDuration  = 0.65;
+    tl.fromTo(panel, { xPercent:panelStart }, { xPercent:0, duration:panelDuration, ease:"power4.out" }, panelInsertTime);
+
+    if (itemEls.length) {
+      const itemsStart = panelInsertTime + panelDuration * 0.15;
+      tl.to(itemEls, { yPercent:0, rotate:0, duration:1, ease:"power4.out", stagger:{ each:0.1, from:"start" } }, itemsStart);
+      if (numberEls.length)
+        tl.to(numberEls, { duration:0.6, ease:"power2.out", "--sm2-num-opacity":1, stagger:{ each:0.08, from:"start" } }, itemsStart+0.1);
+    }
+    if (socialTitle || socialLinks.length) {
+      const sStart = panelInsertTime + panelDuration*0.4;
+      if (socialTitle) tl.to(socialTitle, { opacity:1, duration:0.5, ease:"power2.out" }, sStart);
+      if (socialLinks.length)
+        tl.to(socialLinks, { y:0, opacity:1, duration:0.55, ease:"power3.out", stagger:{ each:0.08, from:"start" },
+          onComplete: () => gsap.set(socialLinks, { clearProps:"opacity" }) }, sStart+0.04);
+    }
+    openTlRef.current = tl;
+    return tl;
+  }, []);
+
+  const playOpen = useCallback(() => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const tl = buildOpenTimeline();
+    if (tl) { tl.eventCallback("onComplete", () => { busyRef.current = false; }); tl.play(0); }
+    else busyRef.current = false;
+  }, [buildOpenTimeline]);
+
+  const playClose = useCallback(() => {
+    openTlRef.current?.kill(); openTlRef.current = null;
+    itemEntranceTweenRef.current?.kill();
+    const panel  = panelRef.current;
+    const layers = preLayerElsRef.current;
+    if (!panel) return;
+    closeTweenRef.current?.kill();
+    const offscreen = position === "left" ? -100 : 100;
+    closeTweenRef.current = gsap.to([...layers, panel], {
+      xPercent: offscreen, duration:0.32, ease:"power3.in", overwrite:"auto",
+      onComplete: () => {
+        const iEls = Array.from(panel.querySelectorAll(".sm2-itemLabel"));
+        if (iEls.length) gsap.set(iEls, { yPercent:140, rotate:10 });
+        const nEls = Array.from(panel.querySelectorAll(".sm2-list[data-numbering] .sm2-item"));
+        if (nEls.length) gsap.set(nEls, { "--sm2-num-opacity":0 });
+        const st = panel.querySelector(".sm2-socials-title");
+        const sl = Array.from(panel.querySelectorAll(".sm2-socials-link"));
+        if (st) gsap.set(st, { opacity:0 });
+        if (sl.length) gsap.set(sl, { y:25, opacity:0 });
+        busyRef.current = false;
+      }
+    });
+  }, [position]);
+
+  const animateIcon = useCallback(opening => {
+    const icon = iconRef.current, h = plusHRef.current, v = plusVRef.current;
+    if (!icon || !h || !v) return;
+    spinTweenRef.current?.kill();
+    if (opening) {
+      gsap.set(icon, { rotate:0, transformOrigin:"50% 50%" });
+      spinTweenRef.current = gsap.timeline({ defaults:{ ease:"power4.out" } })
+        .to(h, { rotate:45,  duration:0.5 }, 0)
+        .to(v, { rotate:-45, duration:0.5 }, 0);
+    } else {
+      spinTweenRef.current = gsap.timeline({ defaults:{ ease:"power3.inOut" } })
+        .to(h, { rotate:0,  duration:0.35 }, 0)
+        .to(v, { rotate:90, duration:0.35 }, 0)
+        .to(icon, { rotate:0, duration:0.001 }, 0);
+    }
+  }, []);
+
+  const animateColor = useCallback(opening => {
+    const btn = toggleBtnRef.current;
+    if (!btn) return;
+    colorTweenRef.current?.kill();
+    if (changeMenuColorOnOpen) {
+      colorTweenRef.current = gsap.to(btn, { color: opening ? btnOpenColor : btnColor, delay:0.18, duration:0.3, ease:"power2.out" });
+    } else {
+      gsap.set(btn, { color: btnColor });
+    }
+  }, [btnOpenColor, btnColor, changeMenuColorOnOpen]);
+
+  const animateText = useCallback(opening => {
+    const inner = textInnerRef.current;
+    if (!inner) return;
+    textCycleAnimRef.current?.kill();
+    const currentLabel = opening ? "Menu" : "Close";
+    const targetLabel  = opening ? "Close" : "Menu";
+    const cycles = 3;
+    const seq = [currentLabel];
+    let last = currentLabel;
+    for (let i = 0; i < cycles; i++) { last = last === "Menu" ? "Close" : "Menu"; seq.push(last); }
+    if (last !== targetLabel) seq.push(targetLabel);
+    seq.push(targetLabel);
+    setTextLines(seq);
+    gsap.set(inner, { yPercent:0 });
+    const finalShift = ((seq.length-1)/seq.length)*100;
+    textCycleAnimRef.current = gsap.to(inner, { yPercent:-finalShift, duration:0.5+seq.length*0.07, ease:"power4.out" });
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    const target = !openRef.current;
+    openRef.current = target;
+    setOpen(target);
+    if (target) { onMenuOpen?.(); playOpen(); }
+    else         { onMenuClose?.(); playClose(); }
+    animateIcon(target); animateColor(target); animateText(target);
+  }, [playOpen, playClose, animateIcon, animateColor, animateText, onMenuOpen, onMenuClose]);
+
+  const closeMenu = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false; setOpen(false);
+    onMenuClose?.(); playClose(); animateIcon(false); animateColor(false); animateText(false);
+  }, [playClose, animateIcon, animateColor, animateText, onMenuClose]);
+
+  // prelayer colours — dark layer first then slightly lighter
+  const prelayerColors = [
+    C.bgCard2,   // darkest — arrives first
+    C.bgCard,    // mid
+  ];
+
+  // Panel background
+  const panelBg = C.mobileMenuBg;
+
+  return (
+    <div style={{ position:"absolute", inset:0, zIndex:40, overflow:"hidden", pointerEvents:"none" }}>
+      <div
+        style={{ position:"relative", width:"100%", height:"100%", "--sm2-accent": accent }}
+        data-position={position}
+        data-open={open || undefined}
+      >
+        {/* Pre-layers */}
+        <div ref={preLayersRef} style={{
+          position:"absolute", top:0, right:0, bottom:0, width:"100%",
+          pointerEvents:"none", zIndex:5, overflow:"hidden",
+        }} aria-hidden="true">
+          {prelayerColors.map((bg, i) => (
+            <div key={i} className="sm2-prelayer" style={{
+              position:"absolute", top:0, right:0, width:"100%", height:"100%", background:bg,
+            }} />
+          ))}
+        </div>
+
+        {/* Toggle button — sits at top-right, visible always when mobile */}
+        <button
+          ref={toggleBtnRef}
+          onClick={toggleMenu}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-controls="sm2-panel"
+          type="button"
+          style={{
+            position:"absolute", top:"50%", right:0,
+            transform:"translateY(-50%)",
+            display:"inline-flex", alignItems:"center", gap:"0.35rem",
+            background:"transparent", border:"none", cursor:"pointer",
+            fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
+            fontWeight:500, letterSpacing:"0.07em",
+            color: C.textPri,
+            pointerEvents:"auto", zIndex:50, padding:"8px",
+            minWidth:"44px", minHeight:"44px", justifyContent:"center",
+          }}
+        >
+          {/* Cycling text */}
+          <span style={{
+            position:"relative", display:"inline-block",
+            height:"1em", overflow:"hidden", whiteSpace:"nowrap",
+            marginRight:"0.25em",
+          }} aria-hidden="true">
+            <span ref={textInnerRef} style={{ display:"flex", flexDirection:"column", lineHeight:1 }}>
+              {textLines.map((l,i) => (
+                <span key={i} style={{ display:"block", height:"1em", lineHeight:1 }}>{l}</span>
+              ))}
+            </span>
+          </span>
+          {/* +/× icon */}
+          <span ref={iconRef} style={{
+            position:"relative", width:"14px", height:"14px",
+            flexShrink:0, display:"inline-flex", alignItems:"center", justifyContent:"center",
+            willChange:"transform",
+          }} aria-hidden="true">
+            <span ref={plusHRef} style={{
+              position:"absolute", left:"50%", top:"50%",
+              width:"100%", height:"2px", background:"currentColor", borderRadius:"2px",
+              transform:"translate(-50%,-50%)", willChange:"transform",
+            }} />
+            <span ref={plusVRef} style={{
+              position:"absolute", left:"50%", top:"50%",
+              width:"100%", height:"2px", background:"currentColor", borderRadius:"2px",
+              transform:"translate(-50%,-50%)", willChange:"transform",
+            }} />
+          </span>
+        </button>
+
+        {/* Panel */}
+        <aside
+          id="sm2-panel"
+          ref={panelRef}
+          aria-hidden={!open}
+          style={{
+            position:"absolute", top:0, right:0, width:"100%", height:"100%",
+            background: panelBg,
+            backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)",
+            display:"flex", flexDirection:"column",
+            padding:"5rem 2rem 2.5rem",
+            overflowY:"auto", zIndex:10, pointerEvents:"auto",
+            boxSizing:"border-box",
+          }}
+        >
+          {/* Logo text inside panel */}
+          <div className="mono" style={{
+            fontSize:"0.82rem", display:"flex", alignItems:"center",
+            gap:"0.25rem", letterSpacing:"0.01em",
+            marginBottom:"2.5rem",
+          }}>
+            <span style={{color:C.mint500, fontWeight:500}}>[</span>
+            <span style={{color:C.textSec}}>paro</span>
+            <span style={{color:C.coral}}>@</span>
+            <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
+            <span style={{color:C.mint500, fontWeight:500}}>]</span>
+            <span style={{color:C.mint500, fontSize:"0.75rem", marginLeft:"3px", animation:"blink 1.2s step-end infinite"}}>█</span>
+          </div>
+
+          {/* Nav items */}
+          <ul className="sm2-list" style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"column", gap:"0.25rem" }}
+            data-numbering={displayItemNumbering || undefined}
+            role="list"
+          >
+            {items.map((it, idx) => (
+              <li key={it.label+idx} style={{ position:"relative", overflow:"hidden", lineHeight:1 }} className="sm2-itemWrap">
+                <button
+                  className="sm2-item"
+                  onClick={() => { closeMenu(); onItemClick?.(it); }}
+                  style={{
+                    background:"none", border:"none", cursor:"pointer",
+                    fontFamily:"'DM Serif Display',serif",
+                    fontSize:"clamp(2.4rem,10vw,3.2rem)", fontWeight:400,
+                    color: C.textPri,
+                    lineHeight:1, letterSpacing:"-0.02em",
+                    padding:"0.1em 1.4em 0.1em 0",
+                    display:"inline-block", textAlign:"left",
+                    transition:"color 0.2s",
+                    "--sm2-num-opacity": 0,
+                  }}
+                >
+                  <span className="sm2-itemLabel" style={{ display:"inline-block", transformOrigin:"50% 100%", willChange:"transform" }}>
+                    {it.label}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* Socials */}
+          {displaySocials && socialItems.length > 0 && (
+            <div className="sm2-socials" style={{ marginTop:"auto", paddingTop:"2rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+              <p className="sm2-socials-title mono" style={{
+                margin:0, fontSize:"0.6rem", fontWeight:500,
+                color: accent, letterSpacing:"0.15em", textTransform:"uppercase", opacity:0.6,
+              }}>// socials</p>
+              <ul style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"row", gap:"1.25rem", flexWrap:"wrap" }} role="list">
+                {socialItems.map((s,i) => (
+                  <li key={s.label+i}>
+                    <a href={s.link} target="_blank" rel="noopener noreferrer"
+                      className="sm2-socials-link mono"
+                      style={{ fontSize:"0.65rem", color:C.textMuted, textDecoration:"none", letterSpacing:"0.05em", transition:"color 0.2s" }}
+                    >
+                      {s.label} ↗
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <style>{`
+        .sm2-item:hover .sm2-itemLabel { color: var(--sm2-accent); }
+        .sm2-item:hover { color: var(--sm2-accent) !important; }
+        .sm2-socials-link:hover { color: var(--sm2-accent) !important; }
+        .sm2-list[data-numbering] { counter-reset: sm2item; }
+        .sm2-list[data-numbering] .sm2-item::after {
+          counter-increment: sm2item;
+          content: counter(sm2item, decimal-leading-zero);
+          position: absolute; top: 0.15em; right: 0.3em;
+          font-size: 0.65rem; font-family: 'JetBrains Mono', monospace;
+          font-weight: 400; color: var(--sm2-accent);
+          letter-spacing: 0; pointer-events: none; user-select: none;
+          opacity: var(--sm2-num-opacity, 0);
+        }
+      `}</style>
+    </div>
+  );
+});
+
 // ── Optimized Navbar with Touch Support ────────────────────────
 const Navbar = memo(({ active, C }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { isMobile } = useTheme();
   const links = useMemo(() => ["Home","Work","Skills","Contact"], []);
   const lastScrollY = useRef(0);
@@ -635,32 +1022,10 @@ const Navbar = memo(({ active, C }) => {
   }, []);
 
   const go = useCallback((l) => {
-    setMobileOpen(false);
-    // Re-enable scroll
     document.body.style.overflow = '';
     const id = l === "Work" ? "work" : l.toLowerCase();
     document.getElementById(id)?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
   }, [isMobile]);
-
-  const toggleMobile = useCallback(() => {
-    setMobileOpen(prev => {
-      const next = !prev;
-      document.body.style.overflow = next ? 'hidden' : '';
-      return next;
-    });
-  }, []);
-
-  // Close mobile menu on resize to desktop
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 900 && mobileOpen) {
-        setMobileOpen(false);
-        document.body.style.overflow = '';
-      }
-    };
-    window.addEventListener('resize', handleResize, { passive: true });
-    return () => window.removeEventListener('resize', handleResize);
-  }, [mobileOpen]);
 
   const navH = scrolled ? "54px" : "68px";
 
@@ -745,88 +1110,42 @@ const Navbar = memo(({ active, C }) => {
           </div>
         )}
 
-        {/* Mobile right: theme toggle + hamburger */}
+        {/* Mobile right: ThemeToggle only — StaggeredMenu handles its own toggle */}
         {isMobile && (
           <div style={{display:"flex", alignItems:"center", gap:"0.25rem"}}>
             <ThemeToggle C={C} />
-            <button
-              onClick={toggleMobile}
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
-              style={{
-                background:"none", border:"none",
-                display:"flex", flexDirection:"column",
-                gap:"5px", padding:"8px",
-                touchAction:"manipulation",
-                minWidth:"44px", minHeight:"44px",
-                alignItems:"center", justifyContent:"center",
-                cursor:"pointer",
-              }}
-            >
-              <span style={{
-                display:"block", width:"20px", height:"1.5px",
-                background:C.mint400, borderRadius:"2px",
-                transition:"transform 0.3s",
-                transform: mobileOpen ? "rotate(45deg) translate(4.5px,4.5px)" : "none",
-              }} />
-              <span style={{
-                display:"block", width:"20px", height:"1.5px",
-                background:C.mint400, borderRadius:"2px",
-                transition:"transform 0.3s",
-                transform: mobileOpen ? "rotate(-45deg) translate(4.5px,-4.5px)" : "none",
-              }} />
-            </button>
+            {/* spacer so StaggeredMenu toggle button sits at correct position */}
+            <div style={{width:"60px"}} aria-hidden="true" />
           </div>
         )}
       </nav>
 
-      {/* ── Mobile full-screen overlay (below navbar) ── */}
+      {/* ── StaggeredMenu — mobile only, covers full viewport below nav ── */}
       {isMobile && (
         <div style={{
           position:"fixed",
           top:"60px", left:0, right:0, bottom:0,
-          zIndex:1002,
-          background:C.mobileMenuBg,
-          display:"flex", flexDirection:"column",
-          alignItems:"center", justifyContent:"center",
-          gap:"1.25rem",
-          opacity: mobileOpen ? 1 : 0,
-          visibility: mobileOpen ? "visible" : "hidden",
-          pointerEvents: mobileOpen ? "auto" : "none",
-          transition:"opacity 0.28s ease, visibility 0.28s ease",
+          zIndex:1002, pointerEvents:"none",
         }}>
-          <p className="mono" style={{
-            fontSize:"0.6rem", color:C.mint500, opacity:0.5,
-            letterSpacing:"0.15em", marginBottom:"0.25rem",
-          }}>// navigate</p>
-
-          {links.map((l, i) => (
-            <button key={l} onClick={() => go(l)} style={{
-              background:"none", border:"none", cursor:"pointer",
-              fontFamily:"'DM Serif Display',serif",
-              fontSize:"2.4rem", fontWeight:400,
-              color: active===l ? C.mint400 : C.textPri,
-              opacity: mobileOpen ? 1 : 0,
-              transform: mobileOpen ? "translateY(0)" : "translateY(12px)",
-              transition:`opacity 0.28s ease ${i*0.05+0.05}s, transform 0.28s ease ${i*0.05+0.05}s, color 0.2s`,
-              padding:"0.25rem 1.5rem",
-              lineHeight:1.2,
-            }}>
-              {l}
-            </button>
-          ))}
-
-          <div style={{marginTop:"1rem", display:"flex", gap:"2rem"}}>
-            {Object.entries(SOCIAL_LINKS).map(([label, url]) => (
-              <a key={label} href={url} target="_blank" rel="noopener noreferrer"
-                className="mono" style={{
-                  fontSize:"0.65rem", color:C.textMuted,
-                  textDecoration:"none", padding:"0.35rem 0",
-                }}>
-                {label}
-              </a>
-            ))}
-          </div>
+          <StaggeredMenu
+            C={C}
+            position="right"
+            items={links.map(l => ({
+              label: l,
+              ariaLabel: `Go to ${l}`,
+              link: "#",
+            }))}
+            socialItems={Object.entries(SOCIAL_LINKS).map(([label, url]) => ({ label, link: url }))}
+            displaySocials={true}
+            displayItemNumbering={true}
+            accentColor={C.mint500}
+            menuButtonColor={C.textPri}
+            openMenuButtonColor={C.textPri}
+            changeMenuColorOnOpen={false}
+            onMenuOpen={() => { document.body.style.overflow = "hidden"; }}
+            onMenuClose={() => { document.body.style.overflow = ""; }}
+            onItemClick={(it) => go(it.label)}
+          />
         </div>
       )}
     </>
