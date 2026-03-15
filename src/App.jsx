@@ -966,14 +966,14 @@ const StaggeredMenu = memo(({
             <div className="sm2-socials" style={{ marginTop:"auto", paddingTop:"2rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
               <p className="sm2-socials-title mono" style={{
                 margin:0, fontSize:"0.6rem", fontWeight:500,
-                color: accent, letterSpacing:"0.15em", textTransform:"uppercase", opacity:0.6,
+                color: accent, letterSpacing:"0.15em", textTransform:"uppercase", opacity:1.9,
               }}>// socials</p>
               <ul style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"row", gap:"1.25rem", flexWrap:"wrap" }} role="list">
                 {socialItems.map((s,i) => (
                   <li key={s.label+i}>
                     <a href={s.link} target="_blank" rel="noopener noreferrer"
                       className="sm2-socials-link mono"
-                      style={{ fontSize:"0.65rem", color:C.textMuted, textDecoration:"none", letterSpacing:"0.05em", transition:"color 0.2s" }}
+                      style={{ fontSize:"0.65rem", color:C.lime, textDecoration:"none", letterSpacing:"0.05em", transition:"color 0.2s" }}
                     >
                       {s.label} ↗
                     </a>
@@ -2257,7 +2257,7 @@ const Footer = memo(({ C }) => {
             rel="noopener noreferrer" 
             style={{
               fontFamily:"'JetBrains Mono',monospace", 
-              fontSize:"0.65rem", color:C.textMuted, 
+              fontSize:"0.65rem", color:C.mint, 
               textDecoration:"none",
               padding: "0.25rem 0",
             }}
@@ -2268,7 +2268,7 @@ const Footer = memo(({ C }) => {
       </div>
       
       <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
-        © {new Date().getFullYear()}
+           ©{new Date().getFullYear()} Alvaro Prayogo, all rights reserved.
       </span>
     </footer>
   );
