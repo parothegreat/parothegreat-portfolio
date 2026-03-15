@@ -1778,7 +1778,7 @@ const Hero = memo(({ C, booted }) => {
           )}
 
           <div className="hero-bottom" style={{
-            display:"flex", alignItems:"flex-end", justifyContent:"space-between",
+            display:"flex", justifyContent:"space-between",
             borderTop:`1px solid ${C.border}`, paddingTop: isMobile ? "1.5rem" : "2rem",
             gap: isMobile ? "1.5rem" : "3rem",
             flexDirection: isMobile ? "column" : "row",
@@ -2390,7 +2390,7 @@ const Footer = memo(({ C }) => {
       padding: isMobile ? "1.25rem" : "1.5rem 3rem",
       borderTop:`1px solid ${C.border}`,
       display:"flex", justifyContent:"space-between", 
-      alignItems:"center", flexWrap:"wrap", gap:"1rem",
+      flexWrap:"wrap", gap:"1rem",
       flexDirection: isMobile ? "column" : "row",
       alignItems: isMobile ? "flex-start" : "center",
     }}>
