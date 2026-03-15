@@ -1714,7 +1714,7 @@ const Hero = memo(({ C, booted }) => {
       )}
 
       {/* Lanyard - lazy loaded, hidden on mobile */}
-      {!isMobile && (
+      {!isMobile && booted && (
         <div className="lanyard-wrap" style={{
           position:"absolute", top:"35%", right:"12rem", 
           transform:"translateY(-50%)",
@@ -1759,9 +1759,9 @@ const Hero = memo(({ C, booted }) => {
                 width:"130px", height:"180px",
                 flexShrink:0, pointerEvents:"all",
               }}>
-                <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
+                {booted && <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
                   <Lanyard position={[0,0,25]} gravity={[0,-50,0]} />
-                </Suspense>
+                </Suspense>}
               </div>
             </div>
           ) : (
