@@ -1721,7 +1721,7 @@ const Work = memo(({ C }) => {
           }}>
             {PROJECTS.length} projects
           </span>
-          <span className="mono" style={{fontSize:"0.68rem", color:C.textMuted}}>2023 — 2025</span>
+          <span className="mono" style={{fontSize:"0.68rem", color:C.textMuted}}>2024 — 2026</span>
         </div>
       </div>
 
