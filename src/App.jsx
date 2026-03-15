@@ -1740,17 +1740,42 @@ const Hero = memo(({ C, booted }) => {
 
         {/* Name */}
         <div>
-          <h1 className="hero-h1" style={{
-            fontFamily:"'DM Serif Display',serif",
-            fontSize: isMobile ? "clamp(2rem, 10vw, 3rem)" : "clamp(3rem, 8vw, 7rem)",
-            lineHeight: isMobile ? 1.1 : 0.9,
-            fontWeight:400, color:C.textPri,
-            letterSpacing:"-0.02em",
-            marginBottom: isMobile ? "2rem" : "3rem",
-          }}>
-            Hi, I'm<br />
-            <span style={{ fontStyle:"italic", color:C.mint500 }}>Alvaro Prayogo</span>
-          </h1>
+          {/* Mobile: h1 + Lanyard side by side */}
+          {isMobile ? (
+            <div style={{
+              display:"flex", alignItems:"flex-start",
+              gap:"0.75rem", marginBottom:"2rem",
+            }}>
+              <h1 className="hero-h1" style={{
+                fontFamily:"'DM Serif Display',serif",
+                fontSize:"clamp(2rem, 10vw, 3rem)",
+                lineHeight:1.1, fontWeight:400, color:C.textPri,
+                letterSpacing:"-0.02em", flex:1, marginBottom:0,
+              }}>
+                Hi, I'm<br />
+                <span style={{ fontStyle:"italic", color:C.mint500 }}>Alvaro Prayogo</span>
+              </h1>
+              <div style={{
+                width:"130px", height:"180px",
+                flexShrink:0, pointerEvents:"all",
+              }}>
+                <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
+                  <Lanyard position={[0,0,25]} gravity={[0,-50,0]} />
+                </Suspense>
+              </div>
+            </div>
+          ) : (
+            <h1 className="hero-h1" style={{
+              fontFamily:"'DM Serif Display',serif",
+              fontSize:"clamp(3rem, 8vw, 7rem)",
+              lineHeight:0.9, fontWeight:400, color:C.textPri,
+              letterSpacing:"-0.02em",
+              marginBottom:"3rem",
+            }}>
+              Hi, I'm<br />
+              <span style={{ fontStyle:"italic", color:C.mint500 }}>Alvaro Prayogo</span>
+            </h1>
+          )}
 
           <div className="hero-bottom" style={{
             display:"flex", alignItems:"flex-end", justifyContent:"space-between",
