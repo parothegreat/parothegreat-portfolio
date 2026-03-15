@@ -7,7 +7,7 @@ services:
     container_name: parothegreat-portfolio
     restart: unless-stopped
     ports:
-      - "80:80"         # HTTP — ganti ke "3000:80" kalau port 80 sudah dipakai
+      - "3000:80"         # HTTP — ganti ke "3000:80" kalau port 80 sudah dipakai
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
       interval: 30s
