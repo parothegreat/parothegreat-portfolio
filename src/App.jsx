@@ -443,8 +443,13 @@ const ThemeToggle = memo(({ C }) => {
 
 // ── Boot Screen ────────────────────────────────────────────────
 const BootScreen = memo(({ onDone }) => {
-  const [phase, setPhase] = useState(0); // 0=title, 1+=lines
+  const [titleVisible, setTitleVisible] = useState(false);
+  const [subtitleVisible, setSubtitleVisible] = useState(false);
+  const [linePhase, setLinePhase] = useState(0); // how many lines are typing/done
+  const [typedLines, setTypedLines] = useState([]); // partial text per line
+  const [loadProgress, setLoadProgress] = useState(0);
   const [exiting, setExiting] = useState(false);
+  const exitingRef = useRef(false);
 
   const LINES = [
     { t:"Checking hardware integrity.......... OK" },
@@ -455,28 +460,81 @@ const BootScreen = memo(({ onDone }) => {
   ];
 
   const skip = useCallback(() => {
-    if (exiting) return;
+    if (exitingRef.current) return;
+    exitingRef.current = true;
     setExiting(true);
     setTimeout(onDone, 900);
-  }, [exiting, onDone]);
+  }, [onDone]);
+
+  // Typing effect for a single line
+  const typeLine = useCallback((lineIdx, text, onComplete) => {
+    let i = 0;
+    const speed = lineIdx === LINES.length - 1 ? 28 : 18; // accent line slightly slower
+    const interval = setInterval(() => {
+      i++;
+      setTypedLines(prev => {
+        const next = [...prev];
+        next[lineIdx] = text.slice(0, i);
+        return next;
+      });
+      if (i >= text.length) {
+        clearInterval(interval);
+        onComplete?.();
+      }
+    }, speed);
+    return interval;
+  }, []);
 
   useEffect(() => {
-    const delays = [800, 1080, 1340, 1580, 1820];
-    const titleTimer = setTimeout(() => setPhase(1), 300);
-    const lineTimers = delays.map((d, i) =>
-      setTimeout(() => setPhase(p => Math.max(p, i + 2)), d)
-    );
-    const autoExit = setTimeout(skip, 2700);
+    const timers = [];
+    const intervals = [];
+
+    // Phase 1: show title
+    timers.push(setTimeout(() => setTitleVisible(true), 200));
+    // Phase 2: show subtitle
+    timers.push(setTimeout(() => setSubtitleVisible(true), 700));
+
+    // Phase 3: type each line in sequence
+    const lineStartTimes = [900, 0, 0, 0, 0]; // first starts at 900ms, rest chained
+    let cumulativeDelay = lineStartTimes[0];
+
+    const initTyped = Array(LINES.length).fill("");
+    setTypedLines(initTyped);
+
+    const typeNext = (idx) => {
+      if (idx >= LINES.length) {
+        // all lines done, start exit
+        timers.push(setTimeout(skip, 600));
+        return;
+      }
+      setLinePhase(p => Math.max(p, idx + 1));
+      // progress bar: map line idx to 0-100
+      const progress = Math.round(((idx + 1) / LINES.length) * 100);
+      setLoadProgress(progress);
+
+      const iv = typeLine(idx, LINES[idx].t, () => {
+        const pause = idx === LINES.length - 1 ? 300 : 120;
+        timers.push(setTimeout(() => typeNext(idx + 1), pause));
+      });
+      intervals.push(iv);
+    };
+
+    timers.push(setTimeout(() => typeNext(0), cumulativeDelay));
+
+    // Hard auto-exit safety valve
+    const autoExit = setTimeout(skip, 7000);
+    timers.push(autoExit);
+
     window.addEventListener("keydown", skip, { once: true });
     window.addEventListener("pointerdown", skip, { once: true });
+
     return () => {
-      clearTimeout(titleTimer);
-      lineTimers.forEach(clearTimeout);
-      clearTimeout(autoExit);
+      timers.forEach(clearTimeout);
+      intervals.forEach(clearInterval);
       window.removeEventListener("keydown", skip);
       window.removeEventListener("pointerdown", skip);
     };
-  }, [skip]);
+  }, [skip, typeLine]);
 
   return (
     <div style={{
@@ -519,7 +577,7 @@ const BootScreen = memo(({ onDone }) => {
           : "none",
       }}>
 
-        {/* PAROTHEGREAT text */}
+        {/* PAROTHEGREAT text — fade+blur in (keep original style) */}
         <div style={{
           fontFamily:"'JetBrains Mono',monospace",
           fontSize:"clamp(1.2rem, 5vw, 4rem)",
@@ -529,53 +587,102 @@ const BootScreen = memo(({ onDone }) => {
           textAlign:"center",
           textShadow:"0 0 30px #00E5A055, 0 0 60px #00E5A022",
           userSelect:"none",
-          opacity: phase >= 1 ? 1 : 0,
-          animation: phase >= 1 ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
-          marginBottom:"1.2rem",
+          opacity: titleVisible ? 1 : 0,
+          animation: titleVisible ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
+          marginBottom:"1rem",
         }}>
           PAROTHEGREAT
         </div>
 
-        {/* Subtitle */}
+        {/* Subtitle — typed character by character */}
         <div style={{
           fontFamily:"'JetBrains Mono',monospace",
           fontSize:"clamp(0.55rem,1.2vw,0.7rem)",
-          color:"#3a3a3a",
+          color:"#7a7a7a",
           letterSpacing:"0.2em",
           textTransform:"uppercase",
-          marginBottom:"3rem",
+          marginBottom:"2.5rem",
           textAlign:"center",
-          opacity: phase >= 1 ? 1 : 0,
-          transition:"opacity 0.4s ease 0.6s",
+          minHeight:"1.2em",
+          opacity: subtitleVisible ? 1 : 0,
+          transition:"opacity 0.3s ease",
         }}>
           Network Engineer · Security Analyst · Sysadmin
         </div>
 
-        {/* Boot lines */}
+        {/* Boot lines — typed one by one */}
         <div style={{
-          display:"flex", flexDirection:"column", gap:"0.28rem",
+          display:"flex", flexDirection:"column", gap:"0.3rem",
           alignItems:"flex-start",
-          width:"min(440px, 88vw)",
+          width:"min(480px, 90vw)",
+          marginBottom:"1.5rem",
+          minHeight: `${LINES.length * 1.6}rem`,
         }}>
-          {LINES.map((l, i) => (
-            <div key={i} style={{
+          {LINES.map((l, i) => {
+            const isActive = linePhase === i + 1 && (typedLines[i]?.length ?? 0) < l.t.length;
+            const isVisible = linePhase >= i + 1;
+            return (
+              <div key={i} style={{
+                fontFamily:"'JetBrains Mono',monospace",
+                fontSize:"clamp(0.58rem,1.1vw,0.68rem)",
+                letterSpacing:"0.04em",
+                color: l.accent ? "#00E5A0" : "#aaaaaa",
+                textShadow: l.accent ? "0 0 10px #00E5A050" : "none",
+                fontWeight: l.accent ? 500 : 400,
+                opacity: isVisible ? 1 : 0,
+                minHeight:"1.2em",
+                display:"flex", alignItems:"center",
+              }}>
+                {isVisible && (
+                  <>
+                    {!l.accent && <span style={{color:"#555", marginRight:"0.4em"}}>$</span>}
+                    <span>{typedLines[i] ?? ""}</span>
+                    {isActive && (
+                      <span style={{
+                        display:"inline-block", width:"0.5em", height:"1em",
+                        background: l.accent ? "#00E5A0" : "#aaaaaa",
+                        marginLeft:"1px", verticalAlign:"middle",
+                        animation:"blink 0.7s step-end infinite",
+                      }} />
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Loading bar */}
+        <div style={{
+          width:"min(480px, 90vw)",
+          opacity: linePhase > 0 ? 1 : 0,
+          transition:"opacity 0.3s ease",
+        }}>
+          <div style={{
+            display:"flex", justifyContent:"space-between",
+            marginBottom:"0.35rem",
+          }}>
+            <span style={{
               fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(0.52rem,1.1vw,0.64rem)",
-              letterSpacing:"0.04em",
-              color: l.accent ? "#00E5A0" : "#3a3a3a",
-              textShadow: l.accent ? "0 0 10px #00E5A050" : "none",
-              fontWeight: l.accent ? 500 : 400,
-              opacity: phase >= i + 2 ? 1 : 0,
-              animation: phase >= i + 2
-                ? `bootLineIn 0.25s ease both`
-                : "none",
-            }}>
-              {l.accent
-                ? l.t
-                : <><span style={{color:"#222"}}>$ </span>{l.t}</>
-              }
-            </div>
-          ))}
+              fontSize:"0.5rem", color:"#555", letterSpacing:"0.1em",
+            }}>LOADING SYSTEM</span>
+            <span style={{
+              fontFamily:"'JetBrains Mono',monospace",
+              fontSize:"0.5rem", color:"#00E5A0", letterSpacing:"0.08em",
+            }}>{loadProgress}%</span>
+          </div>
+          <div style={{
+            width:"100%", height:"2px",
+            background:"#111", borderRadius:"1px", overflow:"hidden",
+          }}>
+            <div style={{
+              height:"100%", width:`${loadProgress}%`,
+              background:"linear-gradient(90deg,#00C488,#00E5A0)",
+              borderRadius:"1px",
+              transition:"width 0.25s ease",
+              boxShadow:"0 0 8px #00E5A060",
+            }} />
+          </div>
         </div>
       </div>
 
@@ -583,7 +690,7 @@ const BootScreen = memo(({ onDone }) => {
       <div style={{
         position:"absolute", bottom:"1.75rem",
         fontFamily:"'JetBrains Mono',monospace",
-        fontSize:"0.5rem", color:"#1c1c1c",
+        fontSize:"0.5rem", color:"#3a3a3a",
         letterSpacing:"0.15em", zIndex:5,
       }}>
         PRESS ANY KEY TO SKIP
@@ -653,9 +760,29 @@ const StaggeredMenu = memo(({
   const itemEntranceTweenRef    = useRef(null);
   const [textLines, setTextLines] = useState(["Menu","Close"]);
 
-  const btnColor  = menuButtonColor  || C.textPri;
-  const btnOpenColor = openMenuButtonColor || C.textPri;
-  const accent    = accentColor || C.mint500;
+  // Use refs for colors to ensure they're always fresh in callbacks
+  const btnColorRef  = useRef(menuButtonColor || C.textPri);
+  const btnOpenColorRef = useRef(openMenuButtonColor || C.textPri);
+  const accentRef    = useRef(accentColor || C.mint500);
+
+  // Update refs when props change (theme switch fix)
+  useEffect(() => {
+    btnColorRef.current = menuButtonColor || C.textPri;
+    btnOpenColorRef.current = openMenuButtonColor || C.textPri;
+    accentRef.current = accentColor || C.mint500;
+  }, [menuButtonColor, openMenuButtonColor, accentColor, C]);
+
+  // Update panel background color on theme change without touching GSAP transforms
+  useEffect(() => {
+    if (panelRef.current) {
+      panelRef.current.style.background = C.mobileMenuBg;
+    }
+    if (preLayersRef.current) {
+      const layers = preLayersRef.current.querySelectorAll(".sm2-prelayer");
+      const colors = [C.bgCard2, C.bgCard];
+      layers.forEach((el, i) => { if (colors[i]) el.style.background = colors[i]; });
+    }
+  }, [C]);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -677,10 +804,13 @@ const StaggeredMenu = memo(({
       gsap.set(plusV,  { transformOrigin:"50% 50%", rotate:90 });
       gsap.set(icon,   { rotate:0, transformOrigin:"50% 50%" });
       gsap.set(textInner, { yPercent:0 });
-      if (toggleBtnRef.current) gsap.set(toggleBtnRef.current, { color: btnColor });
+      if (toggleBtnRef.current) {
+        // Always restore to closed state color (mint) on mount/remount
+        gsap.set(toggleBtnRef.current, { color: accentRef.current });
+      }
     });
     return () => ctx.revert();
-  }, [btnColor, position]);
+  }, [position]); // Only re-run on position change, colors handled via refs
 
   const buildOpenTimeline = useCallback(() => {
     const panel  = panelRef.current;
@@ -784,11 +914,14 @@ const StaggeredMenu = memo(({
     if (!btn) return;
     colorTweenRef.current?.kill();
     if (changeMenuColorOnOpen) {
-      colorTweenRef.current = gsap.to(btn, { color: opening ? btnOpenColor : btnColor, delay:0.18, duration:0.3, ease:"power2.out" });
+      colorTweenRef.current = gsap.to(btn, { 
+        color: opening ? btnOpenColorRef.current : btnColorRef.current, 
+        delay:0.18, duration:0.3, ease:"power2.out" 
+      });
     } else {
-      gsap.set(btn, { color: btnColor });
+      gsap.set(btn, { color: btnColorRef.current });
     }
-  }, [btnOpenColor, btnColor, changeMenuColorOnOpen]);
+  }, [changeMenuColorOnOpen]);
 
   const animateText = useCallback(opening => {
     const inner = textInnerRef.current;
@@ -835,7 +968,7 @@ const StaggeredMenu = memo(({
   return (
     <div style={{ position:"absolute", inset:0, zIndex:40, overflow:"hidden", pointerEvents:"none" }}>
       <div
-        style={{ position:"relative", width:"100%", height:"100%", "--sm2-accent": accent }}
+        style={{ position:"relative", width:"100%", height:"100%", "--sm2-accent": accentRef.current }}
         data-position={position}
         data-open={open || undefined}
       >
@@ -851,7 +984,7 @@ const StaggeredMenu = memo(({
           ))}
         </div>
 
-        {/* Toggle button — sits at top-right, visible always when mobile */}
+        {/* Toggle button — fixed top-right corner with mint styling */}
         <button
           ref={toggleBtnRef}
           onClick={toggleMenu}
@@ -860,22 +993,23 @@ const StaggeredMenu = memo(({
           aria-controls="sm2-panel"
           type="button"
           style={{
-            position:"absolute", top:"50%", right:0,
-            transform:"translateY(-50%)",
-            display:"inline-flex", alignItems:"center", gap:"0.35rem",
-            background:"transparent", border:"none", cursor:"pointer",
-            fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
-            fontWeight:500, letterSpacing:"0.07em",
-            color: C.textPri,
-            pointerEvents:"auto", zIndex:50, padding:"8px",
+            position:"fixed", top:"0.85rem", right:"1rem",
+            display:"inline-flex", alignItems:"center", gap:"0.5rem",
+            background:"transparent", border:`1px solid ${C.mint500}55`,
+            borderRadius:"6px", cursor:"pointer",
+            fontFamily:"'JetBrains Mono',monospace", fontSize:"0.7rem",
+            fontWeight:500, letterSpacing:"0.08em",
+            color: C.mint500,
+            pointerEvents:"auto", zIndex:1010, padding:"0.6rem 1rem",
             minWidth:"44px", minHeight:"44px", justifyContent:"center",
+            boxShadow: open ? `0 0 20px ${C.mint500}30` : "none",
+            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
           }}
         >
           {/* Cycling text */}
           <span style={{
             position:"relative", display:"inline-block",
             height:"1em", overflow:"hidden", whiteSpace:"nowrap",
-            marginRight:"0.25em",
           }} aria-hidden="true">
             <span ref={textInnerRef} style={{ display:"flex", flexDirection:"column", lineHeight:1 }}>
               {textLines.map((l,i) => (
@@ -887,7 +1021,7 @@ const StaggeredMenu = memo(({
           <span ref={iconRef} style={{
             position:"relative", width:"14px", height:"14px",
             flexShrink:0, display:"inline-flex", alignItems:"center", justifyContent:"center",
-            willChange:"transform",
+            willChange:"transform", marginLeft:"0.25rem",
           }} aria-hidden="true">
             <span ref={plusHRef} style={{
               position:"absolute", left:"50%", top:"50%",
@@ -966,7 +1100,7 @@ const StaggeredMenu = memo(({
             <div className="sm2-socials" style={{ marginTop:"auto", paddingTop:"2rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
               <p className="sm2-socials-title mono" style={{
                 margin:0, fontSize:"0.6rem", fontWeight:500,
-                color: accent, letterSpacing:"0.15em", textTransform:"uppercase", opacity:1.9,
+                color: accentRef.current, letterSpacing:"0.15em", textTransform:"uppercase", opacity:0,
               }}>// socials</p>
               <ul style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"row", gap:"1.25rem", flexWrap:"wrap" }} role="list">
                 {socialItems.map((s,i) => (
@@ -1044,20 +1178,23 @@ const Navbar = memo(({ active, C }) => {
         borderBottom:`1px solid ${scrolled ? C.border : C.mint500+"1a"}`,
         transition:"height 0.35s cubic-bezier(.16,1,.3,1), background 0.3s, border-color 0.3s",
       }}>
-        {/* Logo */}
-        <div className="mono" style={{
-          fontSize:"0.82rem", display:"flex", alignItems:"center",
-          gap:"0.25rem", letterSpacing:"0.01em",
-        }}>
-          <span style={{color:C.mint500, fontWeight:500}}>[</span>
-          <span style={{color:C.textSec}}>paro</span>
-          <span style={{color:C.coral}}>@</span>
-          <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
-          <span style={{color:C.mint500, fontWeight:500}}>]</span>
-          <span style={{
-            color:C.mint500, fontSize:"0.75rem", marginLeft:"3px",
-            animation:"blink 1.2s step-end infinite",
-          }}>█</span>
+        {/* Logo (+ ThemeToggle on mobile, placed left to avoid overlap with fixed menu btn) */}
+        <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
+          {isMobile && <ThemeToggle C={C} />}
+          <div className="mono" style={{
+            fontSize:"0.82rem", display:"flex", alignItems:"center",
+            gap:"0.25rem", letterSpacing:"0.01em",
+          }}>
+            <span style={{color:C.mint500, fontWeight:500}}>[</span>
+            <span style={{color:C.textSec}}>paro</span>
+            <span style={{color:C.coral}}>@</span>
+            <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
+            <span style={{color:C.mint500, fontWeight:500}}>]</span>
+            <span style={{
+              color:C.mint500, fontSize:"0.75rem", marginLeft:"3px",
+              animation:"blink 1.2s step-end infinite",
+            }}>█</span>
+          </div>
         </div>
 
         {/* Desktop centre links */}
@@ -1110,22 +1247,14 @@ const Navbar = memo(({ active, C }) => {
           </div>
         )}
 
-        {/* Mobile right: ThemeToggle only — StaggeredMenu handles its own toggle */}
-        {isMobile && (
-          <div style={{display:"flex", alignItems:"center", gap:"0.25rem"}}>
-            <ThemeToggle C={C} />
-            {/* spacer so StaggeredMenu toggle button sits at correct position */}
-            <div style={{width:"60px"}} aria-hidden="true" />
-          </div>
-        )}
       </nav>
 
-      {/* ── StaggeredMenu — mobile only, covers full viewport below nav ── */}
+      {/* ── StaggeredMenu — mobile only, full viewport overlay ── */}
       {isMobile && (
         <div style={{
           position:"fixed",
-          top:"60px", left:0, right:0, bottom:0,
-          zIndex:1002, pointerEvents:"none",
+          top:0, left:0, right:0, bottom:0,
+          zIndex:1004, pointerEvents:"none",
         }}>
           <StaggeredMenu
             C={C}
@@ -1139,8 +1268,8 @@ const Navbar = memo(({ active, C }) => {
             displaySocials={true}
             displayItemNumbering={true}
             accentColor={C.mint500}
-            menuButtonColor={C.textPri}
-            openMenuButtonColor={C.textPri}
+            menuButtonColor={C.mint500}
+            openMenuButtonColor={C.mint500}
             changeMenuColorOnOpen={false}
             onMenuOpen={() => { document.body.style.overflow = "hidden"; }}
             onMenuClose={() => { document.body.style.overflow = ""; }}
