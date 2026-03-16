@@ -84,22 +84,22 @@ const makeTokens = (isDark) => isDark ? {
 const PROJECTS = [
   { id:"01", title:"SentinelNet", category:"Network Security & Monitoring", 
     desc:"Enterprise-grade IDS/IPS deployment across 3 data centers. Reduced threat detection time from 4h to 8min using Suricata rules + custom SIEM correlation logic.",
-    tags:["Suricata","Splunk","pfSense"], year:"2024", accent: ACCENT.coral },
+    tags:["Suricata","Splunk","pfSense"], year:"2024", accent: ACCENT.coral, status:"completed", featured:true },
   { id:"02", title:"VaultOps", category:"Infrastructure Hardening", 
     desc:"Zero-trust architecture rollout for 200-node corporate network. Implemented microsegmentation, PAM, and automated compliance scanning aligned to CIS Benchmarks.",
-    tags:["HashiCorp Vault","Ansible","CIS"], year:"2024", accent: ACCENT.mint500 },
+    tags:["HashiCorp Vault","Ansible","CIS"], year:"2024", accent: ACCENT.mint500, status:"completed" },
   { id:"03", title:"PhantomNet Lab", category:"Penetration Testing", 
     desc:"Full red team engagement simulating APT lateral movement. Identified 14 critical CVEs across Windows AD environment. Delivered remediation roadmap adopted by client.",
-    tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2023", accent: ACCENT.violet },
+    tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2023", accent: ACCENT.violet, status:"completed" },
   { id:"04", title:"CoreFabric", category:"Network Engineering", 
     desc:"Designed and deployed BGP/OSPF multi-site WAN for ISP with 40Gbps backbone. Automated provisioning via Netmiko/NAPALM, cutting config time by 70%.",
-    tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2023", accent: ACCENT.blue },
+    tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2023", accent: ACCENT.blue, status:"completed" },
   { id:"05", title:"Linux Server Ops Lab", category:"System Administration",
     desc:"Maintained and deployed Linux server environments for testing infrastructure, services, and network configurations. Covers service management, reverse proxy, database deployment, and server hardening practices.",
-    tags:["Linux","Nginx","Bash","MySQL"], year:"2024", accent: ACCENT.amber },
+    tags:["Linux","Nginx","Bash","MySQL"], year:"2024", accent: ACCENT.amber, status:"completed" },
   { id:"06", title:"InfraOps Platform", category:"Infrastructure & DevOps Engineering",
     desc:"Designed and deployed a production-ready IT Work Order & Helpdesk platform with containerized services and reverse proxy architecture. Features a Go/Gin backend API, Rust/Axum time-tracking microservice, and host-based MySQL.",
-    tags:["Go","Rust","Docker","Nginx","MySQL","Linux"], year:"2025", accent: ACCENT.lime },
+    tags:["Go","Rust","Docker","Nginx","MySQL","Linux"], year:"2025", accent: ACCENT.lime, status:"active" },
 ];
 
 const SKILLS = [
@@ -231,6 +231,8 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       .reveal.vis, .reveal-left.vis, .reveal-right.vis { opacity:1; transform:translate(0,0); }
       .reveal-scale.vis { opacity:1; transform:scale(1); }
       .d1{transition-delay:.05s}.d2{transition-delay:.1s}.d3{transition-delay:.15s}.d4{transition-delay:.2s}.d5{transition-delay:.25s}
+      .skill-bar { width:0 !important; }
+      .reveal.vis .skill-bar, .reveal-left.vis .skill-bar, .reveal-right.vis .skill-bar { width:var(--bar-w, 80%) !important; }
 
       .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
 
@@ -260,14 +262,14 @@ const GlobalStyles = memo(({ C, isMobile }) => {
 
       .btn-primary {
         display:inline-flex; align-items:center; gap:0.5rem;
-        padding:0.75rem 1.5rem; background:${C.mint500}; color:${C.bgBase};
+        padding:0.75rem 1.75rem; background:${C.mint500}; color:${C.bgBase};
         font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:500;
         letter-spacing:0.06em; text-transform:uppercase; border:none; border-radius:4px;
-        transition:all 0.2s ease; white-space:nowrap; touch-action: manipulation;
+        transition:all 0.22s cubic-bezier(.16,1,.3,1); white-space:nowrap; touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
       }
-      .btn-primary:active { transform:scale(0.98); background:${C.mint400}; }
-      .btn-primary:hover:not(:active) { transform:translateY(-2px); box-shadow:0 8px 32px ${C.mint500}40; }
+      .btn-primary:active { transform:scale(0.97); background:${C.mint400}; }
+      .btn-primary:hover:not(:active) { transform:translateY(-2px); box-shadow:0 6px 28px ${C.mint500}50; filter:brightness(1.05); }
 
       .btn-ghost {
         display:inline-flex; align-items:center; gap:0.5rem; padding:0.75rem 1.5rem;
@@ -289,17 +291,18 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       .form-input:focus-visible { outline:2px solid ${C.mint500}; outline-offset:2px; }
 
       .cert-card {
-        padding:1rem 1.25rem; background:${C.bgCard}; border:1px solid ${C.border};
-        border-radius:6px; transition:all 0.2s; cursor:pointer; touch-action: manipulation;
+        padding:1.25rem 1.25rem; background:${C.bgCard}; border:1px solid ${C.border};
+        border-radius:8px; transition:all 0.25s cubic-bezier(.16,1,.3,1); cursor:pointer; touch-action: manipulation;
       }
       .cert-card:active { transform:scale(0.98); }
-      .cert-card:hover { border-color:var(--cert-color); box-shadow:0 0 20px color-mix(in srgb,var(--cert-color) 15%,transparent); transform:translateY(-2px); }
+      .cert-card:hover { border-color:var(--cert-color); box-shadow:0 4px 32px color-mix(in srgb,var(--cert-color) 18%,transparent); transform:translateY(-3px); }
 
       .tag-pill {
-        display:inline-block; padding:0.25rem 0.6rem;
+        display:inline-block; padding:0.22rem 0.65rem;
         background:${C.bgCard2}; border:1px solid ${C.border};
-        border-radius:3px; font-size:0.65rem; color:${C.textMuted};
-        font-family:'JetBrains Mono',monospace; letter-spacing:0.02em;
+        border-radius:4px; font-size:0.62rem; color:${C.textMuted};
+        font-family:'JetBrains Mono',monospace; letter-spacing:0.03em;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
       }
 
       /* Mobile-first responsive */
@@ -1805,8 +1808,11 @@ const Hero = memo(({ C, booted }) => {
               paddingLeft: isMobile ? 0 : "1.5rem",
             }}>
               <p style={{
-                fontSize:"0.85rem", lineHeight:1.7, fontWeight:300, 
+                fontSize:"0.85rem", lineHeight:1.8, fontWeight:300, 
                 color:C.textSec, maxWidth:"270px",
+                borderLeft:`2px solid ${C.mint500}40`,
+                paddingLeft:"0.85rem",
+                fontStyle:"italic",
               }}>
                 "Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do."
               </p>
@@ -1858,8 +1864,9 @@ const Work = memo(({ C }) => {
         flexWrap:"wrap", gap:"1rem"
       }}>
         <div>
-          <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em"}}>
-            // selected_engagements
+          <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
+            <span style={{opacity:0.4}}>02 /</span>
+            <span>// selected_engagements</span>
           </p>
           <h2 style={{
             fontFamily:"'DM Serif Display',serif",
@@ -1884,14 +1891,14 @@ const Work = memo(({ C }) => {
       {!isMobile && (
         <div style={{
           display:"grid", gridTemplateColumns:"52px 1fr 1fr auto",
-          gap:"2rem", padding:"0 1.5rem 0.6rem",
+          gap:"2rem", padding:"0 1.5rem 0.75rem",
           marginBottom:0,
           borderBottom:`1px solid ${C.border}`,
         }}>
           {["#", "Project", "Description", "Stack"].map(h => (
             <span key={h} className="mono" style={{
               fontSize:"0.56rem", color:C.textMuted,
-              textTransform:"uppercase", letterSpacing:"0.14em", opacity:0.5,
+              textTransform:"uppercase", letterSpacing:"0.14em", opacity:0.4,
             }}>
               {h}
             </span>
@@ -1909,36 +1916,71 @@ const Work = memo(({ C }) => {
             onMouseLeave={() => setHovered(null)}
             style={{
               cursor:"default",
-              background: hovered===p.id ? `${p.accent}08` : "transparent",
+              background: hovered===p.id ? `${p.accent}0d` : "transparent",
               transition:"background 0.2s",
               position:"relative",
             }}
           >
-            {/* Accent left bar on hover */}
+            {/* Featured glow border */}
+            {p.featured && (
+              <div style={{
+                position:"absolute", inset:0, borderRadius:"0",
+                border:`1px solid ${p.accent}22`,
+                pointerEvents:"none", zIndex:0,
+              }} />
+            )}
+
+            {/* Accent left bar — always visible for featured, hover for rest */}
             <div style={{
               position:"absolute", left:0, top:"0.5rem", bottom:"0.5rem",
               width:"2px", borderRadius:"2px",
-              background: hovered===p.id ? p.accent : "transparent",
+              background: p.featured || hovered===p.id ? p.accent : "transparent",
               transition:"background 0.2s",
+              opacity: p.featured && hovered!==p.id ? 0.45 : 1,
             }} />
 
             {/* ID */}
             <div className="mono" style={{
-              fontSize:"0.72rem", color:p.accent,
+              fontSize:"0.72rem", color: hovered===p.id ? p.accent : C.textMuted,
               fontWeight:500, paddingTop:"0.2rem", paddingLeft:"0.75rem",
+              transition:"color 0.2s", opacity: hovered===p.id ? 1 : 0.5,
             }}>
               {p.id}
             </div>
 
-            {/* Title + category */}
+            {/* Title + category + status */}
             <div>
-              <h3 style={{
-                fontFamily:"'DM Serif Display',serif",
-                fontSize: isMobile ? "1.05rem" : "clamp(1.1rem, 2vw, 1.35rem)",
-                fontWeight:400, color:C.textPri, marginBottom:"0.3rem", lineHeight:1.2,
-              }}>
-                {p.title}
-              </h3>
+              <div style={{display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"0.3rem", flexWrap:"wrap"}}>
+                <h3 style={{
+                  fontFamily:"'DM Serif Display',serif",
+                  fontSize: isMobile ? "1.05rem" : "clamp(1.1rem, 2vw, 1.35rem)",
+                  fontWeight:400, color:C.textPri, lineHeight:1.2, margin:0,
+                }}>
+                  {p.title}
+                </h3>
+                {p.status === "active" && (
+                  <span className="mono" style={{
+                    fontSize:"0.48rem", padding:"0.18rem 0.5rem",
+                    borderRadius:"20px", letterSpacing:"0.1em", textTransform:"uppercase",
+                    background:`${ACCENT.mint500}18`, color: ACCENT.mint500,
+                    border:`1px solid ${ACCENT.mint500}40`,
+                    display:"inline-flex", alignItems:"center", gap:"0.3rem",
+                  }}>
+                    <span style={{width:"4px",height:"4px",borderRadius:"50%",background:ACCENT.mint500,display:"inline-block",animation:"pulse-dot 2s ease-in-out infinite"}}/>
+                    active
+                  </span>
+                )}
+                {p.featured && (
+                  <span className="mono" style={{
+                    fontSize:"0.48rem", padding:"0.18rem 0.5rem",
+                    borderRadius:"20px", letterSpacing:"0.1em", textTransform:"uppercase",
+                    background:`${p.accent}18`, color: p.accent,
+                    border:`1px solid ${p.accent}40`,
+                  }}>
+                    featured
+                  </span>
+                )}
+              </div>
               <div style={{display:"flex", alignItems:"center", gap:"0.45rem"}}>
                 <span style={{
                   display:"inline-block", width:"5px", height:"5px",
@@ -1955,7 +1997,8 @@ const Work = memo(({ C }) => {
             {/* Description */}
             <p className="proj-desc" style={{
               fontSize:"0.82rem", lineHeight:1.75, fontWeight:300,
-              color:C.textSec, maxWidth:"380px",
+              color: hovered===p.id ? C.textSec : C.textMuted,
+              maxWidth:"380px", transition:"color 0.2s",
             }}>
               {p.desc}
             </p>
@@ -1964,7 +2007,7 @@ const Work = memo(({ C }) => {
             <div className="proj-meta" style={{textAlign:"right"}}>
               <div className="mono" style={{
                 fontSize:"0.62rem", color:C.textMuted,
-                marginBottom:"0.5rem", opacity:0.6,
+                marginBottom:"0.5rem", opacity:0.45,
               }}>
                 {p.year}
               </div>
@@ -2006,8 +2049,9 @@ const Skills = memo(({ C }) => {
           marginBottom: isMobile ? "2.5rem" : "3rem",
         }}>
           <div>
-            <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em"}}>
-              // capabilities
+            <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
+              <span style={{opacity:0.4}}>03 /</span>
+              <span>// capabilities</span>
             </p>
             <h2 style={{
               fontFamily:"'DM Serif Display',serif",
@@ -2104,23 +2148,34 @@ const Skills = memo(({ C }) => {
 
                 {/* Items */}
                 <div style={{display:"flex", flexDirection:"column"}}>
-                  {group.items.map((item) => (
-                    <div key={item} style={{
-                      display:"flex", alignItems:"center", gap:"0.55rem",
-                      padding:"0.5rem 0",
-                      borderBottom:`1px solid ${C.border}`,
-                    }}>
-                      <span style={{
-                        width:"3px", height:"3px", borderRadius:"50%",
-                        background:group.accent, opacity:0.55, flexShrink:0,
-                      }} />
-                      <span className="mono" style={{
-                        fontSize:"0.78rem", fontWeight:300, color:C.textSec,
+                  {group.items.map((item, idx) => {
+                    const barW = [92, 85, 88, 78, 72, 95, 80, 75, 90, 82][idx % 10];
+                    return (
+                      <div key={item} style={{
+                        padding:"0.55rem 0",
+                        borderBottom:`1px solid ${C.border}`,
                       }}>
-                        {item}
-                      </span>
-                    </div>
-                  ))}
+                        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"0.3rem"}}>
+                          <span className="mono" style={{
+                            fontSize:"0.75rem", fontWeight:400, color:C.textSec,
+                          }}>
+                            {item}
+                          </span>
+                          <span className="mono" style={{fontSize:"0.52rem", color:group.accent, opacity:0.6}}>
+                            {barW}%
+                          </span>
+                        </div>
+                        <div style={{height:"2px", background:`${C.border}`, borderRadius:"2px", overflow:"hidden"}}>
+                          <div className="skill-bar" style={{
+                            height:"100%", width:`${barW}%`,
+                            background:`linear-gradient(90deg, ${group.accent}99, ${group.accent})`,
+                            borderRadius:"2px",
+                            transition:"width 1s cubic-bezier(.16,1,.3,1)",
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -2149,22 +2204,41 @@ const Skills = memo(({ C }) => {
               <div
                 key={cert.name}
                 className={`cert-card reveal-scale d${i+1}`}
-                style={{ "--cert-color": cert.color }}
+                style={{ "--cert-color": cert.color, position:"relative", overflow:"hidden" }}
               >
-                <div className="mono" style={{ 
-                  fontSize:"0.55rem", color:cert.color, opacity:0.7, 
-                  marginBottom:"0.4rem", letterSpacing:"0.12em", textTransform:"uppercase" 
-                }}>
-                  {cert.issuer}
+                {/* Top accent bar */}
+                <div style={{
+                  position:"absolute", top:0, left:0, right:0, height:"2px",
+                  background:`linear-gradient(90deg, ${cert.color}80, ${cert.color}20)`,
+                  borderRadius:"6px 6px 0 0",
+                }} />
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.75rem"}}>
+                  <div className="mono" style={{ 
+                    fontSize:"0.52rem", color:cert.color, opacity:0.65, 
+                    letterSpacing:"0.12em", textTransform:"uppercase",
+                    marginTop:"0.1rem",
+                  }}>
+                    {cert.issuer}
+                  </div>
+                  <div style={{
+                    width:"28px", height:"28px", borderRadius:"6px",
+                    background:`${cert.color}15`, border:`1px solid ${cert.color}30`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    flexShrink:0,
+                  }}>
+                    <div style={{width:"10px",height:"10px",borderRadius:"2px",background:cert.color,opacity:0.8}} />
+                  </div>
                 </div>
                 <div className="mono" style={{ 
-                  fontSize: isMobile ? "1rem" : "1.1rem", 
-                  fontWeight:500, color:cert.color, marginBottom:"0.25rem" 
+                  fontSize: isMobile ? "1.05rem" : "1.15rem", 
+                  fontWeight:500, color:cert.color, marginBottom:"0.2rem",
+                  letterSpacing:"-0.01em",
                 }}>
                   {cert.name}
                 </div>
                 <div style={{ 
-                  fontSize:"0.75rem", color:C.textMuted, fontWeight:300, marginBottom:"1rem" 
+                  fontSize:"0.72rem", color:C.textMuted, fontWeight:300, marginBottom:"1.25rem",
+                  letterSpacing:"0.01em",
                 }}>
                   {cert.full}
                 </div>
@@ -2260,8 +2334,9 @@ const Contact = memo(({ C }) => {
         }}>
           {/* Left */}
           <div className="reveal-left">
-            <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem" }}>
-              // initiate_contact
+            <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+              <span style={{opacity:0.4}}>04 /</span>
+              <span>// initiate_contact</span>
             </p>
             <h2 style={{ 
               fontFamily:"'DM Serif Display',serif", 
@@ -2285,14 +2360,16 @@ const Contact = memo(({ C }) => {
             ].map(([label,value,accent]) => (
               <div key={label} style={{ 
                 display:"flex", justifyContent:"space-between", 
-                alignItems:"center", padding:"0.75rem 0",
-                borderBottom:`1px solid ${C.border}` 
+                alignItems:"center", padding:"0.85rem 0",
+                borderBottom:`1px solid ${C.border}`,
+                gap:"1rem",
               }}>
-                <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
+                <span className="mono" style={{ fontSize:"0.6rem", color:C.textMuted, letterSpacing:"0.08em", flexShrink:0 }}>
                   {label}
                 </span>
                 <span className="mono" style={{ 
-                  fontSize:"0.75rem", color:accent||C.textSec, fontWeight:400 
+                  fontSize:"0.72rem", color:accent||C.textSec, fontWeight:400,
+                  textAlign:"right", wordBreak:"break-all",
                 }}>
                   {value}
                 </span>
