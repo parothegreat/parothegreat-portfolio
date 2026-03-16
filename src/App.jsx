@@ -231,8 +231,9 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       .reveal.vis, .reveal-left.vis, .reveal-right.vis { opacity:1; transform:translate(0,0); }
       .reveal-scale.vis { opacity:1; transform:scale(1); }
       .d1{transition-delay:.05s}.d2{transition-delay:.1s}.d3{transition-delay:.15s}.d4{transition-delay:.2s}.d5{transition-delay:.25s}
-      .skill-bar { width:0 !important; }
-      .reveal.vis .skill-bar, .reveal-left.vis .skill-bar, .reveal-right.vis .skill-bar { width:var(--bar-w, 80%) !important; }
+      @keyframes growBar { from { width:0 } to { width:var(--bar-w,80%) } }
+      .skill-bar { width:0; }
+      .reveal.vis .skill-bar { animation: growBar 0.9s cubic-bezier(.16,1,.3,1) both; width:var(--bar-w,80%); }
 
       .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
 
@@ -997,7 +998,7 @@ const StaggeredMenu = memo(({
           aria-controls="sm2-panel"
           type="button"
           style={{
-            position:"fixed", top:"0.85rem", right:"1rem",
+            position:"fixed", top:"calc((60px - 44px) / 2)", right:"1rem",
             display:"inline-flex", alignItems:"center", gap:"0.5rem",
             background:"transparent", border:`1px solid ${C.mint500}55`,
             borderRadius:"6px", cursor:"pointer",
@@ -2167,10 +2168,10 @@ const Skills = memo(({ C }) => {
                         </div>
                         <div style={{height:"2px", background:`${C.border}`, borderRadius:"2px", overflow:"hidden"}}>
                           <div className="skill-bar" style={{
-                            height:"100%", width:`${barW}%`,
+                            height:"100%",
+                            "--bar-w": `${barW}%`,
                             background:`linear-gradient(90deg, ${group.accent}99, ${group.accent})`,
                             borderRadius:"2px",
-                            transition:"width 1s cubic-bezier(.16,1,.3,1)",
                           }} />
                         </div>
                       </div>
