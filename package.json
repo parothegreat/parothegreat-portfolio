@@ -10,6 +10,7 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@fontsource-variable/geist": "^5.2.8",
     "@react-spring/three": "^10.0.3",
     "@react-three/drei": "^9.122.0",

@@ -3,6 +3,7 @@ import {
   lazy, Suspense, memo, useCallback, useMemo 
 } from "react";
 import { gsap } from "gsap";
+import emailjs from "@emailjs/browser";
 
 // ── Lazy Load Heavy Components ─────────────────────────────────
 const Lanyard = lazy(() => import('./Lanyard'));
@@ -2221,10 +2222,25 @@ const Contact = memo(({ C }) => {
   const [sent, setSent] = useState(false);
   const { isMobile } = useTheme();
 
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
+
   const handleSubmit = useCallback(() => {
-    if (form.name && form.email && form.message) {
+    if (!form.name || !form.email || !form.message) return;
+    setSending(true);
+    setError(null);
+    emailjs.send(
+      "service_vmsghvn",
+      "template_hsc6m9u",
+      { from_name: form.name, from_email: form.email, message: form.message },
+      "sruNPf6oBWFdmDHtA"
+    ).then(() => {
       setSent(true);
-    }
+      setSending(false);
+    }).catch(() => {
+      setError("Failed to send. Please try again or email directly.");
+      setSending(false);
+    });
   }, [form]);
 
   const handleChange = useCallback((key, value) => {
@@ -2368,10 +2384,16 @@ const Contact = memo(({ C }) => {
                 <button 
                   className="btn-primary" 
                   onClick={handleSubmit} 
-                  style={{ alignSelf:"flex-start" }}
+                  disabled={sending}
+                  style={{ alignSelf:"flex-start", opacity: sending ? 0.6 : 1, cursor: sending ? "not-allowed" : "pointer" }}
                 >
-                  ./send_message.sh →
+                  {sending ? "Sending..." : "./send_message.sh →"}
                 </button>
+                {error && (
+                  <p className="mono" style={{ fontSize:"0.65rem", color:"#FF6B6B", marginTop:"0.5rem" }}>
+                    {error}
+                  </p>
+                )}
               </div>
             )}
           </div>
