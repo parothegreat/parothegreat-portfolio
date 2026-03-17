@@ -103,10 +103,34 @@ const PROJECTS = [
 ];
 
 const SKILLS = [
-  { category:"Network Eng.", items:["Cisco","BGP / OSPF / EIGRP","VLAN & VxLAN","SD-WAN","Wireshark"], accent: ACCENT.blue },
-  { category:"Cybersecurity", items:["Penetration Testing","SIEM / SOC","Threat Hunting","CVE Analysis","Zero Trust"], accent: ACCENT.coral },
-  { category:"Sysadmin", items:["Linux (RHEL/Debian)","Ubuntu Server","Active Directory","Ansible","Bash / Python"], accent: ACCENT.mint500 },
-  { category:"Cloud & Infra", items:["AWS / Azure","Terraform","Docker / K8s","Proxmox","Zabbix / Nagios"], accent: ACCENT.violet },
+  { category:"Network Eng.", accent: ACCENT.blue, items:[
+    { name:"Cisco",              level:85 },
+    { name:"BGP / OSPF / EIGRP", level:78 },
+    { name:"VLAN & VxLAN",       level:82 },
+    { name:"SD-WAN",             level:65 },
+    { name:"Wireshark",          level:90 },
+  ]},
+  { category:"Cybersecurity", accent: ACCENT.coral, items:[
+    { name:"Penetration Testing", level:75 },
+    { name:"SIEM / SOC",          level:70 },
+    { name:"Threat Hunting",      level:68 },
+    { name:"CVE Analysis",        level:80 },
+    { name:"Zero Trust",          level:72 },
+  ]},
+  { category:"Sysadmin", accent: ACCENT.mint500, items:[
+    { name:"Linux (RHEL/Debian)", level:92 },
+    { name:"Ubuntu Server",       level:90 },
+    { name:"Active Directory",    level:74 },
+    { name:"Ansible",             level:70 },
+    { name:"Bash / Python",       level:82 },
+  ]},
+  { category:"Cloud & Infra", accent: ACCENT.violet, items:[
+    { name:"AWS / Azure",     level:68 },
+    { name:"Terraform",       level:62 },
+    { name:"Docker / K8s",    level:80 },
+    { name:"Proxmox",         level:85 },
+    { name:"Zabbix / Nagios", level:72 },
+  ]},
 ];
 
 const SOCIAL_LINKS = {
@@ -2031,10 +2055,222 @@ const Work = memo(({ C }) => {
   );
 });
 
+// ── Skills Donut Chart ────────────────────────────────────────
+const SkillsDonut = memo(({ C, isMobile }) => {
+  const canvasRef = useRef(null);
+  const [hovered, setHovered] = useState(null);
+  const animRef = useRef(null);
+  const progressRef = useRef(0);
+  const hoveredRef = useRef(null);
+  const ctxRef = useRef(null);
+  const sizeRef = useRef(0);
+  const anglesRef = useRef([]);
+
+  // Compute average level per category
+  const segments = useMemo(() => {
+    return SKILLS.map(g => ({
+      label: g.category,
+      color: g.accent,
+      value: Math.round(g.items.reduce((s, it) => s + it.level, 0) / g.items.length),
+    }));
+  }, []);
+
+  // Keep hoveredRef in sync without re-running setup
+  useEffect(() => { hoveredRef.current = hovered; }, [hovered]);
+
+  const drawFrame = useCallback((progress) => {
+    const ctx = ctxRef.current;
+    const size = sizeRef.current;
+    const angles = anglesRef.current;
+    if (!ctx || !size || !angles.length) return;
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size * 0.42;
+    const innerR = size * 0.26;
+    const hov = hoveredRef.current;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Track ring background
+    ctx.beginPath();
+    ctx.arc(cx, cy, (outerR + innerR) / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(128,128,128,0.08)";
+    ctx.lineWidth = outerR - innerR;
+    ctx.stroke();
+
+    angles.forEach((seg, i) => {
+      const endAngle = seg.start + (seg.end - seg.start) * progress;
+      const isHov = hov === i;
+      const rOuter = isHov ? outerR + 6 : outerR;
+      const rInner = isHov ? innerR - 3 : innerR;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, seg.start, endAngle);
+      ctx.arc(cx, cy, rInner, endAngle, seg.start, true);
+      ctx.closePath();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = isHov ? seg.color : seg.color + "cc";
+      ctx.fill();
+
+      if (isHov) {
+        ctx.shadowColor = seg.color;
+        ctx.shadowBlur = 14;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    });
+
+    // Center text
+    ctx.textAlign = "center";
+    if (hov !== null && progress >= 1) {
+      const seg = angles[hov];
+      ctx.fillStyle = seg.color;
+      ctx.font = `600 ${isMobile ? 22 : 26}px 'JetBrains Mono', monospace`;
+      ctx.fillText(seg.value + "%", cx, cy + (isMobile ? 7 : 9));
+      ctx.fillStyle = "rgba(128,128,128,0.6)";
+      ctx.font = `400 ${isMobile ? 8 : 9}px 'JetBrains Mono', monospace`;
+      ctx.fillText(seg.label.toUpperCase(), cx, cy + (isMobile ? 20 : 24));
+    } else if (hov === null && progress >= 1) {
+      ctx.fillStyle = "rgba(128,128,128,0.35)";
+      ctx.font = `400 ${isMobile ? 8 : 9}px 'JetBrains Mono', monospace`;
+      ctx.fillText("HOVER TO INSPECT", cx, cy + 4);
+    }
+  }, [isMobile]);
+
+  // Setup canvas ONCE (or when size changes)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const size = isMobile ? 220 : 280;
+    sizeRef.current = size;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + "px";
+    canvas.style.height = size + "px";
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctxRef.current = ctx;
+
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+    const gap = 0.025;
+    let cur = -Math.PI / 2;
+    anglesRef.current = segments.map(seg => {
+      const slice = (seg.value / total) * (Math.PI * 2 - gap * segments.length);
+      const a = { start: cur, end: cur + slice, ...seg };
+      cur += slice + gap;
+      return a;
+    });
+
+    // Animate in from scratch
+    progressRef.current = 0;
+    const start = performance.now();
+    const duration = 1100;
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    const animate = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      progressRef.current = ease(t);
+      drawFrame(progressRef.current);
+      if (t < 1) animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [segments, isMobile, drawFrame]);
+
+  // Redraw on hover change only (no canvas reset)
+  useEffect(() => {
+    if (progressRef.current >= 1) drawFrame(1);
+  }, [hovered, drawFrame]);
+
+  // Hit test for hover
+  const handleMouseMove = useCallback((e) => {
+    const canvas = canvasRef.current;
+    if (!canvas || progressRef.current < 1) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const size = isMobile ? 220 : 280;
+    const cx = size / 2, cy = size / 2;
+    const dx = mx - cx, dy = my - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const outerR = size * 0.42 + 8, innerR = size * 0.26 - 5;
+    if (dist < innerR || dist > outerR) { setHovered(null); return; }
+    let angle = Math.atan2(dy, dx);
+    if (angle < -Math.PI / 2) angle += Math.PI * 2;
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+    const gap = 0.025;
+    let cur = -Math.PI / 2;
+    for (let i = 0; i < segments.length; i++) {
+      const slice = (segments[i].value / total) * (Math.PI * 2 - gap * segments.length);
+      if (angle >= cur && angle <= cur + slice) { setHovered(i); return; }
+      cur += slice + gap;
+    }
+    setHovered(null);
+  }, [segments, isMobile]);
+
+  const handleMouseLeave = useCallback(() => setHovered(null), []);
+
+  return (
+    <div style={{
+      display:"flex", flexDirection: isMobile ? "column" : "row",
+      alignItems:"center", justifyContent:"center",
+      gap: isMobile ? "1.5rem" : "3rem",
+      padding: isMobile ? "1rem 0" : "1.5rem 0",
+    }}>
+      <canvas
+        ref={canvasRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ cursor:"crosshair", flexShrink:0 }}
+      />
+      {/* Legend */}
+      <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem", minWidth:"180px" }}>
+        {segments.map((seg, i) => (
+          <div
+            key={seg.label}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              display:"flex", alignItems:"center", gap:"0.75rem",
+              cursor:"pointer", opacity: hovered !== null && hovered !== i ? 0.35 : 1,
+              transition:"opacity 0.2s",
+            }}
+          >
+            <div style={{
+              width:"10px", height:"10px", borderRadius:"2px", flexShrink:0,
+              background: seg.color,
+              boxShadow: hovered === i ? `0 0 8px ${seg.color}` : "none",
+              transition:"box-shadow 0.2s",
+            }} />
+            <div style={{ flex:1 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                <span className="mono" style={{ fontSize:"0.68rem", color: hovered === i ? seg.color : C.textSec, transition:"color 0.2s" }}>
+                  {seg.label}
+                </span>
+                <span className="mono" style={{ fontSize:"0.62rem", color: seg.color, fontWeight:500 }}>
+                  {seg.value}%
+                </span>
+              </div>
+              <div style={{ height:"1px", background: C.border, marginTop:"0.25rem" }}>
+                <div style={{
+                  height:"100%", width: hovered === i ? `${seg.value}%` : "0%",
+                  background: seg.color, transition:"width 0.35s cubic-bezier(.16,1,.3,1)",
+                }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
 // ── Skills Section ────────────────────────────────────────────
 const Skills = memo(({ C }) => {
   const { isMobile } = useTheme();
   const [activeFilter, setActiveFilter] = useState(null);
+  const [viewMode, setViewMode] = useState("bar"); // "bar" | "chart"
 
   return (
     <section id="skills" className="skills-section" style={{
@@ -2047,7 +2283,7 @@ const Skills = memo(({ C }) => {
         <div className="reveal" style={{
           display:"flex", justifyContent:"space-between",
           alignItems:"flex-end", flexWrap:"wrap", gap:"1rem",
-          marginBottom: isMobile ? "2.5rem" : "3rem",
+          marginBottom: isMobile ? "2rem" : "2.5rem",
         }}>
           <div>
             <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
@@ -2062,97 +2298,124 @@ const Skills = memo(({ C }) => {
               Tools & <em>Expertise</em>
             </h2>
           </div>
-          <p style={{
-            fontSize:"0.82rem", lineHeight:1.65, fontWeight:300,
-            color:C.textSec, maxWidth:"300px",
-          }}>
-            From Cisco ASA configs to Metasploit modules — operating across the full security and networking stack.
-          </p>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"1rem" }}>
+            <p style={{
+              fontSize:"0.82rem", lineHeight:1.65, fontWeight:300,
+              color:C.textSec, maxWidth:"300px", textAlign: isMobile ? "left" : "right",
+            }}>
+              From Cisco ASA configs to Metasploit modules — operating across the full security and networking stack.
+            </p>
+            {/* View mode toggle */}
+            <div style={{
+              display:"flex", alignItems:"center",
+              border:`1px solid ${C.border}`, borderRadius:"6px", overflow:"hidden",
+            }}>
+              {[["bar","// bar"], ["chart","// chart"]].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className="mono"
+                  style={{
+                    fontSize:"0.58rem", letterSpacing:"0.08em",
+                    padding:"0.38rem 0.85rem", cursor:"pointer",
+                    background: viewMode === mode ? `${C.mint500}18` : "transparent",
+                    color: viewMode === mode ? C.mint500 : C.textMuted,
+                    border:"none",
+                    borderLeft: mode === "chart" ? `1px solid ${C.border}` : "none",
+                    transition:"background 0.2s, color 0.2s",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Filter pills */}
-        <div style={{
-          display:"flex", gap:"0.5rem", flexWrap:"wrap",
-          marginBottom: isMobile ? "2rem" : "2.5rem",
-        }}>
-          {SKILLS.map(s => {
-            const on = activeFilter === s.category;
-            return (
-              <button key={s.category}
-                onClick={() => setActiveFilter(on ? null : s.category)}
+        {/* Bar mode: filter pills */}
+        {viewMode === "bar" && (
+          <div style={{
+            display:"flex", gap:"0.5rem", flexWrap:"wrap",
+            marginBottom: isMobile ? "2rem" : "2.5rem",
+          }}>
+            {SKILLS.map(s => {
+              const on = activeFilter === s.category;
+              return (
+                <button key={s.category}
+                  onClick={() => setActiveFilter(on ? null : s.category)}
+                  className="mono"
+                  style={{
+                    fontSize:"0.6rem", letterSpacing:"0.08em", textTransform:"uppercase",
+                    padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
+                    border:`1px solid ${on ? s.accent : C.border}`,
+                    background: on ? `${s.accent}14` : "transparent",
+                    color: on ? s.accent : C.textMuted,
+                    transition:"all 0.2s", display:"flex", alignItems:"center", gap:"0.4rem",
+                  }}>
+                  <span style={{
+                    width:"5px", height:"5px", borderRadius:"1px",
+                    background: on ? s.accent : C.textMuted,
+                    flexShrink:0, transition:"background 0.2s",
+                  }} />
+                  {s.category}
+                </button>
+              );
+            })}
+            {activeFilter && (
+              <button onClick={() => setActiveFilter(null)}
                 className="mono"
                 style={{
-                  fontSize:"0.6rem", letterSpacing:"0.08em", textTransform:"uppercase",
+                  fontSize:"0.6rem", letterSpacing:"0.08em",
                   padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
-                  border:`1px solid ${on ? s.accent : C.border}`,
-                  background: on ? `${s.accent}14` : "transparent",
-                  color: on ? s.accent : C.textMuted,
-                  transition:"all 0.2s", display:"flex", alignItems:"center", gap:"0.4rem",
+                  border:`1px solid ${C.border}`,
+                  background:"transparent", color:C.textMuted,
+                  transition:"all 0.2s",
                 }}>
-                <span style={{
-                  width:"5px", height:"5px", borderRadius:"1px",
-                  background: on ? s.accent : C.textMuted,
-                  flexShrink:0, transition:"background 0.2s",
-                }} />
-                {s.category}
+                ✕ clear
               </button>
-            );
-          })}
-          {activeFilter && (
-            <button onClick={() => setActiveFilter(null)}
-              className="mono"
-              style={{
-                fontSize:"0.6rem", letterSpacing:"0.08em",
-                padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
-                border:`1px solid ${C.border}`,
-                background:"transparent", color:C.textMuted,
-                transition:"all 0.2s",
-              }}>
-              ✕ clear
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* Skill columns */}
-        <div className="skills-grid" style={{
-          display:"grid",
-          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
-          gap: isMobile ? "1.5rem" : "0",
-        }}>
-          {SKILLS.map((group, i) => {
-            const dimmed = activeFilter && activeFilter !== group.category;
-            return (
-              <div key={group.category} className={`reveal d${i+1}`} style={{
-                borderLeft: !isMobile && i > 0 ? `1px solid ${C.border}` : "none",
-                paddingLeft: !isMobile && i > 0 ? "2rem" : 0,
-                paddingRight: !isMobile && i < SKILLS.length-1 ? "2rem" : 0,
-                opacity: dimmed ? 0.28 : 1,
-                transition:"opacity 0.25s",
-              }}>
-                {/* Category heading */}
-                <div style={{
-                  display:"flex", alignItems:"center", gap:"0.5rem",
-                  borderBottom:`2px solid ${group.accent}`,
-                  paddingBottom:"0.75rem", marginBottom:"0.85rem",
+        {/* Bar mode: skill columns */}
+        {viewMode === "bar" && (
+          <div className="skills-grid" style={{
+            display:"grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
+            gap: isMobile ? "1.5rem" : "0",
+          }}>
+            {SKILLS.map((group, i) => {
+              const dimmed = activeFilter && activeFilter !== group.category;
+              return (
+                <div key={group.category} className={`reveal d${i+1}`} style={{
+                  borderLeft: !isMobile && i > 0 ? `1px solid ${C.border}` : "none",
+                  paddingLeft: !isMobile && i > 0 ? "2rem" : 0,
+                  paddingRight: !isMobile && i < SKILLS.length-1 ? "2rem" : 0,
+                  opacity: dimmed ? 0.28 : 1,
+                  transition:"opacity 0.25s",
                 }}>
-                  <span style={{
-                    width:"7px", height:"7px", borderRadius:"2px",
-                    background:group.accent, flexShrink:0,
-                  }} />
-                  <p className="mono" style={{
-                    fontSize:"0.62rem", textTransform:"uppercase",
-                    letterSpacing:"0.1em", color:group.accent, fontWeight:500,
+                  {/* Category heading */}
+                  <div style={{
+                    display:"flex", alignItems:"center", gap:"0.5rem",
+                    borderBottom:`2px solid ${group.accent}`,
+                    paddingBottom:"0.75rem", marginBottom:"0.85rem",
                   }}>
-                    {group.category}
-                  </p>
-                </div>
+                    <span style={{
+                      width:"7px", height:"7px", borderRadius:"2px",
+                      background:group.accent, flexShrink:0,
+                    }} />
+                    <p className="mono" style={{
+                      fontSize:"0.62rem", textTransform:"uppercase",
+                      letterSpacing:"0.1em", color:group.accent, fontWeight:500,
+                    }}>
+                      {group.category}
+                    </p>
+                  </div>
 
-                {/* Items */}
-                <div style={{display:"flex", flexDirection:"column"}}>
-                  {group.items.map((item, idx) => {
-                    const barW = [92, 85, 88, 78, 72, 95, 80, 75, 90, 82][idx % 10];
-                    return (
-                      <div key={item} style={{
+                  {/* Items */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    {group.items.map((item) => (
+                      <div key={item.name} style={{
                         padding:"0.55rem 0",
                         borderBottom:`1px solid ${C.border}`,
                       }}>
@@ -2160,28 +2423,36 @@ const Skills = memo(({ C }) => {
                           <span className="mono" style={{
                             fontSize:"0.75rem", fontWeight:400, color:C.textSec,
                           }}>
-                            {item}
+                            {item.name}
                           </span>
                           <span className="mono" style={{fontSize:"0.52rem", color:group.accent, opacity:0.6}}>
-                            {barW}%
+                            {item.level}%
                           </span>
                         </div>
                         <div style={{height:"2px", background:`${C.border}`, borderRadius:"2px", overflow:"hidden"}}>
                           <div className="skill-bar" style={{
                             height:"100%",
-                            "--bar-w": `${barW}%`,
+                            "--bar-w": `${item.level}%`,
                             background:`linear-gradient(90deg, ${group.accent}99, ${group.accent})`,
                             borderRadius:"2px",
                           }} />
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Chart mode: donut */}
+        {viewMode === "chart" && (
+          <div>
+            <SkillsDonut C={C} isMobile={isMobile} />
+          </div>
+        )}
+
       </div>
 
         {/* Certifications */}
