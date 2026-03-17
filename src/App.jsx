@@ -2068,11 +2068,13 @@ const SkillsDonut = memo(({ C, isMobile }) => {
 
   // Compute average level per category
   const segments = useMemo(() => {
-    return SKILLS.map(g => ({
+    const raw = SKILLS.map(g => ({
       label: g.category,
       color: g.accent,
-      value: Math.round(g.items.reduce((s, it) => s + it.level, 0) / g.items.length),
+      avg: g.items.reduce((s, it) => s + it.level, 0) / g.items.length,
     }));
+    const total = raw.reduce((s, g) => s + g.avg, 0);
+    return raw.map(g => ({ label: g.label, color: g.color, value: Math.round(g.avg / total * 100) }));
   }, []);
 
   // Keep hoveredRef in sync without re-running setup
