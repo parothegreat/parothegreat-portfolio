@@ -104,32 +104,32 @@ const PROJECTS = [
 
 const SKILLS = [
   { category:"Network Eng.", accent: ACCENT.blue, items:[
-    { name:"Cisco",              level:85 },
-    { name:"BGP / OSPF / EIGRP", level:78 },
-    { name:"VLAN & VxLAN",       level:82 },
-    { name:"SD-WAN",             level:65 },
-    { name:"Wireshark",          level:90 },
+    { name:"Cisco",              level:82 },
+    { name:"BGP / OSPF / EIGRP", level:68 },
+    { name:"VLAN & VxLAN",       level:74 },
+    { name:"SD-WAN",             level:52 },
+    { name:"Wireshark",          level:85 },
   ]},
   { category:"Cybersecurity", accent: ACCENT.coral, items:[
-    { name:"Penetration Testing", level:75 },
-    { name:"SIEM / SOC",          level:70 },
-    { name:"Threat Hunting",      level:68 },
-    { name:"CVE Analysis",        level:80 },
-    { name:"Zero Trust",          level:72 },
+    { name:"Penetration Testing", level:55 },
+    { name:"SIEM / SOC",          level:50 },
+    { name:"Threat Hunting",      level:48 },
+    { name:"CVE Analysis",        level:62 },
+    { name:"Zero Trust",          level:52 },
   ]},
   { category:"Sysadmin", accent: ACCENT.mint500, items:[
-    { name:"Linux (RHEL/Debian)", level:92 },
-    { name:"Ubuntu Server",       level:90 },
-    { name:"Active Directory",    level:74 },
-    { name:"Ansible",             level:70 },
-    { name:"Bash / Python",       level:82 },
+    { name:"Linux (RHEL/Debian)", level:95 },
+    { name:"Ubuntu Server",       level:92 },
+    { name:"Active Directory",    level:80 },
+    { name:"Ansible",             level:72 },
+    { name:"Bash / Python",       level:90 },
   ]},
   { category:"Cloud & Infra", accent: ACCENT.violet, items:[
-    { name:"AWS / Azure",     level:68 },
-    { name:"Terraform",       level:62 },
-    { name:"Docker / K8s",    level:80 },
-    { name:"Proxmox",         level:85 },
-    { name:"Zabbix / Nagios", level:72 },
+    { name:"AWS / Azure",     level:58 },
+    { name:"Terraform",       level:48 },
+    { name:"Docker / K8s",    level:72 },
+    { name:"Proxmox",         level:78 },
+    { name:"Zabbix / Nagios", level:62 },
   ]},
 ];
 
@@ -2068,13 +2068,11 @@ const SkillsDonut = memo(({ C, isMobile }) => {
 
   // Compute average level per category
   const segments = useMemo(() => {
-    const raw = SKILLS.map(g => ({
+    return SKILLS.map(g => ({
       label: g.category,
       color: g.accent,
-      avg: g.items.reduce((s, it) => s + it.level, 0) / g.items.length,
+      value: Math.round(g.items.reduce((s, it) => s + it.level, 0) / g.items.length),
     }));
-    const total = raw.reduce((s, g) => s + g.avg, 0);
-    return raw.map(g => ({ label: g.label, color: g.color, value: Math.round(g.avg / total * 100) }));
   }, []);
 
   // Keep hoveredRef in sync without re-running setup
