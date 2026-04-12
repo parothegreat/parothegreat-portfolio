@@ -541,16 +541,24 @@ const BootScreen = memo(({ onDone }) => {
     const initTyped = Array(LINES.length).fill("");
     setTypedLines(initTyped);
 
+    //Loading boot progress
+    let progressStartTime = null;
+    const progressInterval = setInterval(() => {
+      if (progressStartTime === null) progressStartTime = Date.now();
+      const elapsed = Date.now() - progressStartTime;
+      const targetProgress = Math.min(100, (elapsed / 3000) * 100);
+      setLoadProgress(Math.round(targetProgress));
+    }, 10); //10 ms update
+    intervals.push(progressInterval);
+
     const typeNext = (idx) => {
       if (idx >= LINES.length) {
-        // all lines done, start exit
+        // all lines done, set progress to 100 and start exit
+        setLoadProgress(100);
         timers.push(setTimeout(skip, 600));
         return;
       }
       setLinePhase(p => Math.max(p, idx + 1));
-      // progress bar: map line idx to 0-100
-      const progress = Math.round(((idx + 1) / LINES.length) * 100);
-      setLoadProgress(progress);
 
       const iv = typeLine(idx, LINES[idx].t, () => {
         const pause = idx === LINES.length - 1 ? 300 : 120;
@@ -1816,8 +1824,8 @@ const Hero = memo(({ C, booted }) => {
               letterSpacing:"-0.02em",
               marginBottom:"3rem",
             }}>
-              Hi, I'm<br />
-              <span style={{ fontStyle:"italic", color:C.mint500 }}>Alvaro Prayogo</span>
+              Alvaro<br />
+              <span style={{ fontStyle:"italic", color:C.mint500 }}>Prayogo.</span>
             </h1>
           )}
 
@@ -1891,6 +1899,8 @@ const Hero = memo(({ C, booted }) => {
 const Work = memo(({ C }) => {
   const { isMobile } = useTheme();
   const [hovered, setHovered] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const toggleExpand = useCallback((id) => setExpanded(p => p === id ? null : id), []);
 
   return (
     <section id="work" className="work-section" style={{
@@ -1906,14 +1916,14 @@ const Work = memo(({ C }) => {
         <div>
           <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
             <span style={{opacity:0.4}}>02 /</span>
-            <span>// selected_engagements</span>
+            <span>selected work</span>
           </p>
           <h2 style={{
             fontFamily:"'DM Serif Display',serif",
             fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 3vw, 2.5rem)",
             color:C.textPri, fontWeight:400
           }}>
-            Ops that <em>matter</em>
+            Things I've <em>built</em>
           </h2>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
@@ -1954,9 +1964,10 @@ const Work = memo(({ C }) => {
             className={`project-row reveal d${Math.min(i+1,5)}`}
             onMouseEnter={() => setHovered(p.id)}
             onMouseLeave={() => setHovered(null)}
+            onClick={() => toggleExpand(p.id)}
             style={{
-              cursor:"default",
-              background: hovered===p.id ? `${p.accent}0d` : "transparent",
+              cursor:"pointer",
+              background: expanded===p.id ? `${p.accent}12` : hovered===p.id ? `${p.accent}0d` : "transparent",
               transition:"background 0.2s",
               position:"relative",
             }}
@@ -2063,7 +2074,52 @@ const Work = memo(({ C }) => {
                 ))}
               </div>
             </div>
-          </div>
+
+          {/* Expand chevron */}
+          <div style={{
+            position:"absolute", right:"1rem", top:"50%",
+            transform:"translateY(-50%)",
+            color: C.textMuted, fontSize:"0.55rem",
+            opacity: hovered===p.id ? 0.6 : 0.2,
+            transition:"opacity 0.2s",
+            pointerEvents:"none",
+            rotate: expanded===p.id ? "90deg" : "0deg",
+          }}>▶</div>
+
+          {/* Expanded detail panel */}
+          {expanded === p.id && (
+            <div style={{
+              borderBottom:`1px solid ${C.border}`,
+              background:`${p.accent}07`,
+              padding: isMobile ? "1rem 0.75rem 1.25rem 2.5rem" : "1.25rem 3rem 1.5rem 5rem",
+              display:"flex", flexDirection: isMobile ? "column" : "row",
+              gap: isMobile ? "1rem" : "3rem",
+              animation:"fadeUp 0.25s ease both",
+            }}>
+              <div style={{ flex:1 }}>
+                <p className="mono" style={{
+                  fontSize:"0.58rem", color:p.accent, letterSpacing:"0.1em",
+                  textTransform:"uppercase", marginBottom:"0.6rem", opacity:0.7,
+                }}>overview</p>
+                <p style={{ fontSize:"0.82rem", lineHeight:1.8, color:C.textSec, fontWeight:300 }}>
+                  {p.desc}
+                </p>
+              </div>
+              <div style={{ flexShrink:0, minWidth: isMobile ? "auto" : "180px" }}>
+                <p className="mono" style={{
+                  fontSize:"0.58rem", color:p.accent, letterSpacing:"0.1em",
+                  textTransform:"uppercase", marginBottom:"0.6rem", opacity:0.7,
+                }}>stack</p>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:"0.35rem" }}>
+                  {p.tags.map(t => (
+                    <span key={t} className="tag-pill" style={{ borderColor:`${p.accent}44`, color:p.accent }}>{t}</span>
+                  ))}
+                </div>
+                <p className="mono" style={{ fontSize:"0.55rem", color:C.textMuted, marginTop:"0.85rem", opacity:0.5 }}>{p.year}</p>
+              </div>
+            </div>
+          )}
+        </div>
         ))}
       </div>
     </section>
@@ -2303,7 +2359,7 @@ const Skills = memo(({ C }) => {
           <div>
             <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
               <span style={{opacity:0.4}}>03 /</span>
-              <span>// capabilities</span>
+              <span>tools & expertise</span>
             </p>
             <h2 style={{
               fontFamily:"'DM Serif Display',serif",
@@ -2583,9 +2639,15 @@ const Contact = memo(({ C }) => {
   const [form, setForm] = useState({ name:"", email:"", message:"" });
   const [sent, setSent] = useState(false);
   const { isMobile } = useTheme();
-
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(null);
+  const copy = useCallback((val, key) => {
+    navigator.clipboard.writeText(val).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  }, []);
 
   const handleSubmit = useCallback(() => {
     if (!form.name || !form.email || !form.message) return;
@@ -2624,14 +2686,14 @@ const Contact = memo(({ C }) => {
           <div className="reveal-left">
             <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
               <span style={{opacity:0.4}}>04 /</span>
-              <span>// initiate_contact</span>
+              <span>get in touch</span>
             </p>
             <h2 style={{ 
               fontFamily:"'DM Serif Display',serif", 
               fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 3vw, 2.8rem)",
               color:C.textPri, fontWeight:400, lineHeight:1.1, marginBottom:"1.5rem" 
             }}>
-              Let's secure<br /><em>something</em>
+              Drop me<br />a <em>message</em>
             </h2>
             <p style={{ 
               fontSize:"0.85rem", lineHeight:1.7, fontWeight:300, 
@@ -2641,25 +2703,36 @@ const Contact = memo(({ C }) => {
             </p>
             
             {[
-              ["Email","alvaroprayogo38@gmail.com",C.mint500],
-              ["Based in","Bekasi, Indonesia",null],
-              ["PGP Key","0xSH3L·L0WN·3D42·CAF",C.textMuted],
-              ["Response","Within 24h",null],
-            ].map(([label,value,accent]) => (
-              <div key={label} style={{ 
-                display:"flex", justifyContent:"space-between", 
-                alignItems:"center", padding:"0.85rem 0",
-                borderBottom:`1px solid ${C.border}`,
-                gap:"1rem",
-              }}>
+              ["Email","alvaroprayogo38@gmail.com",C.mint500, true],
+              ["Based in","Bekasi, Indonesia",null, false],
+              ["PGP Key","0xSH3L·L0WN·3D42·CAF",C.textMuted, true],
+              ["Response","Within 24h",null, false],
+            ].map(([label,value,accent,copyable]) => (
+              <div
+                key={label}
+                onClick={() => copyable && copy(value, label)}
+                style={{ 
+                  display:"flex", justifyContent:"space-between", 
+                  alignItems:"center", padding:"0.85rem 0",
+                  borderBottom:`1px solid ${C.border}`,
+                  gap:"1rem",
+                  cursor: copyable ? "pointer" : "default",
+                }}
+                title={copyable ? "Click to copy" : undefined}
+              >
                 <span className="mono" style={{ fontSize:"0.6rem", color:C.textMuted, letterSpacing:"0.08em", flexShrink:0 }}>
                   {label}
                 </span>
                 <span className="mono" style={{ 
-                  fontSize:"0.72rem", color:accent||C.textSec, fontWeight:400,
+                  fontSize:"0.72rem", color: copied===label ? C.mint500 : (accent||C.textSec), fontWeight:400,
                   textAlign:"right", wordBreak:"break-all",
+                  transition:"color 0.2s",
+                  display:"flex", alignItems:"center", gap:"0.4rem",
                 }}>
-                  {value}
+                  {copied===label ? "copied!" : value}
+                  {copyable && copied!==label && (
+                    <span style={{ fontSize:"0.5rem", opacity:0.4 }}>⎘</span>
+                  )}
                 </span>
               </div>
             ))}
@@ -2771,6 +2844,13 @@ const Contact = memo(({ C }) => {
 // ── Optimized Footer ───────────────────────────────────────────
 const Footer = memo(({ C }) => {
   const { isMobile } = useTheme();
+  const [atTop, setAtTop] = useState(true);
+  useEffect(() => {
+    const fn = () => setAtTop(window.scrollY < 80);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   
   return (
     <footer className="footer-inner" style={{
@@ -2808,9 +2888,24 @@ const Footer = memo(({ C }) => {
         ))}
       </div>
       
-      <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
-           ©{new Date().getFullYear()} Alvaro Prayogo, all rights reserved.
-      </span>
+      <div style={{ display:"flex", alignItems:"center", gap:"1.5rem" }}>
+        <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
+          ©{new Date().getFullYear()} Alvaro Prayogo
+        </span>
+        <button
+          onClick={scrollTop}
+          className="mono"
+          style={{
+            fontSize:"0.6rem", color: atTop ? C.textMuted : C.mint500,
+            background:"transparent", border:`1px solid ${atTop ? C.border : C.mint500+"44"}`,
+            borderRadius:"4px", padding:"0.28rem 0.7rem", cursor:"pointer",
+            transition:"all 0.25s", letterSpacing:"0.06em",
+            opacity: atTop ? 0.4 : 1,
+          }}
+        >
+          ↑ top
+        </button>
+      </div>
     </footer>
   );
 });
@@ -2906,7 +3001,7 @@ export default function Portfolio() {
       <Navbar active={active} C={C} />
 
       {/* Page content fades in after boot — opacity only, NO transform (would break position:fixed children) */}
-      <div style={{
+      <div style={{                                    
         opacity: booted ? 1 : 0,
         transition: booted ? "opacity 0.8s cubic-bezier(.16,1,.3,1) 0.1s" : "none",
       }}>
