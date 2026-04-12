@@ -256,8 +256,7 @@ const GlobalStyles = memo(({ C, isMobile }) => {
       .reveal-scale.vis { opacity:1; transform:scale(1); }
       .d1{transition-delay:.05s}.d2{transition-delay:.1s}.d3{transition-delay:.15s}.d4{transition-delay:.2s}.d5{transition-delay:.25s}
       @keyframes growBar { from { width:0 } to { width:var(--bar-w,80%) } }
-      .skill-bar { width:0; }
-      .reveal.vis .skill-bar { animation: growBar 0.9s cubic-bezier(.16,1,.3,1) both; width:var(--bar-w,80%); }
+      .skill-bar { width:var(--bar-w,0); transition:width 0.4s cubic-bezier(.16,1,.3,1); }
 
       .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
 
@@ -2432,9 +2431,10 @@ const Skills = memo(({ C }) => {
                         <div style={{height:"2px", background:`${C.border}`, borderRadius:"2px", overflow:"hidden"}}>
                           <div className="skill-bar" style={{
                             height:"100%",
-                            "--bar-w": `${item.level}%`,
+                            width:`${item.level}%`,
                             background:`linear-gradient(90deg, ${group.accent}99, ${group.accent})`,
                             borderRadius:"2px",
+                            transition:"width 0.4s cubic-bezier(.16,1,.3,1)",
                           }} />
                         </div>
                       </div>
