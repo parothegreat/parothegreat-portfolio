@@ -25,7 +25,3 @@ When I'm not in the terminal, I'm probably reading CVE reports or breaking my ho
 ## This site
 
 Built with React + Vite. Deployed via Docker + Nginx.
-
-```bash
-npm install && npm run dev
-```
