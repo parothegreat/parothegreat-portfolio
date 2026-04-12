@@ -1,9 +1,21 @@
-import { 
+import React, { 
   useState, useEffect, useLayoutEffect, useRef, createContext, useContext, 
   lazy, Suspense, memo, useCallback, useMemo 
 } from "react";
 import { gsap } from "gsap";
 import emailjs from "@emailjs/browser";
+
+
+// ── Error Boundary for WebGL/Three.js ─────────────────────────
+class LanyardErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err) { console.warn("Lanyard failed to load:", err.message); }
+  render() {
+    if (this.state.hasError) return null; // silent fail — don't crash the page
+    return this.props.children;
+  }
+}
 
 // ── Lazy Load Heavy Components ─────────────────────────────────
 const Lanyard = lazy(() => import('./Lanyard'));
@@ -1748,9 +1760,11 @@ const Hero = memo(({ C, booted }) => {
           transform:"translateY(-50%)",
           width:"400px", height:"600px", zIndex:3, pointerEvents:"all",
         }}>
-          <Suspense fallback={<div style={{ width: "100%", height: "100%", background: C.bgCard, borderRadius: "8px" }} />}>
-            <Lanyard position={[0,0,20]} gravity={[0,-40,0]} />
-          </Suspense>
+          <LanyardErrorBoundary>
+            <Suspense fallback={<div style={{ width: "100%", height: "100%", background: C.bgCard, borderRadius: "8px" }} />}>
+              <Lanyard position={[0,0,20]} gravity={[0,-40,0]} />
+            </Suspense>
+          </LanyardErrorBoundary>
         </div>
       )}
 
@@ -1787,9 +1801,11 @@ const Hero = memo(({ C, booted }) => {
                 width:"130px", height:"180px",
                 flexShrink:0, pointerEvents:"all",
               }}>
-                {booted && <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
-                  <Lanyard position={[0,0,25]} gravity={[0,-50,0]} />
-                </Suspense>}
+                {booted && <LanyardErrorBoundary>
+                  <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
+                    <Lanyard position={[0,0,25]} gravity={[0,-50,0]} />
+                  </Suspense>
+                </LanyardErrorBoundary>}
               </div>
             </div>
           ) : (
