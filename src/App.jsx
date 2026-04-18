@@ -343,7 +343,7 @@ const GlobalStyles = memo(({ C, isMobile }) => {
 
       /* Mobile-first responsive */
       @media (max-width: 900px) {
-        .project-row { grid-template-columns:40px 1fr; gap:0.75rem; padding:1.25rem 1rem; }
+        .project-row { grid-template-columns:36px 1fr; gap:0.5rem; padding:1rem 0.75rem; }
         .proj-desc, .proj-meta { display:none; }
         .lanyard-wrap { display:none !important; }
         .hero-bottom { flex-direction:column !important; align-items:flex-start !important; gap:1.5rem !important; }
@@ -2000,7 +2000,7 @@ const Work = memo(({ C }) => {
             </div>
 
             {/* Title + category + status */}
-            <div>
+            <div style={{minWidth:0, overflow:"hidden"}}>
               <div style={{display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"0.3rem", flexWrap:"wrap"}}>
                 <h3 style={{
                   fontFamily:"'DM Serif Display',serif",
@@ -2091,17 +2091,22 @@ const Work = memo(({ C }) => {
             <div style={{
               borderBottom:`1px solid ${C.border}`,
               background:`${p.accent}07`,
-              padding: isMobile ? "1rem 0.75rem 1.25rem 2.5rem" : "1.25rem 3rem 1.5rem 5rem",
+              padding: isMobile ? "1rem 0.75rem 1.25rem 0.75rem" : "1.25rem 3rem 1.5rem 5rem",
               display:"flex", flexDirection: isMobile ? "column" : "row",
-              gap: isMobile ? "1rem" : "3rem",
+              gap: isMobile ? "1.25rem" : "3rem",
               animation:"fadeUp 0.25s ease both",
             }}>
-              <div style={{ flex:1 }}>
+              <div style={{ flex:1, minWidth:0 }}>
                 <p className="mono" style={{
                   fontSize:"0.58rem", color:p.accent, letterSpacing:"0.1em",
                   textTransform:"uppercase", marginBottom:"0.6rem", opacity:0.7,
                 }}>overview</p>
-                <p style={{ fontSize:"0.82rem", lineHeight:1.8, color:C.textSec, fontWeight:300 }}>
+                <p style={{
+                  fontSize: isMobile ? "0.78rem" : "0.82rem",
+                  lineHeight:1.75, color:C.textSec, fontWeight:300,
+                  wordBreak:"break-word", overflowWrap:"break-word",
+                  whiteSpace:"normal", margin:0,
+                }}>
                   {p.desc}
                 </p>
               </div>
