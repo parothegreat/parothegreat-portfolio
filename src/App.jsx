@@ -1,24 +1,15 @@
 import React, { 
   useState, useEffect, useLayoutEffect, useRef, createContext, useContext, 
-  lazy, Suspense, memo, useCallback, useMemo 
+  lazy, memo, useCallback, useMemo 
 } from "react";
 import { gsap } from "gsap";
 import emailjs from "@emailjs/browser";
 
 
 // ── Error Boundary for WebGL/Three.js ─────────────────────────
-class LanyardErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(err) { console.warn("Lanyard failed to load:", err.message); }
-  render() {
-    if (this.state.hasError) return null; // silent fail — don't crash the page
-    return this.props.children;
-  }
-}
-
 // ── Lazy Load Heavy Components ─────────────────────────────────
-const Lanyard = lazy(() => import('./Lanyard'));
+import ProfileCard from './ProfileCard';
+import DecryptedText from './DecryptedText';
 
 // ── Theme Context ──────────────────────────────────────────────
 const ThemeCtx = createContext({ isDark: true, toggle: () => {}, isMobile: false });
@@ -390,6 +381,7 @@ const GlobalStyles = memo(({ C, isMobile }) => {
 
       /* Hardware acceleration */
       .gpu-accelerated { transform: translateZ(0); backface-visibility: hidden; }
+
     `;
   }, [C]);
 
@@ -1717,7 +1709,7 @@ const LinuxTerminal = memo(({ C, isMobile, start }) => {
 });
 
 // ── Optimized Hero Section ─────────────────────────────────────
-const Hero = memo(({ C, booted }) => {
+const Hero = memo(({ C, booted, startAlvaro, startPrayogo }) => {
   const [ready, setReady] = useState(false);
   const { isMobile } = useTheme();
 
@@ -1761,18 +1753,31 @@ const Hero = memo(({ C, booted }) => {
         }} />
       )}
 
-      {/* Lanyard - lazy loaded, hidden on mobile */}
+      {/* ProfileCard - desktop only */}
       {!isMobile && booted && (
         <div className="lanyard-wrap" style={{
-          position:"absolute", top:"35%", right:"12rem", 
+          position:"absolute", top:"44%", right:"12rem",
           transform:"translateY(-50%)",
           width:"400px", height:"600px", zIndex:3, pointerEvents:"all",
+          display:"", alignItems:"center", justifyContent:"center",
         }}>
-          <LanyardErrorBoundary>
-            <Suspense fallback={<div style={{ width: "100%", height: "100%", background: C.bgCard, borderRadius: "8px" }} />}>
-              <Lanyard position={[0,0,20]} gravity={[0,-40,0]} />
-            </Suspense>
-          </LanyardErrorBoundary>
+          <ProfileCard
+            name="Alvaro Prayogo"
+            title="Network · Security · Sysadmin"
+            handle="parothegreat"
+            status="Open to Work"
+            contactText="Contact Me"
+            avatarUrl="/images/profile/pfp.jpeg"
+            miniAvatarUrl="/images/profile/pfp.jpeg"
+            showUserInfo={true}
+            enableTilt={true}
+            enableMobileTilt={false}
+            behindGlowEnabled={true}
+            behindGlowSize="50%"
+            behindGlowColor="rgba(0,229,160,0.35)"
+            innerGradient="linear-gradient(145deg,#0A000F 0%,#00E5A022 0%)"
+            onContactClick={() => document.getElementById("contact")?.scrollIntoView({ behavior:"smooth" })}
+          />
         </div>
       )}
 
@@ -1790,31 +1795,32 @@ const Hero = memo(({ C, booted }) => {
 
         {/* Name */}
         <div>
-          {/* Mobile: h1 + Lanyard side by side */}
+          {/* Mobile: Hanya text, lebih rapi */}
           {isMobile ? (
             <div style={{
-              display:"flex", alignItems:"flex-start",
-              gap:"0.75rem", marginBottom:"2rem",
+              marginBottom:"2rem",
             }}>
               <h1 className="hero-h1" style={{
                 fontFamily:"'DM Serif Display',serif",
-                fontSize:"clamp(2rem, 10vw, 3rem)",
-                lineHeight:1.1, fontWeight:400, color:C.textPri,
-                letterSpacing:"-0.02em", flex:1, marginBottom:0,
+                fontSize:"clamp(1.5rem, 7vw, 2.2rem)",
+                lineHeight:1.2, fontWeight:400, color:C.textPri,
+                letterSpacing:"-0.02em", marginBottom:0,
               }}>
                 Hi, I'm<br />
-                <span style={{ fontStyle:"italic", color:C.mint500 }}>Alvaro Prayogo</span>
+                <span style={{ fontStyle:"italic", color:C.mint500 }}>
+                  <DecryptedText 
+                    text="Alvaro Prayogo" 
+                    speed={50}
+                    maxIterations={50}
+                    sequential={true}
+                    revealDirection="center"
+                    animateOn="view"
+                    shouldStart={startAlvaro}
+                    className="decrypted-char"
+                    encryptedClassName="encrypted-char"
+                  />
+                </span>
               </h1>
-              <div style={{
-                width:"130px", height:"180px",
-                flexShrink:0, pointerEvents:"all",
-              }}>
-                {booted && <LanyardErrorBoundary>
-                  <Suspense fallback={<div style={{ width:"100%", height:"100%", background: C.bgCard, borderRadius:"8px" }} />}>
-                    <Lanyard position={[0,0,25]} gravity={[0,-50,0]} />
-                  </Suspense>
-                </LanyardErrorBoundary>}
-              </div>
             </div>
           ) : (
             <h1 className="hero-h1" style={{
@@ -1824,8 +1830,30 @@ const Hero = memo(({ C, booted }) => {
               letterSpacing:"-0.02em",
               marginBottom:"3rem",
             }}>
-              Alvaro<br />
-              <span style={{ fontStyle:"italic", color:C.mint500 }}>Prayogo.</span>
+              <DecryptedText 
+                text="Alvaro" 
+                speed={100}
+                maxIterations={10}
+                sequential={true}
+                revealDirection="start"
+                animateOn="view"
+                shouldStart={startAlvaro}
+                className="decrypted-char"
+                encryptedClassName="encrypted-char"
+              /><br />
+              <span style={{ fontStyle:"italic", color:C.mint500 }}>
+                <DecryptedText 
+                  text="Prayogo." 
+                  speed={100}
+                  maxIterations={10}
+                  sequential={true}
+                  revealDirection="start"
+                  animateOn="view"
+                  shouldStart={startPrayogo}
+                  className="decrypted-char"
+                  encryptedClassName="encrypted-char"
+                />
+              </span>
             </h1>
           )}
 
@@ -2089,12 +2117,14 @@ const Work = memo(({ C }) => {
           {/* Expanded detail panel */}
           {expanded === p.id && (
             <div style={{
+              gridColumn: "1 / -1",   /* span all grid columns */
               borderBottom:`1px solid ${C.border}`,
               background:`${p.accent}07`,
-              padding: isMobile ? "1rem 0.75rem 1.25rem 0.75rem" : "1.25rem 3rem 1.5rem 5rem",
+              padding: isMobile ? "1rem 1rem 1.25rem 1rem" : "1.25rem 3rem 1.5rem 5rem",
               display:"flex", flexDirection: isMobile ? "column" : "row",
               gap: isMobile ? "1.25rem" : "3rem",
               animation:"fadeUp 0.25s ease both",
+              width:"100%", boxSizing:"border-box",
             }}>
               <div style={{ flex:1, minWidth:0 }}>
                 <p className="mono" style={{
@@ -2983,12 +3013,28 @@ function useScrollSpy() {
 export default function Portfolio() {
   const [isDark, setIsDark] = useState(true);
   const [booted, setBooted] = useState(false);
+  const [startAlvaro, setStartAlvaro] = useState(false);
+  const [startPrayogo, setStartPrayogo] = useState(false);
+  const sequenceStartedRef = useRef(false);
   const { isMobile, isTouch } = useMobileDetect();
   const C = useMemo(() => makeTokens(isDark), [isDark]);
   const toggle = useCallback(() => setIsDark(d => !d), []);
   const active = useScrollSpy();
 
   useScrollReveal();
+
+  // Sequential decryption: Alvaro first, then Prayogo (only once on boot)
+  useEffect(() => {
+    if (booted && !sequenceStartedRef.current) {
+      sequenceStartedRef.current = true;
+      setStartAlvaro(true);
+      // Start Prayogo after Alvaro finishes (6 chars * 150ms + buffer = ~1100ms)
+      const timer = setTimeout(() => {
+        setStartPrayogo(true);
+      }, 1100);
+      return () => clearTimeout(timer);
+    }
+  }, [booted]);
 
   const themeValue = useMemo(() => ({
     isDark,
@@ -3011,7 +3057,7 @@ export default function Portfolio() {
         transition: booted ? "opacity 0.8s cubic-bezier(.16,1,.3,1) 0.1s" : "none",
       }}>
         <Overlays C={C} />
-        <Hero C={C} booted={booted} />
+        <Hero C={C} booted={booted} startAlvaro={startAlvaro} startPrayogo={startPrayogo} />
         <Work C={C} />
         <Skills C={C} />
         <Contact C={C} />
