@@ -19,6 +19,7 @@ When I'm not in the terminal, I'm probably reading CVE reports or breaking my ho
 - **Email** — alvaroprayogo38@gmail.com
 - **GitHub** — [github.com/parothegreat](https://github.com/parothegreat)
 - **LinkedIn** — [Moehammad Alvaro Pirata Prayogo](https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a)
+- **Website** — https://parothegreat.site
 
 ---
 
