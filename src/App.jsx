@@ -1,206 +1,307 @@
-import React, { 
-  useState, useEffect, useLayoutEffect, useRef, createContext, useContext, 
-  lazy, memo, useCallback, useMemo 
+import React, {
+  useState, useEffect, useLayoutEffect, useRef,
+  createContext, useContext, memo, useCallback, useMemo,
 } from "react";
 import { gsap } from "gsap";
 import emailjs from "@emailjs/browser";
+import ProfileCard from "./ProfileCard";
+import DecryptedText from "./DecryptedText";
 
-
-// ── Error Boundary for WebGL/Three.js ─────────────────────────
-// ── Lazy Load Heavy Components ─────────────────────────────────
-import ProfileCard from './ProfileCard';
-import DecryptedText from './DecryptedText';
-
-// ── Theme Context ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// THEME CONTEXT
+// ─────────────────────────────────────────────────────────────────
 const ThemeCtx = createContext({ isDark: true, toggle: () => {}, isMobile: false });
 const useTheme = () => useContext(ThemeCtx);
 
-// ── Mobile Detection Hook ──────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// MOBILE DETECTION
+// ─────────────────────────────────────────────────────────────────
 function useMobileDetect() {
   const [isMobile, setIsMobile] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
-
+  const [isTouch, setIsTouch]   = useState(false);
   useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(userAgent);
-      const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-      const isSmallScreen = window.innerWidth < 900;
-      
-      setIsMobile(isMobileDevice || isTouchDevice || isSmallScreen);
-      setIsTouch(isTouchDevice || 'ontouchstart' in window);
+    const check = () => {
+      const ua = navigator.userAgent.toLowerCase();
+      const mob = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+      const touch = window.matchMedia("(pointer: coarse)").matches;
+      const small = window.innerWidth < 900;
+      setIsMobile(mob || touch || small);
+      setIsTouch(touch || "ontouchstart" in window);
     };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile, { passive: true });
-    return () => window.removeEventListener('resize', checkMobile);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
   }, []);
-
   return { isMobile, isTouch };
 }
 
-// ── Brand Tokens ───────────────────────────────────────────────
-const ACCENT = {
-  mint500: "#00E5A0", mint400: "#33EBB3", mint600: "#00C488",
-  lime: "#C8F135", coral: "#FF6B6B", amber: "#FFB830", 
-  violet: "#A788FA", blue: "#00A3FF",
-};
+// ─────────────────────────────────────────────────────────────────
+// DESIGN TOKENS
+// ─────────────────────────────────────────────────────────────────
+const makeTokens = (isDark) =>
+  isDark
+    ? {
+        // Dark: deep obsidian + refined slate borders + indigo/emerald accents
+        bgBase:       "#0D0D12",
+        bgCard:       "#13131A",
+        bgCard2:      "#1A1A24",
+        bgCard3:      "#1F1F2E",
+        border:       "#252535",
+        borderFaint:  "#1C1C2A",
+        textPri:      "#EEF0F6",
+        textSec:      "#8892A4",
+        textMuted:    "#4E566A",
+        navBg:        "rgba(13,13,18,0.40)",
+        navBgScr:     "rgba(13,13,18,0.92)",
+        overlayBg:    "rgba(13,13,18,0.60)",
+        heroOverlay:  "linear-gradient(to top,#0D0D12f8 0%,#0D0D12b0 38%,#0D0D1260 65%,transparent 100%)",
+        mobileMenuBg: "#0D0D12",
+        // Accent palette — indigo primary, emerald secondary
+        accent:       "#6366F1",   // indigo 500
+        accentLight:  "#818CF8",   // indigo 400
+        accentDark:   "#4F52D9",   // indigo 600
+        emerald:      "#10B981",   // emerald 500
+        emeraldLight: "#34D399",   // emerald 400
+        emeraldDark:  "#059669",   // emerald 600
+        amber:        "#F59E0B",   // amber
+        rose:         "#F43F5E",   // rose
+        sky:          "#38BDF8",   // sky
+      }
+    : {
+        // Light: warm parchment + ink text + sage/indigo accents
+        bgBase:       "#F8F7F3",
+        bgCard:       "#FFFFFF",
+        bgCard2:      "#F0EFE9",
+        bgCard3:      "#E8E6DF",
+        border:       "#D8D6CE",
+        borderFaint:  "#E8E6DF",
+        textPri:      "#18181F",
+        textSec:      "#4A4E5C",
+        textMuted:    "#8C909C",
+        navBg:        "rgba(248,247,243,0.82)",
+        navBgScr:     "rgba(248,247,243,0.96)",
+        overlayBg:    "rgba(248,247,243,0.78)",
+        heroOverlay:  "linear-gradient(to top,#F8F7F3f8 0%,#F8F7F3c0 40%,#F8F7F360 65%,transparent 100%)",
+        mobileMenuBg: "#F8F7F3",
+        accent:       "#4F52D9",
+        accentLight:  "#6366F1",
+        accentDark:   "#3730A3",
+        emerald:      "#059669",
+        emeraldLight: "#10B981",
+        emeraldDark:  "#047857",
+        amber:        "#D97706",
+        rose:         "#E11D48",
+        sky:          "#0284C7",
+      };
 
-const makeTokens = (isDark) => isDark ? {
-  bgBase: "#0A000F", bgCard: "#131619", bgCard2: "#1A1E22", 
-  border: "#252A2F", textPri: "#F0F4F8", textSec: "#8A95A0", 
-  textMuted: "#5E6873", navBg: "rgba(10,0,15,0.35)", 
-  navBgScr: "#0A000Fe0", overlayBg: "rgba(10,0,15,0.55)",
-  heroOverlay: "linear-gradient(to top,#0A000Ff5 0%,#0A000F99 40%,#0A000F55 70%,transparent 100%)",
-  mobileMenuBg: "#0A000F", ...ACCENT,
-} : {
-  // ── Light mode backgrounds — warm off-white, not flat grey ──
-  bgBase:  "#F7F5F0",   // warm parchment
-  bgCard:  "#FFFFFF",
-  bgCard2: "#EEF0EC",   // subtle sage tint
-  border:  "#D6DAD2",
-
-  // ── Light mode text — ink tones, not pure black ──
-  textPri:  "#1A1F1C",  // deep forest ink
-  textSec:  "#4A5550",  // muted sage
-  textMuted:"#8A9690",  // soft grey-green
-
-  // ── Nav / overlay ──
-  navBg:       "rgba(247,245,240,0.80)",
-  navBgScr:    "#F7F5F0f0",
-  overlayBg:   "rgba(247,245,240,0.75)",
-  heroOverlay: "linear-gradient(to top,#F7F5F0fa 0%,#F7F5F0cc 40%,#F7F5F066 70%,transparent 100%)",
-  mobileMenuBg:"#F7F5F0",
-
-  // ── Accents — darker, more saturated for readability on light bg ──
-  mint500: "#007A54",   // deep emerald  (was #00E5A0 — too neon)
-  mint400: "#009966",   // mid emerald
-  mint600: "#005C3F",   // darker emerald
-  lime:    "#6B8A00",   // olive (was #C8F135 — invisible on white)
-  coral:   "#C0392B",   // deep red-coral (was #FF6B6B — washed out)
-  amber:   "#B8620A",   // burnt amber (was #FFB830 — too bright)
-  violet:  "#5B3FA8",   // rich indigo (was #A788FA — too pale)
-  blue:    "#0066CC",   // strong blue  (was #00A3FF — too light)
-};
-
-// ── Data Constants ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// DATA — SYNCED FROM README
+// ─────────────────────────────────────────────────────────────────
 const PROJECTS = [
-  { id:"01", title:"SentinelNet", category:"Network Security & Monitoring", 
-    desc:"Enterprise-grade IDS/IPS deployment across 3 data centers. Reduced threat detection time from 4h to 8min using Suricata rules + custom SIEM correlation logic.",
-    tags:["Suricata","Splunk","pfSense"], year:"2024", accent: ACCENT.coral, status:"completed", featured:true },
-  { id:"02", title:"VaultOps", category:"Infrastructure Hardening", 
-    desc:"Zero-trust architecture rollout for 200-node corporate network. Implemented microsegmentation, PAM, and automated compliance scanning aligned to CIS Benchmarks.",
-    tags:["HashiCorp Vault","Ansible","CIS"], year:"2024", accent: ACCENT.mint500, status:"completed" },
-  { id:"03", title:"PhantomNet Lab", category:"Penetration Testing", 
-    desc:"Full red team engagement simulating APT lateral movement. Identified 14 critical CVEs across Windows AD environment. Delivered remediation roadmap adopted by client.",
-    tags:["Metasploit","BloodHound","Cobalt Strike"], year:"2023", accent: ACCENT.violet, status:"completed" },
-  { id:"04", title:"CoreFabric", category:"Network Engineering", 
-    desc:"Designed and deployed BGP/OSPF multi-site WAN for ISP with 40Gbps backbone. Automated provisioning via Netmiko/NAPALM, cutting config time by 70%.",
-    tags:["Cisco IOS-XE","BGP","NAPALM"], year:"2023", accent: ACCENT.blue, status:"completed" },
-  { id:"05", title:"Linux Server Ops Lab", category:"System Administration",
-    desc:"Maintained and deployed Linux server environments for testing infrastructure, services, and network configurations. Covers service management, reverse proxy, database deployment, and server hardening practices.",
-    tags:["Linux","Nginx","Bash","MySQL"], year:"2024", accent: ACCENT.amber, status:"completed" },
-  { id:"06", title:"InfraOps Platform", category:"Infrastructure & DevOps Engineering",
-    desc:"Designed and deployed a production-ready IT Work Order & Helpdesk platform with containerized services and reverse proxy architecture. Features a Go/Gin backend API, Rust/Axum time-tracking microservice, and host-based MySQL.",
-    tags:["Go","Rust","Docker","Nginx","MySQL","Linux"], year:"2025", accent: ACCENT.lime, status:"active" },
+  {
+    id: "01",
+    title: "go-bot",
+    category: "Autonomous Reconnaissance Tool",
+    repo: "https://github.com/parothegreat/go-bot",
+    stack: ["Go", "goroutines", "HTTP client", "CLI"],
+    year: "2025",
+    status: "active",
+    featured: true,
+    accent: "emerald",
+    desc: "An autonomous bot written in Go for penetration testing recon workflows. Concurrent goroutine-based request handling for fast target enumeration across systems.",
+    impact: [
+      "Reduces manual reconnaissance time by eliminating repetitive enumeration steps",
+      "Modular plugin architecture allows new recon modules without touching core logic",
+      "Structured output for downstream analysis and reporting",
+    ],
+    challenges: [
+      "Designing a goroutine pool that avoids race conditions under high concurrency",
+      "Keeping the binary portable and dependency-free across Linux environments",
+      "Structuring extensibility without sacrificing simplicity of the core task runner",
+    ],
+  },
+  {
+    id: "02",
+    title: "rfid-access-control-system",
+    category: "Institutional Physical Access Platform",
+    repo: "https://github.com/teamitmivhs/rfid-access-control-system",
+    stack: ["Go", "RFID hardware", "REST API", "PostgreSQL"],
+    year: "2024",
+    status: "completed",
+    featured: true,
+    accent: "accent",
+    desc: "Full RFID-based physical access control system for SMK Mitra Industri MM2100. Sub-200ms card read-to-response latency with role-based area permissions and full audit trail.",
+    impact: [
+      "Replaced manual attendance and access tracking with an automated, auditable system",
+      "Institutional deployment across multiple campus access points used daily by students and staff",
+      "Full audit trail per card read with timestamp and location logging",
+    ],
+    challenges: [
+      "Bridging physical RFID hardware reads with a Go backend in real time under sub-200ms SLA",
+      "Designing role-based permission mappings that stay manageable as access points scale",
+      "Ensuring the system degrades gracefully during network or DB interruptions",
+    ],
+  },
+  {
+    id: "03",
+    title: "go_http_checker",
+    category: "Infrastructure HTTP Monitor",
+    repo: "https://github.com/parothegreat/go_http_checker",
+    stack: ["Go", "net/http", "concurrent workers", "TLS"],
+    year: "2024",
+    status: "completed",
+    featured: false,
+    accent: "sky",
+    desc: "Lightweight production-ready HTTP health checking utility. Monitors endpoint availability, response times, and status codes — single binary, no runtime dependencies.",
+    impact: [
+      "Operational visibility for self-hosted infrastructure without heavy observability overhead",
+      "Ships as a single binary deployable on any Linux server — zero install friction",
+      "Ideal for post-deploy smoke tests and lightweight uptime monitoring",
+    ],
+    challenges: [
+      "Implementing concurrent checks across many endpoints without goroutine leaks",
+      "Handling TLS edge cases and configurable retry/timeout policies correctly",
+      "Keeping memory footprint minimal even under continuous monitoring load",
+    ],
+  },
+  {
+    id: "04",
+    title: "Mitra-Coffeeshop",
+    category: "Institutional Web Application",
+    repo: "https://github.com/teamitmivhs/Mitra-Coffeeshop",
+    stack: ["TypeScript", "React", "Next.js", "Node.js"],
+    year: "2024",
+    status: "completed",
+    featured: false,
+    accent: "amber",
+    desc: "Full-stack web platform for the Mitra Industri Vocational High School coffee shop. Handles product display, ordering workflow, and operational management.",
+    impact: [
+      "Digitalised the school coffee shop's full ordering and inventory workflow",
+      "Actively deployed and used daily by students and staff on campus",
+      "Role-based admin access for product, order, and session management",
+    ],
+    challenges: [
+      "Enforcing TypeScript type safety across a full-stack Next.js + Node.js codebase",
+      "Designing a UX that works reliably on low-spec school devices and slow networks",
+      "Coordinating a collaborative team build within the teamitmivhs org",
+    ],
+  },
+  {
+    id: "05",
+    title: "work-order",
+    category: "Digital Workflow Management System",
+    repo: "https://github.com/teamitmivhs/work-order",
+    stack: ["HTML", "CSS", "JavaScript", "backend API"],
+    year: "2023",
+    status: "completed",
+    featured: false,
+    accent: "rose",
+    desc: "Digital work order management for SMK Mitra Industri MM2100. Streamlines creation, assignment, tracking, and resolution of maintenance and technical tasks.",
+    impact: [
+      "Eliminated paper-based work orders — full digital audit trail per completed task",
+      "School-wide deployment across maintenance and technical departments",
+      "Real-time supervisor view of open tasks with searchable history",
+    ],
+    challenges: [
+      "Designing a simple enough workflow that non-technical staff could adopt without training",
+      "Building role-based approval stages (submit → assign → approve) that map to real ops",
+      "Ensuring reliability on the school's existing network infrastructure",
+    ],
+  },
 ];
 
 const SKILLS = [
-  { category:"Network Eng.", accent: ACCENT.blue, items:[
-    { name:"Cisco",              level:82 },
-    { name:"BGP / OSPF / EIGRP", level:68 },
-    { name:"VLAN & VxLAN",       level:74 },
-    { name:"SD-WAN",             level:52 },
-    { name:"Wireshark",          level:85 },
-  ]},
-  { category:"Cybersecurity", accent: ACCENT.coral, items:[
-    { name:"Penetration Testing", level:55 },
-    { name:"SIEM / SOC",          level:50 },
-    { name:"Threat Hunting",      level:48 },
-    { name:"CVE Analysis",        level:62 },
-    { name:"Zero Trust",          level:52 },
-  ]},
-  { category:"Sysadmin", accent: ACCENT.mint500, items:[
-    { name:"Linux (RHEL/Debian)", level:95 },
-    { name:"Ubuntu Server",       level:92 },
-    { name:"Active Directory",    level:80 },
-    { name:"Ansible",             level:72 },
-    { name:"Bash / Python",       level:90 },
-  ]},
-  { category:"Cloud & Infra", accent: ACCENT.violet, items:[
-    { name:"AWS / Azure",     level:58 },
-    { name:"Terraform",       level:48 },
-    { name:"Docker / K8s",    level:72 },
-    { name:"Proxmox",         level:78 },
-    { name:"Zabbix / Nagios", level:62 },
-  ]},
+  {
+    category: "Linux & Sysadmin",
+    accent: "emerald",
+    items: [
+      { name: "Linux (Fedora/Ubuntu/CentOS)", level: 95 },
+      { name: "systemd / cgroups / hardening",  level: 88 },
+      { name: "Bash / Shell Scripting",          level: 92 },
+      { name: "Nginx / reverse proxy",           level: 82 },
+      { name: "User & permission management",    level: 90 },
+    ],
+  },
+  {
+    category: "Penetration Testing",
+    accent: "rose",
+    items: [
+      { name: "Recon & enumeration",    level: 72 },
+      { name: "Go offensive tooling",   level: 68 },
+      { name: "CTF (web/linux/network)",level: 65 },
+      { name: "OWASP Top 10",           level: 60 },
+      { name: "CVE analysis",           level: 62 },
+    ],
+  },
+  {
+    category: "Networking & Infra",
+    accent: "sky",
+    items: [
+      { name: "TCP/IP / DNS / DHCP",   level: 80 },
+      { name: "VPN / firewall rules",  level: 75 },
+      { name: "VLANs / routing basics",level: 72 },
+      { name: "Wireshark / traffic analysis", level: 70 },
+      { name: "Network hardening",     level: 68 },
+    ],
+  },
+  {
+    category: "Backend & Dev",
+    accent: "accent",
+    items: [
+      { name: "Go (REST / CLI / concurrent)", level: 78 },
+      { name: "TypeScript / React / Next.js", level: 75 },
+      { name: "Docker / containerisation",    level: 65 },
+      { name: "Git / GitHub Actions / CI-CD", level: 80 },
+      { name: "PostgreSQL / MySQL / Redis",   level: 62 },
+    ],
+  },
 ];
 
 const SOCIAL_LINKS = {
-  GitHub: "https://github.com/parothegreat/",
-  LinkedIn: "https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a/",
+  GitHub:   "https://github.com/parothegreat",
+  LinkedIn: "https://linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a",
+  TryHackMe:"https://tryhackme.com/p/parothegreat",
+  LeetCode: "https://leetcode.com/parothegreat",
 };
 
 const CERTS = [
-  {
-    name:      "Network Defense",
-    full:      "Cisco — Network Defense",
-    issuer:    "Cisco Networking Academy",
-    color:     ACCENT.blue,
-    credlyUrl: "https://www.credly.com/badges/26767ad4-478f-47d2-bd76-c30903affef0/linked_in_profile",
-    pdfUrl:    "/certs/network-defense.pdf",
-  },
-  {
-    name:      "Ethical Hacker",
-    full:      "Cisco — Ethical Hacker",
-    issuer:    "Cisco Networking Academy",
-    color:     ACCENT.coral,
-    credlyUrl: "https://www.credly.com/badges/27912f5c-4b4f-4190-9684-9a3822bb6723/linked_in_profile",
-    pdfUrl:    "/certs/ethical-hacker.pdf",
-  },
+  { name: "Networking Essentials",      issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
+  { name: "Linux Essentials",           issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
+  { name: "Cybersecurity Essentials",   issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
+  { name: "Ethical Hacking Essentials", issuer: "EC-Council / Cisco",       group: "sec",    accent: "rose" },
+  { name: "Network Defence Essentials", issuer: "EC-Council",               group: "sec",    accent: "rose" },
+  { name: "Introduction to Cybersecurity", issuer: "Cisco / NDG",           group: "sec",    accent: "accent" },
+  { name: "Google for Developers",      issuer: "Google",                   group: "google", accent: "emerald" },
+  { name: "Google Cloud Fundamentals",  issuer: "Google Cloud",             group: "google", accent: "emerald" },
+  { name: "NDG Linux Essentials",       issuer: "NDG / Cisco",              group: "linux",  accent: "amber" },
+  { name: "Linux Unhatched",            issuer: "NDG / Cisco",              group: "linux",  accent: "amber" },
 ];
 
-// ── Optimized Global Styles ────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// GLOBAL STYLES
+// ─────────────────────────────────────────────────────────────────
 const GlobalStyles = memo(({ C, isMobile }) => {
   useEffect(() => {
-    // Optimized font loading with display=swap
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap";
     link.media = "print";
     link.onload = () => { link.media = "all"; };
-    if (!document.querySelector(`link[href="${link.href}"]`)) {
-      document.head.appendChild(link);
-    }
+    if (!document.querySelector(`link[href="${link.href}"]`)) document.head.appendChild(link);
 
-    // Viewport meta optimization
-    let viewport = document.querySelector('meta[name="viewport"]');
-    if (!viewport) {
-      viewport = document.createElement('meta');
-      viewport.name = "viewport";
-      document.head.appendChild(viewport);
-    }
-    viewport.content = "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes";
+    let vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
+    vp.content = "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes";
 
-    // Theme color
-    let themeColor = document.querySelector('meta[name="theme-color"]');
-    if (!themeColor) {
-      themeColor = document.createElement('meta');
-      themeColor.name = "theme-color";
-      document.head.appendChild(themeColor);
-    }
-    themeColor.content = C.bgBase;
+    let tc = document.querySelector('meta[name="theme-color"]');
+    if (!tc) { tc = document.createElement("meta"); tc.name = "theme-color"; document.head.appendChild(tc); }
+    tc.content = C.bgBase;
   }, [C.bgBase]);
 
   useEffect(() => {
-    const styleId = "__portfolio-styles";
-    let el = document.getElementById(styleId);
-    if (!el) { 
-      el = document.createElement("style"); 
-      el.id = styleId; 
-      document.head.appendChild(el); 
-    }
-    
+    const id = "__paro-styles";
+    let el = document.getElementById(id);
+    if (!el) { el = document.createElement("style"); el.id = id; document.head.appendChild(el); }
     el.textContent = `
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -209,1108 +310,600 @@ const GlobalStyles = memo(({ C, isMobile }) => {
         font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         transition: background 0.3s ease, color 0.3s ease;
         -webkit-tap-highlight-color: transparent;
-        overflow-x: hidden;
-        touch-action: pan-y;
+        overflow-x: hidden; touch-action: pan-y;
       }
-      ::selection { background: ${C.mint500}22; color: ${C.mint400}; }
+      ::selection { background: ${C.accent}28; color: ${C.accentLight}; }
       input, textarea { font-family: inherit; -webkit-appearance: none; border-radius: 0; }
       input::placeholder, textarea::placeholder { color: ${C.textMuted}; }
       button { cursor: pointer; font-family: inherit; touch-action: manipulation; }
       a { touch-action: manipulation; }
 
-      @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes bootExit { 0%{opacity:1} 100%{opacity:0} }
-      @keyframes crtFlicker {
-        0%{opacity:1} 3%{opacity:0.93} 5%{opacity:1}
-        22%{opacity:1} 23%{opacity:0.95} 24%{opacity:1}
-        60%{opacity:1} 61%{opacity:0.91} 62%{opacity:1} 100%{opacity:1}
-      }
-      @keyframes bootTextIn {
-        0%{opacity:0;letter-spacing:0.6em;filter:blur(6px)}
-        60%{opacity:1;letter-spacing:0.22em;filter:blur(0)}
-        100%{opacity:1;letter-spacing:0.22em;filter:blur(0)}
-      }
-      @keyframes bootLineIn {
-        0%{opacity:0;transform:translateY(6px)}
-        100%{opacity:1;transform:translateY(0)}
-      }
-      @keyframes bootExit1 {
-        0%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
-        40%{opacity:1;transform:scale(1.06) translateY(-8px);filter:blur(0)}
-        100%{opacity:0;transform:scale(1.18) translateY(-24px);filter:blur(8px)}
-      }
-      @keyframes pageReveal {
-        0%{opacity:0;transform:translateY(18px)}
-        100%{opacity:1;transform:translateY(0)}
-      }
-      @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
-      @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-      @keyframes pulse-dot {
-        0%,100%{opacity:1;box-shadow:0 0 0 0 ${C.mint500}55}
-        50%{opacity:.6;box-shadow:0 0 0 6px ${C.mint500}00}
-      }
-      @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      @keyframes fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+      @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
+      @keyframes scanline  { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+      @keyframes crtFlicker { 0%{opacity:1} 3%{opacity:0.94} 5%{opacity:1} 22%{opacity:1} 23%{opacity:0.96} 24%{opacity:1} 100%{opacity:1} }
+      @keyframes bootTextIn { 0%{opacity:0;letter-spacing:.6em;filter:blur(6px)} 60%{opacity:1;letter-spacing:.22em;filter:blur(0)} 100%{opacity:1;letter-spacing:.22em;filter:blur(0)} }
+      @keyframes bootExit1  { 0%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)} 40%{opacity:1;transform:scale(1.05) translateY(-6px);filter:blur(0)} 100%{opacity:0;transform:scale(1.14) translateY(-20px);filter:blur(8px)} }
+      @keyframes pulse-dot  { 0%,100%{opacity:1;box-shadow:0 0 0 0 ${C.emerald}55} 50%{opacity:.6;box-shadow:0 0 0 5px ${C.emerald}00} }
+      @keyframes shimmer    { 0%{background-position:200% 50%} 100%{background-position:-200% 50%} }
 
-      .reveal { opacity:0; transform:translateY(24px); transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
-      .reveal-left { opacity:0; transform:translateX(-20px); transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
-      .reveal-right { opacity:0; transform:translateX(20px); transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
-      .reveal-scale { opacity:0; transform:scale(.95); transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
+      .reveal        { opacity:0; transform:translateY(20px); transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
+      .reveal-left   { opacity:0; transform:translateX(-18px); transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); }
+      .reveal-right  { opacity:0; transform:translateX(18px);  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); }
+      .reveal-scale  { opacity:0; transform:scale(.96);  transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1); }
       .reveal.vis, .reveal-left.vis, .reveal-right.vis { opacity:1; transform:translate(0,0); }
       .reveal-scale.vis { opacity:1; transform:scale(1); }
-      .d1{transition-delay:.05s}.d2{transition-delay:.1s}.d3{transition-delay:.15s}.d4{transition-delay:.2s}.d5{transition-delay:.25s}
-      @keyframes growBar { from { width:0 } to { width:var(--bar-w,80%) } }
-      .skill-bar { width:var(--bar-w,0); transition:width 0.4s cubic-bezier(.16,1,.3,1); }
+      .d1{transition-delay:.06s}.d2{transition-delay:.12s}.d3{transition-delay:.18s}.d4{transition-delay:.24s}.d5{transition-delay:.30s}
 
       .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
 
       .nav-link {
-        font-family:'JetBrains Mono',monospace; font-size:0.72rem; font-weight:400;
-        letter-spacing:0.06em; text-transform:uppercase; color:${C.textMuted};
-        background:none; border:none; transition:color 0.2s; padding:0.5rem;
-        -webkit-tap-highlight-color:transparent; touch-action: manipulation;
+        font-family:'JetBrains Mono',monospace; font-size:.7rem; font-weight:400;
+        letter-spacing:.07em; text-transform:uppercase; color:${C.textMuted};
+        background:none; border:none; transition:color .2s; padding:.5rem;
+        -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+        min-height:44px; display:inline-flex; align-items:center;
       }
-      .nav-link:hover, .nav-link:active { color: ${C.textPri}; }
-      .nav-link.active { color: ${C.mint400}; }
-
-      .project-row {
-        display:grid; grid-template-columns:52px 1fr 1fr auto;
-        gap:2rem; align-items:start; padding:2rem 1.5rem;
-        border-top:1px solid ${C.border}; transition:background 0.2s;
-      }
-      .project-row:last-child { border-bottom:1px solid ${C.border}; }
-      .project-row:active { background:${C.bgCard}; }
-
-      .skill-item {
-        font-size:0.82rem; font-weight:300; color:${C.textSec};
-        padding:0.6rem 0; border-bottom:1px solid ${C.border};
-        transition:color 0.2s,padding-left 0.2s; font-family:'JetBrains Mono',monospace;
-      }
-      .skill-item:active { color:${C.textPri}; padding-left:0.4rem; }
+      .nav-link:hover,.nav-link:active { color:${C.textPri}; }
+      .nav-link.active { color:${C.accentLight}; }
 
       .btn-primary {
-        display:inline-flex; align-items:center; gap:0.5rem;
-        padding:0.75rem 1.75rem; background:${C.mint500}; color:${C.bgBase};
-        font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:500;
-        letter-spacing:0.06em; text-transform:uppercase; border:none; border-radius:4px;
-        transition:all 0.22s cubic-bezier(.16,1,.3,1); white-space:nowrap; touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
+        display:inline-flex; align-items:center; gap:.5rem;
+        padding:.75rem 1.75rem; background:${C.accent}; color:#fff;
+        font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+        letter-spacing:.06em; text-transform:uppercase; border:none; border-radius:6px;
+        transition:all .2s cubic-bezier(.16,1,.3,1); white-space:nowrap;
+        touch-action:manipulation; min-height:44px;
       }
-      .btn-primary:active { transform:scale(0.97); background:${C.mint400}; }
-      .btn-primary:hover:not(:active) { transform:translateY(-2px); box-shadow:0 6px 28px ${C.mint500}50; filter:brightness(1.05); }
+      .btn-primary:hover:not(:active) { transform:translateY(-1px); box-shadow:0 6px 24px ${C.accent}45; filter:brightness(1.08); }
+      .btn-primary:active { transform:scale(.97); }
 
       .btn-ghost {
-        display:inline-flex; align-items:center; gap:0.5rem; padding:0.75rem 1.5rem;
-        background:transparent; color:${C.textSec}; font-family:'JetBrains Mono',monospace;
-        font-size:0.75rem; font-weight:400; letter-spacing:0.06em; text-transform:uppercase;
-        border:1px solid ${C.border}; border-radius:4px; transition:all 0.2s ease;
-        white-space:nowrap; touch-action: manipulation;
+        display:inline-flex; align-items:center; gap:.5rem;
+        padding:.75rem 1.5rem; background:transparent; color:${C.textSec};
+        font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:400;
+        letter-spacing:.06em; text-transform:uppercase;
+        border:1px solid ${C.border}; border-radius:6px;
+        transition:all .2s ease; white-space:nowrap; min-height:44px;
       }
+      .btn-ghost:hover { border-color:${C.accent}60; color:${C.accentLight}; background:${C.accent}08; }
       .btn-ghost:active { background:${C.bgCard}; }
-      .btn-ghost:hover { border-color:${C.mint500}66; color:${C.mint400}; }
 
       .form-input {
-        width:100%; padding:0.85rem 1rem; background:${C.bgCard2};
-        border:1px solid ${C.border}; border-radius:4px; color:${C.textPri};
+        width:100%; padding:.85rem 1rem; background:${C.bgCard2};
+        border:1px solid ${C.border}; border-radius:6px; color:${C.textPri};
         font-size:1rem; font-weight:300; outline:none;
-        transition:border-color 0.2s,box-shadow 0.2s; touch-action: manipulation;
+        transition:border-color .2s,box-shadow .2s;
       }
-      .form-input:focus { border-color:${C.mint500}88; box-shadow:0 0 0 3px ${C.mint500}18; }
-      .form-input:focus-visible { outline:2px solid ${C.mint500}; outline-offset:2px; }
-
-      .cert-card {
-        padding:1.25rem 1.25rem; background:${C.bgCard}; border:1px solid ${C.border};
-        border-radius:8px; transition:all 0.25s cubic-bezier(.16,1,.3,1); cursor:pointer; touch-action: manipulation;
-      }
-      .cert-card:active { transform:scale(0.98); }
-      .cert-card:hover { border-color:var(--cert-color); box-shadow:0 4px 32px color-mix(in srgb,var(--cert-color) 18%,transparent); transform:translateY(-3px); }
+      .form-input:focus { border-color:${C.accent}70; box-shadow:0 0 0 3px ${C.accent}14; }
+      .form-input:focus-visible { outline:2px solid ${C.accent}; outline-offset:2px; }
 
       .tag-pill {
-        display:inline-block; padding:0.22rem 0.65rem;
+        display:inline-block; padding:.22rem .65rem;
         background:${C.bgCard2}; border:1px solid ${C.border};
-        border-radius:4px; font-size:0.62rem; color:${C.textMuted};
-        font-family:'JetBrains Mono',monospace; letter-spacing:0.03em;
-        transition: background 0.15s, color 0.15s, border-color 0.15s;
+        border-radius:4px; font-size:.6rem; color:${C.textMuted};
+        font-family:'JetBrains Mono',monospace; letter-spacing:.03em;
+        transition:background .15s, color .15s, border-color .15s;
       }
 
-      /* Mobile-first responsive */
+      .cert-card {
+        padding:1rem 1.25rem; background:${C.bgCard}; border:1px solid ${C.border};
+        border-radius:8px; transition:all .22s cubic-bezier(.16,1,.3,1); cursor:pointer;
+      }
+      .cert-card:hover { border-color:var(--cert-color); box-shadow:0 4px 28px color-mix(in srgb,var(--cert-color) 15%,transparent); transform:translateY(-2px); }
+      .cert-card:active { transform:scale(.98); }
+
+      .project-row {
+        display:grid; grid-template-columns:48px 1fr 1fr auto;
+        gap:1.75rem; align-items:start; padding:1.75rem 1.25rem;
+        border-top:1px solid ${C.border}; transition:background .2s;
+        position:relative;
+      }
+      .project-row:last-child { border-bottom:1px solid ${C.border}; }
+      .project-row:active { background:${C.bgCard}44; }
+
+      .skill-bar { transition:width .42s cubic-bezier(.16,1,.3,1); }
+
+      /* Bottom sheet for mobile project details */
+      .bottom-sheet-overlay {
+        position:fixed; inset:0; z-index:9990;
+        background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+        animation:fadeIn .2s ease;
+      }
+      .bottom-sheet {
+        position:fixed; left:0; right:0; bottom:0; z-index:9991;
+        background:${C.bgCard}; border-radius:16px 16px 0 0;
+        border-top:1px solid ${C.border};
+        max-height:82vh; overflow-y:auto;
+        animation:fadeUp .28s cubic-bezier(.16,1,.3,1);
+        padding-bottom:env(safe-area-inset-bottom,0px);
+      }
+      .bottom-sheet-handle {
+        width:36px; height:4px; border-radius:2px;
+        background:${C.border}; margin:0.75rem auto 0;
+      }
+
+      /* Responsive */
       @media (max-width: 900px) {
-        .project-row { grid-template-columns:36px 1fr; gap:0.5rem; padding:1rem 0.75rem; }
-        .proj-desc, .proj-meta { display:none; }
+        .project-row { grid-template-columns:36px 1fr; gap:.5rem; padding:.9rem .75rem; }
+        .proj-desc,.proj-meta { display:none; }
         .lanyard-wrap { display:none !important; }
-        .hero-bottom { flex-direction:column !important; align-items:flex-start !important; gap:1.5rem !important; }
-        .hero-bottom-right { border-left:none !important; padding-left:0 !important; flex-direction:column !important; align-items:flex-start !important; gap:1rem !important; }
+        .hero-bottom { flex-direction:column !important; align-items:flex-start !important; gap:1.25rem !important; }
+        .hero-bottom-right { border-left:none !important; padding-left:0 !important; flex-direction:column !important; align-items:flex-start !important; gap:.75rem !important; }
         .skills-inner { flex-direction:column !important; gap:2rem !important; }
         .skills-left { flex:none !important; width:100% !important; }
-        .skills-grid { grid-template-columns:1fr 1fr !important; gap:1.5rem !important; }
-        .contact-grid { grid-template-columns:1fr !important; gap:2.5rem !important; }
-        .certs-grid { grid-template-columns:1fr !important; }
-        .stat-row { gap:1.5rem !important; flex-wrap:wrap !important; }
-        .hero-section { padding:0 1rem 3rem !important; min-height: auto !important; }
-        .work-section { padding:4rem 1rem !important; max-width:100% !important; }
-        .skills-section { padding:4rem 1rem !important; }
-        .contact-section { padding:4rem 1rem !important; }
-        .footer-inner { padding:1rem !important; flex-direction:column !important; align-items:flex-start !important; gap:0.75rem !important; }
-        .hero-top-rule { left:1rem !important; right:1rem !important; }
-        nav { grid-template-columns: 1fr auto !important; padding: 0 1rem !important; height: 60px !important; }
-        .hero-h1 { font-size: clamp(2.5rem, 12vw, 4rem) !important; margin-bottom: 2rem !important; }
-        .hero-terminal { padding: 0.75rem 1rem !important; margin-bottom: 1.5rem !important; }
-        .hero-terminal .mono { font-size: 0.7rem !important; line-height: 1.6 !important; }
-        .btn-row { width: 100%; }
-        .btn-row button { flex: 1; justify-content: center; }
+        .skills-grid { grid-template-columns:1fr 1fr !important; gap:1.25rem !important; }
+        .contact-grid { grid-template-columns:1fr !important; gap:2rem !important; }
+        .certs-grid { grid-template-columns:1fr 1fr !important; }
+        .hero-section { padding:0 1rem 3rem !important; min-height:auto !important; }
+        .work-section { padding:3.5rem 1rem !important; max-width:100% !important; }
+        .skills-section { padding:3.5rem 1rem !important; }
+        .contact-section { padding:3.5rem 1rem !important; }
+        .footer-inner { padding:1rem !important; flex-direction:column !important; align-items:flex-start !important; gap:.75rem !important; }
+        nav { padding:0 1rem !important; height:58px !important; }
+        .hero-h1 { font-size:clamp(2.4rem,10vw,3.6rem) !important; margin-bottom:1.75rem !important; }
       }
-      
       @media (max-width: 560px) {
         .skills-grid { grid-template-columns:1fr !important; }
-
-        .stat-row > div { text-align: left !important; }
-        .hero-bottom-right p { max-width: 100% !important; border-left: none !important; padding-left: 0 !important; }
+        .certs-grid { grid-template-columns:1fr !important; }
       }
-
-      /* Reduced motion support */
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-        }
-        html { scroll-behavior: auto; }
-        .reveal, .reveal-left, .reveal-right, .reveal-scale {
-          opacity: 1 !important; transform: none !important;
-        }
+        *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+        html { scroll-behavior:auto; }
+        .reveal,.reveal-left,.reveal-right,.reveal-scale { opacity:1 !important; transform:none !important; }
       }
-
-      /* Hardware acceleration */
-      .gpu-accelerated { transform: translateZ(0); backface-visibility: hidden; }
-
     `;
   }, [C]);
-
   return null;
 });
 
-// ── Overlays (Optimized) ───────────────────────────────────────
-const Overlays = memo(({ C }) => (
-  <>
-    <div style={{ 
-      position:"fixed", inset:0, pointerEvents:"none", zIndex:9999, opacity:0.015,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` 
-    }} />
-    <div style={{ 
-      position:"fixed", inset:0, pointerEvents:"none", zIndex:0, opacity:0.02,
-      backgroundImage: `linear-gradient(${C.mint500} 1px,transparent 1px),linear-gradient(90deg,${C.mint500} 1px,transparent 1px)`,
-      backgroundSize: "80px 80px" 
-    }} />
-  </>
-));
+// ─────────────────────────────────────────────────────────────────
+// ACCENT RESOLVER (maps string key → token color)
+// ─────────────────────────────────────────────────────────────────
+function useAccent(key, C) {
+  return C[key] || C.accent;
+}
 
-// ── Optimized Terminal Typewriter ──────────────────────────────
-const TerminalLine = memo(({ text, delay = 0, color, C }) => {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-  const frameRef = useRef();
+// ─────────────────────────────────────────────────────────────────
+// BOOT SCREEN
+// ─────────────────────────────────────────────────────────────────
+const BOOT_LINES = [
+  { t: "Initialising system environment...",        accent: false },
+  { t: "Loading kernel modules... [OK]",            accent: false },
+  { t: "Mounting /proc /sys /dev... [OK]",          accent: false },
+  { t: "Starting network interfaces... [OK]",       accent: false },
+  { t: ">> PAROTHEGREAT OS v2.6 — READY",           accent: true  },
+];
 
-  useEffect(() => {
-    // Skip animation on mobile for better performance
-    if (window.matchMedia('(pointer: coarse)').matches) {
-      setDisplayed(text);
-      setDone(true);
-      return;
-    }
-
-    let i = 0;
-    const startTimeout = setTimeout(() => {
-      const type = () => {
-        i++;
-        setDisplayed(text.slice(0, i));
-        if (i < text.length) {
-          frameRef.current = requestAnimationFrame(type);
-        } else {
-          setDone(true);
-        }
-      };
-      frameRef.current = requestAnimationFrame(type);
-    }, delay);
-
-    return () => {
-      clearTimeout(startTimeout);
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    };
-  }, [text, delay]);
-
-  return (
-    <div className="mono" style={{ fontSize:"0.78rem", color: color || C.textMuted, lineHeight: 1.8 }}>
-      <span style={{ color: C.mint500, marginRight: "0.5rem" }}>$</span>
-      {displayed}
-      {!done && <span style={{ animation: "blink 1s step-end infinite", color: C.mint400 }}>|</span>}
-    </div>
-  );
-});
-
-// ── Theme Toggle (Optimized) ───────────────────────────────────
-const ThemeToggle = memo(({ C }) => {
-  const { isDark, toggle } = useTheme();
-  
-  const handleClick = useCallback((e) => {
-    e.preventDefault();
-    toggle();
-  }, [toggle]);
-
-  return (
-    <button
-      onClick={handleClick}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{
-        background: "none", border: `1px solid ${C.border}`,
-        borderRadius: "6px", padding: "0.4rem 0.6rem",
-        color: C.textMuted, fontSize: "1.1rem", lineHeight: 1,
-        transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", touchAction: "manipulation", minWidth: "44px", minHeight: "44px",
-      }}
-    >
-      {isDark ? "☀" : "☾"}
-    </button>
-  );
-});
-
-
-// ── Boot Screen ────────────────────────────────────────────────
 const BootScreen = memo(({ onDone }) => {
-  const [titleVisible, setTitleVisible] = useState(false);
-  const [subtitleVisible, setSubtitleVisible] = useState(false);
-  const [linePhase, setLinePhase] = useState(0); // how many lines are typing/done
-  const [typedLines, setTypedLines] = useState([]); // partial text per line
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [exiting, setExiting] = useState(false);
-  const exitingRef = useRef(false);
-
-  const LINES = [
-    { t:"Checking hardware integrity.......... OK" },
-    { t:"Loading network modules.............. OK" },
-    { t:"Mounting encrypted volumes........... OK" },
-    { t:"Starting security daemon............. OK" },
-    { t:"[ paro@thegreat ] — system ready",  accent: true },
-  ];
+  const [typedLines, setTypedLines]   = useState(Array(BOOT_LINES.length).fill(""));
+  const [linePhase,  setLinePhase]    = useState(0);
+  const [titleVis,   setTitleVis]     = useState(false);
+  const [subtitleVis,setSubtitleVis]  = useState(false);
+  const [loadPct,    setLoadPct]      = useState(0);
+  const [exiting,    setExiting]      = useState(false);
+  const timers    = useRef([]);
+  const intervals = useRef([]);
 
   const skip = useCallback(() => {
-    if (exitingRef.current) return;
-    exitingRef.current = true;
+    if (exiting) return;
     setExiting(true);
-    setTimeout(onDone, 900);
-  }, [onDone]);
+    timers.current.push(setTimeout(onDone, 820));
+  }, [exiting, onDone]);
 
-  // Typing effect for a single line
-  const typeLine = useCallback((lineIdx, text, onComplete) => {
+  const typeLine = useCallback((idx, text, done) => {
     let i = 0;
-    const speed = lineIdx === LINES.length - 1 ? 28 : 18; // accent line slightly slower
-    const interval = setInterval(() => {
+    const iv = setInterval(() => {
       i++;
-      setTypedLines(prev => {
-        const next = [...prev];
-        next[lineIdx] = text.slice(0, i);
-        return next;
-      });
-      if (i >= text.length) {
-        clearInterval(interval);
-        onComplete?.();
-      }
-    }, speed);
-    return interval;
+      setTypedLines(p => { const n = [...p]; n[idx] = text.slice(0, i); return n; });
+      if (i >= text.length) { clearInterval(iv); done?.(); }
+    }, 28);
+    return iv;
   }, []);
 
   useEffect(() => {
-    const timers = [];
-    const intervals = [];
+    timers.current = []; intervals.current = [];
+    timers.current.push(setTimeout(() => setTitleVis(true), 150));
+    timers.current.push(setTimeout(() => setSubtitleVis(true), 500));
 
-    // Phase 1: show title
-    timers.push(setTimeout(() => setTitleVisible(true), 200));
-    // Phase 2: show subtitle
-    timers.push(setTimeout(() => setSubtitleVisible(true), 700));
-
-    // Phase 3: type each line in sequence
-    const lineStartTimes = [900, 0, 0, 0, 0]; // first starts at 900ms, rest chained
-    let cumulativeDelay = lineStartTimes[0];
-
-    const initTyped = Array(LINES.length).fill("");
-    setTypedLines(initTyped);
-
-    //Loading boot progress
-    let progressStartTime = null;
-    const progressInterval = setInterval(() => {
-      if (progressStartTime === null) progressStartTime = Date.now();
-      const elapsed = Date.now() - progressStartTime;
-      const targetProgress = Math.min(100, (elapsed / 3000) * 100);
-      setLoadProgress(Math.round(targetProgress));
-    }, 10); //10 ms update
-    intervals.push(progressInterval);
+    let pStart = null;
+    const piv = setInterval(() => {
+      if (!pStart) pStart = Date.now();
+      setLoadPct(Math.min(100, Math.round(((Date.now() - pStart) / 3200) * 100)));
+    }, 16);
+    intervals.current.push(piv);
 
     const typeNext = (idx) => {
-      if (idx >= LINES.length) {
-        // all lines done, set progress to 100 and start exit
-        setLoadProgress(100);
-        timers.push(setTimeout(skip, 600));
-        return;
-      }
+      if (idx >= BOOT_LINES.length) { setLoadPct(100); timers.current.push(setTimeout(skip, 500)); return; }
       setLinePhase(p => Math.max(p, idx + 1));
-
-      const iv = typeLine(idx, LINES[idx].t, () => {
-        const pause = idx === LINES.length - 1 ? 300 : 120;
-        timers.push(setTimeout(() => typeNext(idx + 1), pause));
+      const iv = typeLine(idx, BOOT_LINES[idx].t, () => {
+        timers.current.push(setTimeout(() => typeNext(idx + 1), idx === BOOT_LINES.length - 1 ? 200 : 80));
       });
-      intervals.push(iv);
+      intervals.current.push(iv);
     };
-
-    timers.push(setTimeout(() => typeNext(0), cumulativeDelay));
-
-    // Hard auto-exit safety valve
-    const autoExit = setTimeout(skip, 7000);
-    timers.push(autoExit);
-
+    timers.current.push(setTimeout(() => typeNext(0), 900));
+    timers.current.push(setTimeout(skip, 7000));
     window.addEventListener("keydown", skip, { once: true });
     window.addEventListener("pointerdown", skip, { once: true });
-
     return () => {
-      timers.forEach(clearTimeout);
-      intervals.forEach(clearInterval);
-      window.removeEventListener("keydown", skip);
-      window.removeEventListener("pointerdown", skip);
+      timers.current.forEach(clearTimeout); intervals.current.forEach(clearInterval);
+      window.removeEventListener("keydown", skip); window.removeEventListener("pointerdown", skip);
     };
-  }, [skip, typeLine]);
+  }, []);  // eslint-disable-line
 
   return (
     <div style={{
-      position:"fixed", inset:0, zIndex:99999,
-      background:"#000",
-      display:"flex", flexDirection:"column",
-      alignItems:"center", justifyContent:"center",
-      overflow:"hidden",
-      animation:"crtFlicker 6s infinite",
+      position: "fixed", inset: 0, zIndex: 99999, background: "#000",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      overflow: "hidden", animation: "crtFlicker 6s infinite",
       pointerEvents: exiting ? "none" : "auto",
     }}>
-
       {/* CRT scanlines */}
-      <div style={{
-        position:"absolute", inset:0, zIndex:2, pointerEvents:"none",
-        backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px)",
-      }} />
+      <div style={{ position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
+        backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px)" }} />
+      {/* Moving beam */}
+      <div style={{ position:"absolute",left:0,right:0,height:"100px",zIndex:3,pointerEvents:"none",
+        background:"linear-gradient(to bottom,transparent,rgba(99,102,241,0.04),transparent)",
+        animation:"scanline 5s linear infinite" }} />
+      {/* Vignette */}
+      <div style={{ position:"absolute",inset:0,zIndex:4,pointerEvents:"none",
+        background:"radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.85) 100%)" }} />
 
-      {/* Moving scan beam */}
       <div style={{
-        position:"absolute", left:0, right:0, height:"120px", zIndex:3,
-        pointerEvents:"none",
-        background:"linear-gradient(to bottom,transparent,rgba(0,229,160,0.03),transparent)",
-        animation:"scanline 5s linear infinite",
-      }} />
-
-      {/* CRT vignette */}
-      <div style={{
-        position:"absolute", inset:0, zIndex:4, pointerEvents:"none",
-        background:"radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.82) 100%)",
-      }} />
-
-      {/* Content — exits with scale+blur+fade */}
-      <div style={{
-        position:"relative", zIndex:5,
-        display:"flex", flexDirection:"column", alignItems:"center",
-        width:"100%", padding:"0 2rem",
-        animation: exiting
-          ? "bootExit1 0.85s cubic-bezier(.4,0,.2,1) both"
-          : "none",
+        position:"relative",zIndex:5,display:"flex",flexDirection:"column",alignItems:"center",
+        width:"100%",padding:"0 2rem",
+        animation: exiting ? "bootExit1 0.82s cubic-bezier(.4,0,.2,1) both" : "none",
       }}>
-
-        {/* PAROTHEGREAT text — fade+blur in (keep original style) */}
+        {/* Title */}
         <div style={{
-          fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(1.2rem, 5vw, 4rem)",
-          fontWeight:500,
-          color:"#00E5A0",
-          letterSpacing:"0.22em",
-          textAlign:"center",
-          textShadow:"0 0 30px #00E5A055, 0 0 60px #00E5A022",
-          userSelect:"none",
-          opacity: titleVisible ? 1 : 0,
-          animation: titleVisible ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
-          marginBottom:"1rem",
-        }}>
-          PAROTHEGREAT
-        </div>
+          fontFamily:"'JetBrains Mono',monospace", fontSize:"clamp(1.1rem,5vw,3.6rem)",
+          fontWeight:600, color:"#6366F1", letterSpacing:".22em", textAlign:"center",
+          textShadow:"0 0 28px #6366F140,0 0 60px #6366F120", userSelect:"none",
+          opacity: titleVis ? 1 : 0,
+          animation: titleVis ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
+          marginBottom:".75rem",
+        }}>PAROTHEGREAT</div>
 
-        {/* Subtitle — typed character by character */}
         <div style={{
-          fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(0.55rem,1.2vw,0.7rem)",
-          color:"#7a7a7a",
-          letterSpacing:"0.2em",
-          textTransform:"uppercase",
-          marginBottom:"2.5rem",
-          textAlign:"center",
-          minHeight:"1.2em",
-          opacity: subtitleVisible ? 1 : 0,
-          transition:"opacity 0.3s ease",
-        }}>
-          Network Engineer · Security Analyst · Sysadmin
-        </div>
+          fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(.52rem,1.1vw,.66rem)",
+          color:"#555",letterSpacing:".2em",textTransform:"uppercase",marginBottom:"2.25rem",
+          textAlign:"center",opacity: subtitleVis ? 1 : 0,transition:"opacity .3s ease",
+        }}>SysAdmin · Penetration Tester · Infrastructure Engineer</div>
 
-        {/* Boot lines — typed one by one */}
-        <div style={{
-          display:"flex", flexDirection:"column", gap:"0.3rem",
-          alignItems:"flex-start",
-          width:"min(480px, 90vw)",
-          marginBottom:"1.5rem",
-          minHeight: `${LINES.length * 1.6}rem`,
-        }}>
-          {LINES.map((l, i) => {
+        {/* Boot lines */}
+        <div style={{ display:"flex",flexDirection:"column",gap:".28rem",alignItems:"flex-start",
+          width:"min(480px,90vw)",marginBottom:"1.5rem",minHeight:`${BOOT_LINES.length*1.55}rem` }}>
+          {BOOT_LINES.map((l, i) => {
+            const isVis    = linePhase >= i + 1;
             const isActive = linePhase === i + 1 && (typedLines[i]?.length ?? 0) < l.t.length;
-            const isVisible = linePhase >= i + 1;
             return (
               <div key={i} style={{
-                fontFamily:"'JetBrains Mono',monospace",
-                fontSize:"clamp(0.58rem,1.1vw,0.68rem)",
-                letterSpacing:"0.04em",
-                color: l.accent ? "#00E5A0" : "#aaaaaa",
-                textShadow: l.accent ? "0 0 10px #00E5A050" : "none",
+                fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(.56rem,1vw,.65rem)",
+                letterSpacing:".04em",
+                color: l.accent ? "#6366F1" : "#999",
+                textShadow: l.accent ? "0 0 10px #6366F150" : "none",
                 fontWeight: l.accent ? 500 : 400,
-                opacity: isVisible ? 1 : 0,
-                minHeight:"1.2em",
-                display:"flex", alignItems:"center",
+                opacity: isVis ? 1 : 0, minHeight:"1.15em",
+                display:"flex",alignItems:"center",
               }}>
-                {isVisible && (
-                  <>
-                    {!l.accent && <span style={{color:"#555", marginRight:"0.4em"}}>$</span>}
-                    <span>{typedLines[i] ?? ""}</span>
-                    {isActive && (
-                      <span style={{
-                        display:"inline-block", width:"0.5em", height:"1em",
-                        background: l.accent ? "#00E5A0" : "#aaaaaa",
-                        marginLeft:"1px", verticalAlign:"middle",
-                        animation:"blink 0.7s step-end infinite",
-                      }} />
-                    )}
-                  </>
-                )}
+                {isVis && (<>
+                  {!l.accent && <span style={{color:"#444",marginRight:".4em"}}>$</span>}
+                  <span>{typedLines[i] ?? ""}</span>
+                  {isActive && <span style={{ display:"inline-block",width:".48em",height:"1em",
+                    background: l.accent ? "#6366F1" : "#888",marginLeft:"1px",verticalAlign:"middle",
+                    animation:"blink .7s step-end infinite" }} />}
+                </>)}
               </div>
             );
           })}
         </div>
 
         {/* Loading bar */}
-        <div style={{
-          width:"min(480px, 90vw)",
-          opacity: linePhase > 0 ? 1 : 0,
-          transition:"opacity 0.3s ease",
-        }}>
-          <div style={{
-            display:"flex", justifyContent:"space-between",
-            marginBottom:"0.35rem",
-          }}>
-            <span style={{
-              fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"0.5rem", color:"#555", letterSpacing:"0.1em",
-            }}>LOADING SYSTEM</span>
-            <span style={{
-              fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"0.5rem", color:"#00E5A0", letterSpacing:"0.08em",
-            }}>{loadProgress}%</span>
+        <div style={{ width:"min(480px,90vw)",opacity:linePhase>0?1:0,transition:"opacity .3s ease" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:".3rem" }}>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".48rem",color:"#444",letterSpacing:".1em" }}>LOADING SYSTEM</span>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".48rem",color:"#6366F1",letterSpacing:".08em" }}>{loadPct}%</span>
           </div>
-          <div style={{
-            width:"100%", height:"2px",
-            background:"#111", borderRadius:"1px", overflow:"hidden",
-          }}>
-            <div style={{
-              height:"100%", width:`${loadProgress}%`,
-              background:"linear-gradient(90deg,#00C488,#00E5A0)",
-              borderRadius:"1px",
-              transition:"width 0.25s ease",
-              boxShadow:"0 0 8px #00E5A060",
-            }} />
+          <div style={{ width:"100%",height:"2px",background:"#111",borderRadius:"1px",overflow:"hidden" }}>
+            <div style={{ height:"100%",width:`${loadPct}%`,
+              background:"linear-gradient(90deg,#4F52D9,#6366F1,#818CF8)",
+              borderRadius:"1px",transition:"width .2s ease",boxShadow:"0 0 6px #6366F155" }} />
           </div>
         </div>
       </div>
 
-      {/* Skip hint */}
-      <div style={{
-        position:"absolute", bottom:"1.75rem",
-        fontFamily:"'JetBrains Mono',monospace",
-        fontSize:"0.5rem", color:"#3a3a3a",
-        letterSpacing:"0.15em", zIndex:5,
-      }}>
+      <div style={{ position:"absolute",bottom:"1.5rem",fontFamily:"'JetBrains Mono',monospace",
+        fontSize:".48rem",color:"#2a2a2a",letterSpacing:".15em",zIndex:5 }}>
         PRESS ANY KEY TO SKIP
       </div>
     </div>
   );
 });
 
-// ── Theme Flash Overlay ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// THEME FLASH
+// ─────────────────────────────────────────────────────────────────
 const ThemeFlash = memo(({ isDark }) => {
   const [flash, setFlash] = useState(false);
   const prev = useRef(null);
-
   useEffect(() => {
     if (prev.current === null) { prev.current = isDark; return; }
     if (prev.current !== isDark) {
       setFlash(true);
-      const t = setTimeout(() => setFlash(false), 380);
+      const t = setTimeout(() => setFlash(false), 350);
       prev.current = isDark;
       return () => clearTimeout(t);
     }
   }, [isDark]);
-
   return (
     <div style={{
-      position:"fixed", inset:0, zIndex:9997, pointerEvents:"none",
+      position:"fixed",inset:0,zIndex:9997,pointerEvents:"none",
       background: isDark ? "#000" : "#fff",
-      opacity: flash ? 0.12 : 0,
-      transition: flash ? "opacity 0.06s ease" : "opacity 0.32s ease",
+      opacity: flash ? 0.10 : 0,
+      transition: flash ? "opacity .05s ease" : "opacity .3s ease",
     }} />
   );
 });
 
-
-// ── StaggeredMenu (inline — no Tailwind, wired to design tokens) ─
-const StaggeredMenu = memo(({
-  C,
-  position = "right",
-  items = [],
-  socialItems = [],
-  displaySocials = true,
-  displayItemNumbering = true,
-  menuButtonColor,
-  openMenuButtonColor,
-  changeMenuColorOnOpen = true,
-  accentColor,
-  onMenuOpen,
-  onMenuClose,
-  onItemClick,
-}) => {
-  const [open, setOpen]         = useState(false);
-  const openRef                 = useRef(false);
-  const panelRef                = useRef(null);
-  const preLayersRef            = useRef(null);
-  const preLayerElsRef          = useRef([]);
-  const plusHRef                = useRef(null);
-  const plusVRef                = useRef(null);
-  const iconRef                 = useRef(null);
-  const textInnerRef            = useRef(null);
-  const toggleBtnRef            = useRef(null);
-  const openTlRef               = useRef(null);
-  const closeTweenRef           = useRef(null);
-  const spinTweenRef            = useRef(null);
-  const textCycleAnimRef        = useRef(null);
-  const colorTweenRef           = useRef(null);
-  const busyRef                 = useRef(false);
-  const itemEntranceTweenRef    = useRef(null);
-  const [textLines, setTextLines] = useState(["Menu","Close"]);
-
-  // Use refs for colors to ensure they're always fresh in callbacks
-  const btnColorRef  = useRef(menuButtonColor || C.textPri);
-  const btnOpenColorRef = useRef(openMenuButtonColor || C.textPri);
-  const accentRef    = useRef(accentColor || C.mint500);
-
-  // Update refs when props change (theme switch fix)
-  useEffect(() => {
-    btnColorRef.current = menuButtonColor || C.textPri;
-    btnOpenColorRef.current = openMenuButtonColor || C.textPri;
-    accentRef.current = accentColor || C.mint500;
-  }, [menuButtonColor, openMenuButtonColor, accentColor, C]);
-
-  // Update panel background color on theme change without touching GSAP transforms
-  useEffect(() => {
-    if (panelRef.current) {
-      panelRef.current.style.background = C.mobileMenuBg;
-    }
-    if (preLayersRef.current) {
-      const layers = preLayersRef.current.querySelectorAll(".sm2-prelayer");
-      const colors = [C.bgCard2, C.bgCard];
-      layers.forEach((el, i) => { if (colors[i]) el.style.background = colors[i]; });
-    }
-  }, [C]);
-
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const panel     = panelRef.current;
-      const preContainer = preLayersRef.current;
-      const plusH = plusHRef.current;
-      const plusV = plusVRef.current;
-      const icon  = iconRef.current;
-      const textInner = textInnerRef.current;
-      if (!panel || !plusH || !plusV || !icon || !textInner) return;
-
-      let preLayers = [];
-      if (preContainer) preLayers = Array.from(preContainer.querySelectorAll(".sm2-prelayer"));
-      preLayerElsRef.current = preLayers;
-
-      const offscreen = position === "left" ? -100 : 100;
-      gsap.set([panel, ...preLayers], { xPercent: offscreen });
-      gsap.set(plusH,  { transformOrigin:"50% 50%", rotate:0 });
-      gsap.set(plusV,  { transformOrigin:"50% 50%", rotate:90 });
-      gsap.set(icon,   { rotate:0, transformOrigin:"50% 50%" });
-      gsap.set(textInner, { yPercent:0 });
-      if (toggleBtnRef.current) {
-        // Always restore to closed state color (mint) on mount/remount
-        gsap.set(toggleBtnRef.current, { color: accentRef.current });
-      }
-    });
-    return () => ctx.revert();
-  }, [position]); // Only re-run on position change, colors handled via refs
-
-  const buildOpenTimeline = useCallback(() => {
-    const panel  = panelRef.current;
-    const layers = preLayerElsRef.current;
-    if (!panel) return null;
-    openTlRef.current?.kill();
-    closeTweenRef.current?.kill();
-    closeTweenRef.current = null;
-    itemEntranceTweenRef.current?.kill();
-
-    const itemEls    = Array.from(panel.querySelectorAll(".sm2-itemLabel"));
-    const numberEls  = Array.from(panel.querySelectorAll(".sm2-list[data-numbering] .sm2-item"));
-    const socialTitle = panel.querySelector(".sm2-socials-title");
-    const socialLinks = Array.from(panel.querySelectorAll(".sm2-socials-link"));
-
-    const layerStates = layers.map(el => ({ el, start: Number(gsap.getProperty(el, "xPercent")) }));
-    const panelStart  = Number(gsap.getProperty(panel, "xPercent"));
-
-    if (itemEls.length)  gsap.set(itemEls, { yPercent:140, rotate:10 });
-    if (numberEls.length) gsap.set(numberEls, { "--sm2-num-opacity":0 });
-    if (socialTitle)     gsap.set(socialTitle, { opacity:0 });
-    if (socialLinks.length) gsap.set(socialLinks, { y:25, opacity:0 });
-
-    const tl = gsap.timeline({ paused:true });
-    layerStates.forEach((ls, i) => {
-      tl.fromTo(ls.el, { xPercent:ls.start }, { xPercent:0, duration:0.5, ease:"power4.out" }, i*0.07);
-    });
-    const lastTime       = layerStates.length ? (layerStates.length-1)*0.07 : 0;
-    const panelInsertTime = lastTime + (layerStates.length ? 0.08 : 0);
-    const panelDuration  = 0.65;
-    tl.fromTo(panel, { xPercent:panelStart }, { xPercent:0, duration:panelDuration, ease:"power4.out" }, panelInsertTime);
-
-    if (itemEls.length) {
-      const itemsStart = panelInsertTime + panelDuration * 0.15;
-      tl.to(itemEls, { yPercent:0, rotate:0, duration:1, ease:"power4.out", stagger:{ each:0.1, from:"start" } }, itemsStart);
-      if (numberEls.length)
-        tl.to(numberEls, { duration:0.6, ease:"power2.out", "--sm2-num-opacity":1, stagger:{ each:0.08, from:"start" } }, itemsStart+0.1);
-    }
-    if (socialTitle || socialLinks.length) {
-      const sStart = panelInsertTime + panelDuration*0.4;
-      if (socialTitle) tl.to(socialTitle, { opacity:1, duration:0.5, ease:"power2.out" }, sStart);
-      if (socialLinks.length)
-        tl.to(socialLinks, { y:0, opacity:1, duration:0.55, ease:"power3.out", stagger:{ each:0.08, from:"start" },
-          onComplete: () => gsap.set(socialLinks, { clearProps:"opacity" }) }, sStart+0.04);
-    }
-    openTlRef.current = tl;
-    return tl;
-  }, []);
-
-  const playOpen = useCallback(() => {
-    if (busyRef.current) return;
-    busyRef.current = true;
-    const tl = buildOpenTimeline();
-    if (tl) { tl.eventCallback("onComplete", () => { busyRef.current = false; }); tl.play(0); }
-    else busyRef.current = false;
-  }, [buildOpenTimeline]);
-
-  const playClose = useCallback(() => {
-    openTlRef.current?.kill(); openTlRef.current = null;
-    itemEntranceTweenRef.current?.kill();
-    const panel  = panelRef.current;
-    const layers = preLayerElsRef.current;
-    if (!panel) return;
-    closeTweenRef.current?.kill();
-    const offscreen = position === "left" ? -100 : 100;
-    closeTweenRef.current = gsap.to([...layers, panel], {
-      xPercent: offscreen, duration:0.32, ease:"power3.in", overwrite:"auto",
-      onComplete: () => {
-        const iEls = Array.from(panel.querySelectorAll(".sm2-itemLabel"));
-        if (iEls.length) gsap.set(iEls, { yPercent:140, rotate:10 });
-        const nEls = Array.from(panel.querySelectorAll(".sm2-list[data-numbering] .sm2-item"));
-        if (nEls.length) gsap.set(nEls, { "--sm2-num-opacity":0 });
-        const st = panel.querySelector(".sm2-socials-title");
-        const sl = Array.from(panel.querySelectorAll(".sm2-socials-link"));
-        if (st) gsap.set(st, { opacity:0 });
-        if (sl.length) gsap.set(sl, { y:25, opacity:0 });
-        busyRef.current = false;
-      }
-    });
-  }, [position]);
-
-  const animateIcon = useCallback(opening => {
-    const icon = iconRef.current, h = plusHRef.current, v = plusVRef.current;
-    if (!icon || !h || !v) return;
-    spinTweenRef.current?.kill();
-    if (opening) {
-      gsap.set(icon, { rotate:0, transformOrigin:"50% 50%" });
-      spinTweenRef.current = gsap.timeline({ defaults:{ ease:"power4.out" } })
-        .to(h, { rotate:45,  duration:0.5 }, 0)
-        .to(v, { rotate:-45, duration:0.5 }, 0);
-    } else {
-      spinTweenRef.current = gsap.timeline({ defaults:{ ease:"power3.inOut" } })
-        .to(h, { rotate:0,  duration:0.35 }, 0)
-        .to(v, { rotate:90, duration:0.35 }, 0)
-        .to(icon, { rotate:0, duration:0.001 }, 0);
-    }
-  }, []);
-
-  const animateColor = useCallback(opening => {
-    const btn = toggleBtnRef.current;
-    if (!btn) return;
-    colorTweenRef.current?.kill();
-    if (changeMenuColorOnOpen) {
-      colorTweenRef.current = gsap.to(btn, { 
-        color: opening ? btnOpenColorRef.current : btnColorRef.current, 
-        delay:0.18, duration:0.3, ease:"power2.out" 
-      });
-    } else {
-      gsap.set(btn, { color: btnColorRef.current });
-    }
-  }, [changeMenuColorOnOpen]);
-
-  const animateText = useCallback(opening => {
-    const inner = textInnerRef.current;
-    if (!inner) return;
-    textCycleAnimRef.current?.kill();
-    const currentLabel = opening ? "Menu" : "Close";
-    const targetLabel  = opening ? "Close" : "Menu";
-    const cycles = 3;
-    const seq = [currentLabel];
-    let last = currentLabel;
-    for (let i = 0; i < cycles; i++) { last = last === "Menu" ? "Close" : "Menu"; seq.push(last); }
-    if (last !== targetLabel) seq.push(targetLabel);
-    seq.push(targetLabel);
-    setTextLines(seq);
-    gsap.set(inner, { yPercent:0 });
-    const finalShift = ((seq.length-1)/seq.length)*100;
-    textCycleAnimRef.current = gsap.to(inner, { yPercent:-finalShift, duration:0.5+seq.length*0.07, ease:"power4.out" });
-  }, []);
-
-  const toggleMenu = useCallback(() => {
-    const target = !openRef.current;
-    openRef.current = target;
-    setOpen(target);
-    if (target) { onMenuOpen?.(); playOpen(); }
-    else         { onMenuClose?.(); playClose(); }
-    animateIcon(target); animateColor(target); animateText(target);
-  }, [playOpen, playClose, animateIcon, animateColor, animateText, onMenuOpen, onMenuClose]);
-
-  const closeMenu = useCallback(() => {
-    if (!openRef.current) return;
-    openRef.current = false; setOpen(false);
-    onMenuClose?.(); playClose(); animateIcon(false); animateColor(false); animateText(false);
-  }, [playClose, animateIcon, animateColor, animateText, onMenuClose]);
-
-  // prelayer colours — dark layer first then slightly lighter
-  const prelayerColors = [
-    C.bgCard2,   // darkest — arrives first
-    C.bgCard,    // mid
-  ];
-
-  // Panel background
-  const panelBg = C.mobileMenuBg;
-
+// ─────────────────────────────────────────────────────────────────
+// THEME TOGGLE
+// ─────────────────────────────────────────────────────────────────
+const ThemeToggle = memo(({ C }) => {
+  const { isDark, toggle } = useTheme();
   return (
-    <div style={{ position:"absolute", inset:0, zIndex:40, overflow:"hidden", pointerEvents:"none" }}>
-      <div
-        style={{ position:"relative", width:"100%", height:"100%", "--sm2-accent": accentRef.current }}
-        data-position={position}
-        data-open={open || undefined}
-      >
-        {/* Pre-layers */}
-        <div ref={preLayersRef} style={{
-          position:"absolute", top:0, right:0, bottom:0, width:"100%",
-          pointerEvents:"none", zIndex:5, overflow:"hidden",
-        }} aria-hidden="true">
-          {prelayerColors.map((bg, i) => (
-            <div key={i} className="sm2-prelayer" style={{
-              position:"absolute", top:0, right:0, width:"100%", height:"100%", background:bg,
-            }} />
-          ))}
-        </div>
-
-        {/* Toggle button — fixed top-right corner with mint styling */}
-        <button
-          ref={toggleBtnRef}
-          onClick={toggleMenu}
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          aria-controls="sm2-panel"
-          type="button"
-          style={{
-            position:"fixed", top:"calc((60px - 44px) / 2)", right:"1rem",
-            display:"inline-flex", alignItems:"center", gap:"0.5rem",
-            background:"transparent", border:`1px solid ${C.mint500}55`,
-            borderRadius:"6px", cursor:"pointer",
-            fontFamily:"'JetBrains Mono',monospace", fontSize:"0.7rem",
-            fontWeight:500, letterSpacing:"0.08em",
-            color: C.mint500,
-            pointerEvents:"auto", zIndex:1010, padding:"0.6rem 1rem",
-            minWidth:"44px", minHeight:"44px", justifyContent:"center",
-            boxShadow: open ? `0 0 20px ${C.mint500}30` : "none",
-            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-          }}
-        >
-          {/* Cycling text */}
-          <span style={{
-            position:"relative", display:"inline-block",
-            height:"1em", overflow:"hidden", whiteSpace:"nowrap",
-          }} aria-hidden="true">
-            <span ref={textInnerRef} style={{ display:"flex", flexDirection:"column", lineHeight:1 }}>
-              {textLines.map((l,i) => (
-                <span key={i} style={{ display:"block", height:"1em", lineHeight:1 }}>{l}</span>
-              ))}
-            </span>
-          </span>
-          {/* +/× icon */}
-          <span ref={iconRef} style={{
-            position:"relative", width:"14px", height:"14px",
-            flexShrink:0, display:"inline-flex", alignItems:"center", justifyContent:"center",
-            willChange:"transform", marginLeft:"0.25rem",
-          }} aria-hidden="true">
-            <span ref={plusHRef} style={{
-              position:"absolute", left:"50%", top:"50%",
-              width:"100%", height:"2px", background:"currentColor", borderRadius:"2px",
-              transform:"translate(-50%,-50%)", willChange:"transform",
-            }} />
-            <span ref={plusVRef} style={{
-              position:"absolute", left:"50%", top:"50%",
-              width:"100%", height:"2px", background:"currentColor", borderRadius:"2px",
-              transform:"translate(-50%,-50%)", willChange:"transform",
-            }} />
-          </span>
-        </button>
-
-        {/* Panel */}
-        <aside
-          id="sm2-panel"
-          ref={panelRef}
-          aria-hidden={!open}
-          style={{
-            position:"absolute", top:0, right:0, width:"100%", height:"100%",
-            background: panelBg,
-            backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)",
-            display:"flex", flexDirection:"column",
-            padding:"5rem 2rem 2.5rem",
-            overflowY:"auto", zIndex:10, pointerEvents:"auto",
-            boxSizing:"border-box",
-          }}
-        >
-          {/* Logo text inside panel */}
-          <div className="mono" style={{
-            fontSize:"0.82rem", display:"flex", alignItems:"center",
-            gap:"0.25rem", letterSpacing:"0.01em",
-            marginBottom:"2.5rem",
-          }}>
-            <span style={{color:C.mint500, fontWeight:500}}>[</span>
-            <span style={{color:C.textSec}}>paro</span>
-            <span style={{color:C.coral}}>@</span>
-            <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
-            <span style={{color:C.mint500, fontWeight:500}}>]</span>
-            <span style={{color:C.mint500, fontSize:"0.75rem", marginLeft:"3px", animation:"blink 1.2s step-end infinite"}}>█</span>
-          </div>
-
-          {/* Nav items */}
-          <ul className="sm2-list" style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"column", gap:"0.25rem" }}
-            data-numbering={displayItemNumbering || undefined}
-            role="list"
-          >
-            {items.map((it, idx) => (
-              <li key={it.label+idx} style={{ position:"relative", overflow:"hidden", lineHeight:1 }} className="sm2-itemWrap">
-                <button
-                  className="sm2-item"
-                  onClick={() => { closeMenu(); onItemClick?.(it); }}
-                  style={{
-                    background:"none", border:"none", cursor:"pointer",
-                    fontFamily:"'DM Serif Display',serif",
-                    fontSize:"clamp(2.4rem,10vw,3.2rem)", fontWeight:400,
-                    color: C.textPri,
-                    lineHeight:1, letterSpacing:"-0.02em",
-                    padding:"0.1em 1.4em 0.1em 0",
-                    display:"inline-block", textAlign:"left",
-                    transition:"color 0.2s",
-                    "--sm2-num-opacity": 0,
-                  }}
-                >
-                  <span className="sm2-itemLabel" style={{ display:"inline-block", transformOrigin:"50% 100%", willChange:"transform" }}>
-                    {it.label}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          {/* Socials */}
-          {displaySocials && socialItems.length > 0 && (
-            <div className="sm2-socials" style={{ marginTop:"auto", paddingTop:"2rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
-              <p className="sm2-socials-title mono" style={{
-                margin:0, fontSize:"0.6rem", fontWeight:500,
-                color: accentRef.current, letterSpacing:"0.15em", textTransform:"uppercase", opacity:0,
-              }}>// socials</p>
-              <ul style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"row", gap:"1.25rem", flexWrap:"wrap" }} role="list">
-                {socialItems.map((s,i) => (
-                  <li key={s.label+i}>
-                    <a href={s.link} target="_blank" rel="noopener noreferrer"
-                      className="sm2-socials-link mono"
-                      style={{ fontSize:"0.65rem", color:C.lime, textDecoration:"none", letterSpacing:"0.05em", transition:"color 0.2s" }}
-                    >
-                      {s.label} ↗
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </aside>
-      </div>
-
-      <style>{`
-        .sm2-item:hover .sm2-itemLabel { color: var(--sm2-accent); }
-        .sm2-item:hover { color: var(--sm2-accent) !important; }
-        .sm2-socials-link:hover { color: var(--sm2-accent) !important; }
-        .sm2-list[data-numbering] { counter-reset: sm2item; }
-        .sm2-list[data-numbering] .sm2-item::after {
-          counter-increment: sm2item;
-          content: counter(sm2item, decimal-leading-zero);
-          position: absolute; top: 0.15em; right: 0.3em;
-          font-size: 0.65rem; font-family: 'JetBrains Mono', monospace;
-          font-weight: 400; color: var(--sm2-accent);
-          letter-spacing: 0; pointer-events: none; user-select: none;
-          opacity: var(--sm2-num-opacity, 0);
-        }
-      `}</style>
-    </div>
+    <button
+      onClick={toggle}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      style={{
+        background: "transparent", border:`1px solid ${C.border}`,
+        borderRadius:"6px", padding:".4rem .6rem", color:C.textMuted,
+        fontSize:".8rem", transition:"all .2s ease", cursor:"pointer",
+        minWidth:"44px", minHeight:"44px", display:"inline-flex",
+        alignItems:"center", justifyContent:"center",
+      }}
+    >
+      {isDark ? "☀" : "◑"}
+    </button>
   );
 });
 
-// ── Optimized Navbar with Touch Support ────────────────────────
-const Navbar = memo(({ active, C }) => {
-  const [scrolled, setScrolled] = useState(false);
-  const { isMobile } = useTheme();
-  const links = useMemo(() => ["Home","Work","Skills","Contact"], []);
-  const lastScrollY = useRef(0);
+// ─────────────────────────────────────────────────────────────────
+// STAGGERED MENU (GSAP mobile overlay)
+// ─────────────────────────────────────────────────────────────────
+const StaggeredMenu = memo(({ C, items, socialItems, accentColor, onMenuOpen, onMenuClose, onItemClick }) => {
+  const [open, setOpen] = useState(false);
+  const openRef  = useRef(false);
+  const panelRef = useRef(null);
+  const preRef   = useRef(null);
+  const plusH    = useRef(null);
+  const plusV    = useRef(null);
+  const iconRef  = useRef(null);
+  const btnRef   = useRef(null);
+  const openTl   = useRef(null);
+  const closeTw  = useRef(null);
+  const busyRef  = useRef(false);
 
-  useEffect(() => {
-    const fn = () => {
-      const currentY = window.scrollY;
-      setScrolled(currentY > 60);
-      lastScrollY.current = currentY;
-    };
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const panel = panelRef.current;
+      const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
+      if (!panel) return;
+      gsap.set([panel, ...prelayers], { xPercent: 100 });
+      gsap.set(plusH.current,  { transformOrigin:"50% 50%", rotate:0 });
+      gsap.set(plusV.current,  { transformOrigin:"50% 50%", rotate:90 });
+      gsap.set(iconRef.current,{ rotate:0, transformOrigin:"50% 50%" });
+      if (btnRef.current) gsap.set(btnRef.current, { color: accentColor });
+    });
+    return () => ctx.revert();
   }, []);
 
-  const go = useCallback((l) => {
-    document.body.style.overflow = '';
-    const id = l === "Work" ? "work" : l.toLowerCase();
-    document.getElementById(id)?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
-  }, [isMobile]);
+  useEffect(() => {
+    if (panelRef.current) panelRef.current.style.background = C.mobileMenuBg;
+  }, [C]);
 
-  const navH = scrolled ? "54px" : "68px";
+  const doOpen = useCallback(() => {
+    if (busyRef.current || openRef.current) return;
+    busyRef.current = true; openRef.current = true; setOpen(true);
+    onMenuOpen?.();
+    const panel = panelRef.current;
+    const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
+    const items_ = Array.from(panel.querySelectorAll(".sm-item-label"));
+    if (items_.length) gsap.set(items_, { yPercent:140, rotate:8 });
+    const tl = gsap.timeline({ onComplete: () => { busyRef.current = false; } });
+    prelayers.forEach((el, i) => tl.fromTo(el, { xPercent:100 }, { xPercent:0, duration:.45, ease:"power4.out" }, i*.06));
+    tl.fromTo(panel, { xPercent:100 }, { xPercent:0, duration:.55, ease:"power4.out" }, prelayers.length*.06+.05);
+    if (items_.length) tl.to(items_, { yPercent:0, rotate:0, duration:.7, ease:"power4.out", stagger:{ each:.08, from:"start" } }, "-=.3");
+    gsap.to(iconRef.current, { rotate:45, duration:.35, ease:"power2.out" });
+    openTl.current = tl;
+  }, [onMenuOpen]);
+
+  const doClose = useCallback(() => {
+    if (busyRef.current || !openRef.current) return;
+    busyRef.current = true; openRef.current = false; setOpen(false);
+    onMenuClose?.();
+    const panel = panelRef.current;
+    const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
+    const tl = gsap.timeline({ onComplete: () => { busyRef.current = false; } });
+    tl.to([panel, ...prelayers], { xPercent:100, duration:.4, ease:"power3.in", stagger:{ each:.04, from:"end" } });
+    gsap.to(iconRef.current, { rotate:0, duration:.3, ease:"power2.out" });
+    closeTw.current = tl;
+  }, [onMenuClose]);
+
+  const toggle = useCallback(() => {
+    if (openRef.current) doClose(); else doOpen();
+  }, [doOpen, doClose]);
+
+  const handleItemClick = useCallback((item) => {
+    doClose();
+    setTimeout(() => onItemClick?.(item), 200);
+  }, [doClose, onItemClick]);
 
   return (
     <>
-      {/* ── Nav bar ── */}
-      <nav style={{
-        position:"fixed", top:0, left:0, right:0,
-        zIndex:1003,
-        display:"flex", alignItems:"center",
-        justifyContent:"space-between",
-        padding: isMobile ? "0 1rem" : "0 2rem",
-        height: isMobile ? "60px" : navH,
-        background: scrolled ? C.navBgScr : C.navBg,
-        backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
-        borderBottom:`1px solid ${scrolled ? C.border : C.mint500+"1a"}`,
-        transition:"height 0.35s cubic-bezier(.16,1,.3,1), background 0.3s, border-color 0.3s",
+      {/* Toggle button */}
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        aria-label="Menu"
+        style={{
+          position:"fixed", top:"9px", right:"1rem", zIndex:1006,
+          background:"transparent", border:"none", cursor:"pointer",
+          padding:".5rem", display:"flex", alignItems:"center", gap:".45rem",
+          minWidth:"44px", minHeight:"44px",
+        }}
+      >
+        <svg ref={iconRef} width="20" height="20" viewBox="0 0 20 20" style={{ overflow:"visible" }}>
+          <rect ref={plusH} x="3" y="9.5" width="14" height="1.5" rx=".75" fill={accentColor} />
+          <rect ref={plusV} x="9.25" y="3" width="1.5" height="14" rx=".75" fill={accentColor} />
+        </svg>
+      </button>
+
+      {/* Pre-layers */}
+      <div ref={preRef} style={{ position:"fixed",inset:0,zIndex:1007,pointerEvents:"none" }}>
+        {[C.bgCard2, C.bgCard].map((bg, i) => (
+          <div key={i} className="sm-pre" style={{ position:"absolute",inset:0,background:bg }} />
+        ))}
+      </div>
+
+      {/* Panel */}
+      <div ref={panelRef} style={{
+        position:"fixed",inset:0,zIndex:1008,background:C.mobileMenuBg,
+        display:"flex",flexDirection:"column",justifyContent:"center",
+        padding:"2rem 2.5rem",pointerEvents:open?"auto":"none",
       }}>
-        {/* Logo (+ ThemeToggle on mobile, placed left to avoid overlap with fixed menu btn) */}
-        <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
+        <nav style={{ display:"flex",flexDirection:"column",gap:"1rem",marginBottom:"3rem" }}>
+          {items.map((item, i) => (
+            <div key={item.label} style={{ overflow:"hidden",paddingBottom:".1em" }}>
+              <button
+                className="sm-item-label"
+                onClick={() => handleItemClick(item)}
+                style={{
+                  fontFamily:"'DM Serif Display',serif", fontSize:"clamp(2rem,8vw,3.5rem)",
+                  color:C.textPri, background:"transparent", border:"none",
+                  cursor:"pointer", display:"flex", alignItems:"center", gap:"1rem",
+                  letterSpacing:"-.01em",
+                }}
+              >
+                <span className="mono" style={{ fontSize:".6rem",color:accentColor,opacity:.5,marginTop:".3em" }}>
+                  0{i+1}
+                </span>
+                {item.label}
+              </button>
+            </div>
+          ))}
+        </nav>
+        <div style={{ display:"flex",gap:"1.5rem",flexWrap:"wrap" }}>
+          {socialItems.map(s => (
+            <a key={s.label} href={s.link} target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".65rem",
+                color:C.textMuted,textDecoration:"none",padding:".5rem 0",
+                transition:"color .2s",minHeight:"44px",display:"inline-flex",alignItems:"center" }}>
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────
+// NAVBAR
+// ─────────────────────────────────────────────────────────────────
+const NAV_LINKS = ["Home","Work","Skills","Contact"];
+
+const Navbar = memo(({ active, C }) => {
+  const { isMobile } = useTheme();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", fn, { passive:true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const go = useCallback((label) => {
+    document.body.style.overflow = "";
+    const id = label === "Work" ? "work" : label.toLowerCase();
+    document.getElementById(id)?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
+  }, [isMobile]);
+
+  return (
+    <>
+      <nav style={{
+        position:"fixed",top:0,left:0,right:0,zIndex:1003,
+        display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding: isMobile ? "0 1rem" : "0 2rem",
+        height: isMobile ? "58px" : (scrolled ? "52px" : "64px"),
+        background: scrolled ? C.navBgScr : C.navBg,
+        backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+        borderBottom:`1px solid ${scrolled ? C.border : C.accent+"18"}`,
+        transition:"height .3s cubic-bezier(.16,1,.3,1),background .3s,border-color .3s",
+      }}>
+        {/* Logo */}
+        <div style={{ display:"flex",alignItems:"center",gap:".6rem" }}>
           {isMobile && <ThemeToggle C={C} />}
-          <div className="mono" style={{
-            fontSize:"0.82rem", display:"flex", alignItems:"center",
-            gap:"0.25rem", letterSpacing:"0.01em",
-          }}>
-            <span style={{color:C.mint500, fontWeight:500}}>[</span>
-            <span style={{color:C.textSec}}>paro</span>
-            <span style={{color:C.coral}}>@</span>
-            <span style={{color:C.textPri, fontWeight:500}}>thegreat</span>
-            <span style={{color:C.mint500, fontWeight:500}}>]</span>
-            <span style={{
-              color:C.mint500, fontSize:"0.75rem", marginLeft:"3px",
-              animation:"blink 1.2s step-end infinite",
-            }}>█</span>
+          <div className="mono" style={{ fontSize:".78rem",display:"flex",alignItems:"center",gap:".2rem",letterSpacing:".01em" }}>
+            <span style={{ color:C.accent,fontWeight:600 }}>[</span>
+            <span style={{ color:C.textSec }}>paro</span>
+            <span style={{ color:C.rose }}>@</span>
+            <span style={{ color:C.textPri,fontWeight:600 }}>thegreat</span>
+            <span style={{ color:C.accent,fontWeight:600 }}>]</span>
+            <span style={{ color:C.accent,fontSize:".7rem",marginLeft:"2px",animation:"blink 1.4s step-end infinite" }}>█</span>
           </div>
         </div>
 
-        {/* Desktop centre links */}
+        {/* Desktop links */}
         {!isMobile && (
-          <div style={{display:"flex", gap:"0"}}>
-            {links.map(l => (
+          <div style={{ display:"flex",gap:0 }}>
+            {NAV_LINKS.map(l => (
               <button key={l} onClick={() => go(l)} style={{
-                fontFamily:"'JetBrains Mono',monospace", fontSize:"0.68rem",
-                letterSpacing:"0.07em", textTransform:"uppercase",
-                background:"none", border:"none",
-                padding:"0.5rem 1.1rem", position:"relative",
-                color: active===l ? C.mint400 : C.textMuted,
-                transition:"color 0.2s", cursor:"pointer",
+                fontFamily:"'JetBrains Mono',monospace",fontSize:".65rem",letterSpacing:".07em",
+                textTransform:"uppercase",background:"none",border:"none",padding:".5rem 1rem",
+                position:"relative",color: active===l ? C.accentLight : C.textMuted,
+                transition:"color .2s",cursor:"pointer",minHeight:"44px",
               }}>
                 {l}
                 <span style={{
-                  position:"absolute", bottom:"-1px", left:"50%",
+                  position:"absolute",bottom:"-1px",left:"50%",
                   transform: active===l ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
-                  transformOrigin:"center",
-                  width:"28px", height:"2px",
-                  background:C.mint500, borderRadius:"1px",
-                  boxShadow: active===l ? `0 0 8px ${C.mint500}90` : "none",
-                  transition:"transform 0.25s cubic-bezier(.16,1,.3,1), box-shadow 0.25s",
-                  display:"block",
+                  transformOrigin:"center",width:"24px",height:"2px",
+                  background:C.accent,borderRadius:"1px",
+                  boxShadow: active===l ? `0 0 6px ${C.accent}80` : "none",
+                  transition:"transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s",display:"block",
                 }} />
               </button>
             ))}
           </div>
         )}
 
-        {/* Desktop right: status pill + theme toggle */}
+        {/* Desktop right */}
         {!isMobile && (
-          <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
+          <div style={{ display:"flex",alignItems:"center",gap:".75rem" }}>
             <div style={{
-              display:"flex", alignItems:"center", gap:"0.5rem",
-              padding:"0.28rem 0.7rem",
-              border:`1px solid ${C.mint500}28`,
-              borderRadius:"20px", background:`${C.mint500}0a`,
+              display:"flex",alignItems:"center",gap:".45rem",padding:".25rem .65rem",
+              border:`1px solid ${C.emerald}28`,borderRadius:"20px",background:`${C.emerald}0a`,
             }}>
-              <span style={{
-                width:"5px", height:"5px", borderRadius:"50%",
-                background:C.mint500, display:"inline-block",
-                animation:"pulse-dot 2.5s ease-in-out infinite",
-              }} />
-              <span className="mono" style={{
-                fontSize:"0.6rem", color:C.mint500, opacity:0.85, letterSpacing:"0.05em"
-              }}>available_for_hire</span>
+              <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:C.emerald,
+                display:"inline-block",animation:"pulse-dot 2.5s ease-in-out infinite" }} />
+              <span className="mono" style={{ fontSize:".58rem",color:C.emerald,opacity:.85,letterSpacing:".05em" }}>
+                available_for_hire
+              </span>
             </div>
             <ThemeToggle C={C} />
           </div>
         )}
-
       </nav>
 
-      {/* ── StaggeredMenu — mobile only, full viewport overlay ── */}
+      {/* Mobile menu */}
       {isMobile && (
-        <div style={{
-          position:"fixed",
-          top:0, left:0, right:0, bottom:0,
-          zIndex:1004, pointerEvents:"none",
-        }}>
+        <div style={{ position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:1004,pointerEvents:"none" }}>
           <StaggeredMenu
             C={C}
-            position="right"
-            items={links.map(l => ({
-              label: l,
-              ariaLabel: `Go to ${l}`,
-              link: "#",
-            }))}
-            socialItems={Object.entries(SOCIAL_LINKS).map(([label, url]) => ({ label, link: url }))}
-            displaySocials={true}
-            displayItemNumbering={true}
-            accentColor={C.mint500}
-            menuButtonColor={C.mint500}
-            openMenuButtonColor={C.mint500}
-            changeMenuColorOnOpen={false}
+            items={NAV_LINKS.map(l => ({ label:l }))}
+            socialItems={Object.entries(SOCIAL_LINKS).map(([label,link]) => ({ label,link }))}
+            accentColor={C.accent}
             onMenuOpen={() => { document.body.style.overflow = "hidden"; }}
             onMenuClose={() => { document.body.style.overflow = ""; }}
             onItemClick={(it) => go(it.label)}
@@ -1321,1048 +914,708 @@ const Navbar = memo(({ active, C }) => {
   );
 });
 
-// ── Optimized Uptime Counter ───────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// UPTIME COUNTER
+// ─────────────────────────────────────────────────────────────────
 const START_DATE = new Date("2024-09-16T00:00:00");
-
-
 const UptimeCounter = memo(({ C }) => {
-  const [uptime, setUptime] = useState({ years:0, months:0, days:0, hours:0, minutes:0, seconds:0 });
-  const intervalRef = useRef();
-
+  const [u, setU] = useState({ years:0,months:0,days:0,hours:0,minutes:0,seconds:0 });
+  const ref = useRef();
   useEffect(() => {
-    const calculate = () => {
+    const calc = () => {
       const diff = Date.now() - START_DATE.getTime();
       const ts = Math.floor(diff/1000), tm = Math.floor(ts/60), th = Math.floor(tm/60), td = Math.floor(th/24);
-      setUptime({
-        years: Math.floor(td/365),
-        months: Math.floor((td%365)/30),
-        days: td%30,
-        hours: th%24,
-        minutes: tm%60,
-        seconds: ts%60
-      });
+      setU({ years:Math.floor(td/365),months:Math.floor((td%365)/30),days:td%30,hours:th%24,minutes:tm%60,seconds:ts%60 });
     };
-    
-    calculate();
-    // Update every second, but use less frequent updates if tab is hidden
-    intervalRef.current = setInterval(calculate, 1000);
-    
-    const handleVisibility = () => {
-      if (document.hidden) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(calculate, 5000); // Slow down when hidden
-      } else {
-        clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(calculate, 1000);
-        calculate();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      clearInterval(intervalRef.current);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
+    calc(); ref.current = setInterval(calc, 1000);
+    const vis = () => { clearInterval(ref.current); ref.current = setInterval(calc, document.hidden ? 5000 : 1000); if (!document.hidden) calc(); };
+    document.addEventListener("visibilitychange", vis);
+    return () => { clearInterval(ref.current); document.removeEventListener("visibilitychange", vis); };
   }, []);
-
-  const pad = useCallback(n => String(n).padStart(2,"0"), []);
-  const display = uptime.years > 0 
-    ? `${uptime.years}y ${uptime.months}m` 
-    : uptime.months > 0 
-      ? `${uptime.months}m ${uptime.days}d` 
-      : `${uptime.days}d`;
-
+  const pad = n => String(n).padStart(2,"0");
+  const display = u.years>0 ? `${u.years}y ${u.months}m` : u.months>0 ? `${u.months}m ${u.days}d` : `${u.days}d`;
   return (
-    <div style={{ textAlign: window.innerWidth < 560 ? "left" : "right" }}>
-      <div style={{ 
-        fontFamily:"'DM Serif Display',serif", fontSize:"1.75rem", 
-        color:C.mint500, lineHeight:1 
-      }}>
-        {display}
-      </div>
-      <div className="mono" style={{ 
-        fontSize:"0.55rem", letterSpacing:"0.1em", 
-        textTransform:"uppercase", color:C.textMuted, marginTop:"0.25rem" 
-      }}>
-        Uptime
-      </div>
-      <div className="mono" style={{ 
-        fontSize:"0.6rem", color:C.mint500, opacity:0.5, 
-        marginTop:"0.2rem", letterSpacing:"0.05em" 
-      }}>
-        {pad(uptime.hours)}:{pad(uptime.minutes)}:{pad(uptime.seconds)}
-      </div>
+    <div>
+      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.emerald,lineHeight:1 }}>{display}</div>
+      <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Uptime</div>
+      <div className="mono" style={{ fontSize:".58rem",color:C.emerald,opacity:.45,marginTop:".15rem" }}>{pad(u.hours)}:{pad(u.minutes)}:{pad(u.seconds)}</div>
     </div>
   );
 });
 
-// ── Optimized Dither Background (Mobile-aware) ─────────────────
-const Dither = memo(({ waveColor=[0.0,0.898,0.627], isMobile=false }) => {
+// ─────────────────────────────────────────────────────────────────
+// DITHER BACKGROUND (WebGL)
+// ─────────────────────────────────────────────────────────────────
+const Dither = memo(({ waveColor=[0.388,0.4,0.945], isMobile=false }) => {
   const canvasRef = useRef(null);
-  const stateRef = useRef({ mouse:[0.5,0.5], time:0, raf:null, gl:null, prog:null, locs:{}, frameCount:0 });
+  const state = useRef({ mouse:[.5,.5],time:0,raf:null,gl:null,prog:null,locs:{} });
 
   useEffect(() => {
-    if (isMobile) return; // Skip WebGL on mobile entirely
-    
+    if (isMobile) return;
     const canvas = canvasRef.current;
-    const gl = canvas.getContext("webgl", { antialias:false, alpha:true, powerPreference: "low-power" });
+    const gl = canvas.getContext("webgl",{ antialias:false,alpha:true,powerPreference:"low-power" });
     if (!gl) return;
-    
-    const s = stateRef.current; 
-    s.gl = gl;
-    
-    // Simplified shader for better performance
-    const vert = `attribute vec2 a_pos; void main(){gl_Position=vec4(a_pos,0.0,1.0);}`;
+    const s = state.current; s.gl = gl;
+    const vert = `attribute vec2 a_pos; void main(){gl_Position=vec4(a_pos,0.,1.);}`;
     const frag = `
       precision lowp float;
       uniform vec2 u_res; uniform float u_time; uniform vec2 u_mouse;
       uniform vec3 u_waveColor; uniform float u_pixelSize;
-      
-      float bayer(vec2 p){
-        int x=int(mod(p.x,4.0)),y=int(mod(p.y,4.0));
-        float v = float(x*3 + y*5) / 16.0;
-        return v;
-      }
-      
+      float bayer(vec2 p){int x=int(mod(p.x,4.)),y=int(mod(p.y,4.));return float(x*3+y*5)/16.;}
       void main(){
-        vec2 pxUV=floor(gl_FragCoord.xy/u_pixelSize)*u_pixelSize; 
+        vec2 pxUV=floor(gl_FragCoord.xy/u_pixelSize)*u_pixelSize;
         vec2 uv=pxUV/u_res;
-        
-        float wave = sin(uv.x*10.0+u_time)*0.3 + sin(uv.y*8.0+u_time*0.7)*0.2;
-        float brightness = 0.5 + wave;
-        
-        float dist=length(uv-u_mouse); 
-        float ripple=smoothstep(0.3,0.0,dist);
-        brightness=mix(brightness,1.0,ripple*0.2);
-        
-        float threshold=bayer(gl_FragCoord.xy/u_pixelSize);
-        float quantized=floor(brightness*3.0+threshold)/3.0;
-        
-        vec3 dark=vec3(0.039,0.0,0.059);
-        vec3 color=mix(dark,u_waveColor,quantized);
-        gl_FragColor=vec4(color,1.0);
-      }
-    `;
-    
-    const compile = (type,src) => {
-      const sh=gl.createShader(type);
-      gl.shaderSource(sh,src);
-      gl.compileShader(sh);
-      return sh;
+        float wave=sin(uv.x*10.+u_time)*.28+sin(uv.y*7.5+u_time*.7)*.18;
+        float brightness=.5+wave;
+        float dist=length(uv-u_mouse);
+        brightness=mix(brightness,1.,smoothstep(.3,.0,dist)*.15);
+        float t=bayer(gl_FragCoord.xy/u_pixelSize);
+        float q=floor(brightness*3.+t)/3.;
+        vec3 dark=vec3(0.051,0.051,0.071);
+        gl_FragColor=vec4(mix(dark,u_waveColor,q),1.);
+      }`;
+    const compile=(type,src)=>{ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); return sh; };
+    const prog=gl.createProgram();
+    gl.attachShader(prog,compile(gl.VERTEX_SHADER,vert));
+    gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,frag));
+    gl.linkProgram(prog); gl.useProgram(prog); s.prog=prog;
+    const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+    const loc=gl.getAttribLocation(prog,"a_pos"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+    s.locs={ res:gl.getUniformLocation(prog,"u_res"),time:gl.getUniformLocation(prog,"u_time"),mouse:gl.getUniformLocation(prog,"u_mouse"),waveColor:gl.getUniformLocation(prog,"u_waveColor"),pixelSize:gl.getUniformLocation(prog,"u_pixelSize") };
+    const resize=()=>{ const dpr=Math.min(devicePixelRatio,1.5); canvas.width=Math.floor(canvas.offsetWidth*dpr); canvas.height=Math.floor(canvas.offsetHeight*dpr); gl.viewport(0,0,canvas.width,canvas.height); };
+    resize(); const ro=new ResizeObserver(resize); ro.observe(canvas);
+    canvas.addEventListener("mousemove",e=>{ const r=canvas.getBoundingClientRect(); s.mouse=[(e.clientX-r.left)/r.width,1.-(e.clientY-r.top)/r.height]; },{passive:true});
+    let last=0;
+    const render=(ts)=>{
+      if (ts-last<34){ s.raf=requestAnimationFrame(render); return; } last=ts;
+      s.time+=.025; const{locs}=s;
+      gl.uniform2f(locs.res,canvas.width,canvas.height); gl.uniform1f(locs.time,s.time);
+      gl.uniform2f(locs.mouse,s.mouse[0],s.mouse[1]); gl.uniform3f(locs.waveColor,...waveColor);
+      gl.uniform1f(locs.pixelSize,4.); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      s.raf=requestAnimationFrame(render);
     };
-    
-    const prog = gl.createProgram();
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
-    gl.linkProgram(prog); 
-    gl.useProgram(prog); 
-    s.prog = prog;
-    
-    const buf = gl.createBuffer(); 
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-    
-    const loc = gl.getAttribLocation(prog, "a_pos"); 
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    
-    s.locs = {
-      res: gl.getUniformLocation(prog, "u_res"),
-      time: gl.getUniformLocation(prog, "u_time"),
-      mouse: gl.getUniformLocation(prog, "u_mouse"),
-      waveColor: gl.getUniformLocation(prog, "u_waveColor"),
-      pixelSize: gl.getUniformLocation(prog, "u_pixelSize"),
-    };
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio, 1.5);
-      canvas.width = Math.floor(canvas.offsetWidth * dpr);
-      canvas.height = Math.floor(canvas.offsetHeight * dpr);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-    
-    resize(); 
-    const ro = new ResizeObserver(resize); 
-    ro.observe(canvas);
-    
-    const onMouse = (e) => {
-      const r = canvas.getBoundingClientRect();
-      s.mouse = [(e.clientX-r.left)/r.width, 1.0-(e.clientY-r.top)/r.height];
-    };
-    
-    canvas.addEventListener("mousemove", onMouse, { passive: true });
-    
-    let lastTime = 0;
-    const render = (timestamp) => {
-      // Throttle to 30fps for performance
-      if (timestamp - lastTime < 33) {
-        s.raf = requestAnimationFrame(render);
-        return;
-      }
-      lastTime = timestamp;
-      
-      s.time += 0.03;
-      const { locs } = s;
-      
-      gl.uniform2f(locs.res, canvas.width, canvas.height); 
-      gl.uniform1f(locs.time, s.time);
-      gl.uniform2f(locs.mouse, s.mouse[0], s.mouse[1]); 
-      gl.uniform3f(locs.waveColor, waveColor[0], waveColor[1], waveColor[2]); 
-      gl.uniform1f(locs.pixelSize, 4.0);
-      
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); 
-      s.raf = requestAnimationFrame(render);
-    };
-    
     render(0);
-    
-    return () => {
-      cancelAnimationFrame(s.raf);
-      ro.disconnect();
-      canvas.removeEventListener("mousemove", onMouse);
-      gl.deleteProgram(prog);
-    };
-  }, [waveColor, isMobile]);
+    return ()=>{ cancelAnimationFrame(s.raf); ro.disconnect(); gl.deleteProgram(prog); };
+  },[waveColor,isMobile]);
 
   if (isMobile) {
-    // Return CSS gradient fallback for mobile
-    return (
-      <div style={{ 
-        position:"absolute", inset:0, 
-        background: `radial-gradient(ellipse at 30% 20%, ${ACCENT.mint500}15 0%, transparent 50%),
-                     radial-gradient(ellipse at 70% 80%, ${ACCENT.violet}10 0%, transparent 50%)`,
-        zIndex:0 
-      }} />
-    );
+    return <div style={{ position:"absolute",inset:0,
+      background:`radial-gradient(ellipse at 25% 18%,#6366F115 0%,transparent 50%),radial-gradient(ellipse at 75% 82%,#10B98110 0%,transparent 50%)`,zIndex:0 }} />;
   }
-
-  return <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", display:"block", zIndex:0 }} />;
+  return <canvas ref={canvasRef} style={{ position:"absolute",inset:0,width:"100%",height:"100%",display:"block",zIndex:0 }} />;
 });
 
-// ── Linux Terminal Animation ───────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// LINUX TERMINAL ANIMATION
+// ─────────────────────────────────────────────────────────────────
 const LinuxTerminal = memo(({ C, isMobile, start }) => {
   const SEQUENCE = useMemo(() => [
-    {
-      cmd: "whoami",
-      output: "Sysadmin · Network Engineer · Security Analyst — Bekasi, ID",
-      outputColor: C.coral,
-    },
-    {
-      cmd: "cat role.txt",
-      output: isMobile
-        ? "securing networks · hardening systems · hunting threats"
-        : "parothegreat -- securing networks, hardening systems, hunting threats",
-      outputColor: C.mint600,
-    },
-    {
-      cmd: "uptime --since 2024-09-16",
-      output: isMobile
-        ? "status: operational-student"
-        : "online since Sep 16 2024 | load avg: high | status: operational-student",
-      outputColor: C.mint400,
-    },
+    { cmd:"whoami", output:"parothegreat — SysAdmin · Penetration Tester · Infrastructure Engineer", outColor:C.rose },
+    { cmd:"cat role.txt", output:"securing networks · hardening Linux · building Go recon tools", outColor:C.emeraldDark },
+    { cmd:"uptime --since 2024-09-16", output:"status: operational-student | org: teamitmivhs | loc: Cikarang, ID", outColor:C.accentLight },
   ], [C, isMobile]);
 
-  // phase: which command is currently being typed (-1 = not started yet)
-  const [phase, setPhase]           = useState(-1);
-  const [typed, setTyped]           = useState(0);
-  const [showOutput, setShowOutput] = useState(false);
-  const [done, setDone]             = useState(false);
-  const timerRef                    = useRef();
-
-  const skipAnim = useMemo(() =>
-    typeof window !== "undefined" && window.matchMedia("(pointer:coarse)").matches
-  , []);
+  const [phase, setPhase]       = useState(-1);
+  const [typed, setTyped]       = useState(0);
+  const [showOut, setShowOut]   = useState(false);
+  const [done, setDone]         = useState(false);
+  const timerRef                = useRef();
+  const skipAnim = useMemo(() => typeof window !== "undefined" && window.matchMedia("(pointer:coarse)").matches, []);
 
   useEffect(() => {
-    if (!start) return; // wait for boot to finish
+    if (!start) return;
     if (skipAnim) { setDone(true); return; }
-    timerRef.current = setTimeout(() => setPhase(0), 350);
+    timerRef.current = setTimeout(() => setPhase(0), 300);
     return () => clearTimeout(timerRef.current);
   }, [start]); // eslint-disable-line
 
   useEffect(() => {
     if (skipAnim || phase < 0 || phase >= SEQUENCE.length) return;
-    setTyped(0);
-    setShowOutput(false);
-    const cmd = SEQUENCE[phase].cmd;
-    let i = 0;
+    setTyped(0); setShowOut(false);
+    const cmd = SEQUENCE[phase].cmd; let i = 0;
     const tick = () => {
-      i++;
-      setTyped(i);
-      if (i < cmd.length) {
-        timerRef.current = setTimeout(tick, 36 + Math.random() * 24);
-      } else {
+      i++; setTyped(i);
+      if (i < cmd.length) { timerRef.current = setTimeout(tick, 32+Math.random()*20); }
+      else { timerRef.current = setTimeout(() => {
+        setShowOut(true);
         timerRef.current = setTimeout(() => {
-          setShowOutput(true);
-          timerRef.current = setTimeout(() => {
-            if (phase + 1 < SEQUENCE.length) setPhase(p => p + 1);
-            else setDone(true);
-          }, 480);
-        }, 170);
-      }
+          if (phase+1 < SEQUENCE.length) setPhase(p=>p+1); else setDone(true);
+        }, 440);
+      }, 150); }
     };
-    timerRef.current = setTimeout(tick, 36);
+    timerRef.current = setTimeout(tick, 30);
     return () => clearTimeout(timerRef.current);
   }, [phase]); // eslint-disable-line
 
-  const fz = isMobile ? "0.65rem" : "0.74rem";
-
+  const fz = isMobile ? ".62rem" : ".7rem";
   const Prompt = () => (
-    <span style={{userSelect:"none", whiteSpace:"nowrap"}}>
-      <span style={{color:"#27C93F"}}>paro@thegreat</span>
-      <span style={{color:"rgba(255,255,255,0.2)", margin:"0 0.3rem"}}>~</span>
-      <span style={{color:"rgba(255,255,255,0.45)"}}>$</span>
+    <span style={{ userSelect:"none",whiteSpace:"nowrap" }}>
+      <span style={{ color:"#22C55E" }}>paro@thegreat</span>
+      <span style={{ color:C.textMuted }}>:</span>
+      <span style={{ color:C.accent }}>~</span>
+      <span style={{ color:C.textMuted }}> $ </span>
     </span>
   );
 
+  const allDone = done || skipAnim;
+
   return (
     <div className="hero-terminal" style={{
-      marginBottom: isMobile ? "1.5rem" : "2.5rem",
-      display: isMobile ? "block" : "inline-block",
-      width: isMobile ? "100%" : "auto",
-      minWidth: isMobile ? "auto" : "520px",
-      background:"rgba(0,0,0,0.55)",
-      backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)",
-      border:"1px solid rgba(255,255,255,0.07)",
-      borderRadius:"8px",
-      boxShadow:"0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
-      overflow:"hidden", boxSizing:"border-box",
+      background:`${C.bgCard}cc`, border:`1px solid ${C.border}`,
+      borderRadius:"8px", padding:isMobile?".7rem .85rem":".9rem 1.1rem",
+      marginBottom:isMobile?"1.25rem":"1.5rem",
+      backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)",
     }}>
-
-      {/* Title bar */}
-      <div style={{
-        display:"flex", alignItems:"center", gap:"0.5rem",
-        padding: isMobile ? "0.5rem 0.75rem" : "0.55rem 1rem",
-        background:"rgba(255,255,255,0.04)",
-        borderBottom:"1px solid rgba(255,255,255,0.06)",
-        flexShrink:0,
-      }}>
-        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#FF5F56",display:"inline-block",flexShrink:0}} />
-        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#FFBD2E",display:"inline-block",flexShrink:0}} />
-        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:"#27C93F",display:"inline-block",flexShrink:0}} />
-        <span className="mono" style={{
-          fontSize:"0.6rem", color:"rgba(255,255,255,0.25)",
-          letterSpacing:"0.08em", marginLeft:"0.5rem", userSelect:"none",
-        }}>paro@thegreat: ~</span>
+      {/* Window chrome */}
+      <div style={{ display:"flex",gap:".4rem",marginBottom:".6rem" }}>
+        {["#FF5F57","#FFBD2E","#28C840"].map((c,i) => <div key={i} style={{ width:"9px",height:"9px",borderRadius:"50%",background:c,opacity:.7 }} />)}
       </div>
 
-      {/* Body — all rows always in DOM so height is fixed from the start */}
-      <div style={{padding: isMobile ? "0.85rem 0.9rem" : "1rem 1.25rem"}}>
-        {SEQUENCE.map((entry, idx) => {
-          const isPast   = skipAnim || phase > idx || done;
-          const isActive = !skipAnim && phase === idx;
-          // Text to show for the command (full if past/skip, partial if active, invisible placeholder if not yet)
-          const cmdText  = isPast    ? entry.cmd
-                         : isActive  ? entry.cmd.slice(0, typed)
-                         : " "; // non-breaking space — keeps row height
-          const showOut  = skipAnim || isPast || (isActive && showOutput);
-          // Colour: dim if not yet reached, normal otherwise
-          const cmdColor = (isPast || isActive) ? "rgba(255,255,255,0.75)" : "transparent";
-          const outColor = showOut ? entry.outputColor : "transparent";
-          const promptOpacity = (isPast || isActive || skipAnim) ? 1 : 0.12;
-
-          return (
-            <div key={idx}>
-              {/* Prompt + command — always takes up space */}
-              <div className="mono" style={{fontSize:fz, lineHeight:1.85, color:"rgba(255,255,255,0.35)"}}>
-                <span style={{opacity: promptOpacity, transition:"opacity 0.2s"}}>
-                  <Prompt />
-                </span>
-                <span style={{
-                  marginLeft:"0.5rem",
-                  color: cmdColor,
-                  transition:"color 0.15s",
-                }}>{cmdText}</span>
-                {isActive && !showOutput && (
-                  <span style={{animation:"blink 0.9s step-end infinite", color:C.mint400, marginLeft:"1px"}}>▋</span>
-                )}
-              </div>
-              {/* Output — always takes up space via minHeight, colour fades in */}
-              <div className="mono" style={{
-                fontSize:fz, lineHeight:1.6,
-                color: outColor,
-                paddingLeft:"0.5rem",
-                marginBottom:"0.35rem",
-                wordBreak:"break-word",
-                minHeight: `calc(${fz} * 1.6)`, // reserve space even when invisible
-                transition:"color 0.2s ease",
-              }}>
-                {entry.output}
-              </div>
+      {allDone ? (
+        SEQUENCE.map((s, i) => (
+          <div key={i} style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
+            <div><Prompt /><span style={{ color:C.textPri }}>{s.cmd}</span></div>
+            <div style={{ color:s.outColor,opacity:.8,paddingLeft:isMobile?0:".5rem" }}>{s.output}</div>
+          </div>
+        ))
+      ) : (
+        <>
+          {SEQUENCE.slice(0, phase).map((s, i) => (
+            <div key={i} style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
+              <div><Prompt /><span style={{ color:C.textPri }}>{s.cmd}</span></div>
+              <div style={{ color:s.outColor,opacity:.8 }}>{s.output}</div>
             </div>
-          );
-        })}
-
-        {/* Final idle prompt — always in DOM */}
-        <div className="mono" style={{fontSize:fz, lineHeight:1.85, color:"rgba(255,255,255,0.35)"}}>
-          <span style={{opacity: done || skipAnim ? 1 : 0.12, transition:"opacity 0.3s"}}>
-            <Prompt />
-          </span>
-          {(done || skipAnim) && (
-            <span style={{animation:"blink 1.1s step-end infinite", color:C.mint400, marginLeft:"0.5rem", fontSize:"0.9em"}}>▋</span>
+          ))}
+          {phase >= 0 && phase < SEQUENCE.length && (
+            <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
+              <div>
+                <Prompt />
+                <span style={{ color:C.textPri }}>{SEQUENCE[phase].cmd.slice(0, typed)}</span>
+                <span style={{ display:"inline-block",width:".45em",height:"1em",background:C.accent,marginLeft:"1px",verticalAlign:"middle",animation:"blink .7s step-end infinite" }} />
+              </div>
+              {showOut && <div style={{ color:SEQUENCE[phase].outColor,opacity:.8 }}>{SEQUENCE[phase].output}</div>}
+            </div>
           )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 });
 
-// ── Optimized Hero Section ─────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// HERO
+// ─────────────────────────────────────────────────────────────────
 const Hero = memo(({ C, booted, startAlvaro, startPrayogo }) => {
-  const [ready, setReady] = useState(false);
   const { isMobile } = useTheme();
-
-  useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const scrollToWork = useCallback(() => {
-    document.getElementById("work")?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
-  }, [isMobile]);
-
-  const scrollToContact = useCallback(() => {
-    document.getElementById("contact")?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
-  }, [isMobile]);
+  const navH = isMobile ? 58 : 64;
 
   return (
-    <section id="home" className="hero-section gpu-accelerated" style={{
-      minHeight: isMobile ? "auto" : "100vh", 
-      display:"flex", flexDirection:"column",
-      justifyContent: isMobile ? "flex-start" : "flex-end",
-      padding: isMobile ? "0 1rem 3rem" : "0 3rem 5rem", 
-      position:"relative", overflow:"hidden",
+    <section id="home" className="hero-section" style={{
+      position:"relative", minHeight:`calc(100dvh - ${navH}px)`,
+      padding: isMobile ? `${navH+40}px 1rem 3.5rem` : `${navH+80}px 3rem 4rem`,
+      display:"flex", flexDirection:"column", justifyContent:"flex-end",
+      overflow:"hidden",
     }}>
-      {/* Dither BG - disabled on mobile */}
-      <Dither waveColor={[0.0,0.898,0.627]} isMobile={isMobile} />
-      
-      {/* Overlay */}
-      <div style={{ 
-        position:"absolute", inset:0, zIndex:1, 
-        background: C.heroOverlay, pointerEvents:"none",
-        transition:"background 0.3s ease" 
-      }} />
+      <Dither waveColor={[0.388,0.4,0.945]} isMobile={isMobile} />
+      <div style={{ position:"absolute",inset:0,background:C.heroOverlay,zIndex:1,pointerEvents:"none" }} />
 
-      {/* Top rule — desktop only absolute, mobile hidden */}
+      {/* ProfileCard / Lanyard placeholder — top right on desktop */}
       {!isMobile && (
-        <div className="hero-top-rule" style={{ 
-          position:"absolute", top:"66px",
-          left:"3rem", right:"3rem",
-          height:"1px", background:C.border, zIndex:2 
-        }} />
-      )}
-
-      {/* ProfileCard - desktop only */}
-      {!isMobile && booted && (
         <div className="lanyard-wrap" style={{
-          position:"absolute", top:"44%", right:"12rem",
-          transform:"translateY(-50%)",
-          width:"400px", height:"600px", zIndex:3, pointerEvents:"all",
-          display:"", alignItems:"center", justifyContent:"center",
+          position:"absolute", top:navH+20, right:"3rem", zIndex:2,
+          width:"300px", height:"420px",
         }}>
           <ProfileCard
             name="Alvaro Prayogo"
-            title="Network · Security · Sysadmin"
+            title="SysAdmin & Penetration Tester"
             handle="parothegreat"
-            status="Open to Work"
-            contactText="Contact Me"
-            avatarUrl="/images/profile/pfp.jpeg"
-            miniAvatarUrl="/images/profile/pfp.jpeg"
-            showUserInfo={true}
-            enableTilt={true}
-            enableMobileTilt={false}
-            behindGlowEnabled={true}
-            behindGlowSize="50%"
-            behindGlowColor="rgba(0,229,160,0.35)"
-            innerGradient="linear-gradient(145deg,#0A000F 0%,#00E5A022 0%)"
-            onContactClick={() => document.getElementById("contact")?.scrollIntoView({ behavior:"smooth" })}
+            avatarUrl={null}
+            C={C}
           />
         </div>
       )}
 
-      {/* Main content */}
-      <div style={{
-        opacity: ready ? 1 : 0, 
-        transform: ready ? "translateY(0)" : "translateY(20px)",
-        transition:"opacity 0.7s ease 0.15s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s",
-        position:"relative", zIndex:2,
-        paddingTop: isMobile ? "80px" : "0",
-      }}>
+      {/* Content */}
+      <div style={{ position:"relative",zIndex:2,maxWidth:"900px" }}>
 
-        {/* ── Animated Linux terminal ── */}
+        {/* Eyebrow */}
+        <div className="mono" style={{
+          fontSize: isMobile ? ".62rem" : ".68rem",
+          color:C.textMuted, letterSpacing:".12em", marginBottom:"1.1rem",
+          display:"flex", alignItems:"center", gap:".6rem",
+        }}>
+          <span style={{ display:"inline-block",width:"18px",height:"1px",background:C.border }} />
+          <span>parothegreat.site — systems &amp; security</span>
+        </div>
+
+        {/* H1 with DecryptedText */}
+        <h1 className="hero-h1" style={{
+          fontFamily:"'DM Serif Display',serif",
+          fontSize:"clamp(2.8rem,7.5vw,5.5rem)",
+          fontWeight:400,lineHeight:1.0,letterSpacing:"-.02em",
+          color:C.textPri,marginBottom:"2rem",
+        }}>
+          <span style={{ display:"block" }}>
+            <DecryptedText text="Moehammad" start={startAlvaro} animateOn="mount" speed={90} revealDirection="start" className="" style={{ color:C.textPri }} />
+          </span>
+          <span style={{ display:"block",color:C.accent }}>
+            <DecryptedText text="Alvaro" start={startAlvaro} animateOn="mount" speed={90} revealDirection="start" style={{ color:C.accent }} />
+          </span>
+          <span style={{ display:"block",color:C.textSec,fontStyle:"italic" }}>
+            <DecryptedText text="Pirata Prayogo" start={startPrayogo} animateOn="mount" speed={80} revealDirection="start" style={{ color:C.textSec }} />
+          </span>
+        </h1>
+
+        {/* Terminal */}
         <LinuxTerminal C={C} isMobile={isMobile} start={booted} />
 
-        {/* Name */}
-        <div>
-          {/* Mobile: Hanya text, lebih rapi */}
-          {isMobile ? (
-            <div style={{
-              marginBottom:"2rem",
-            }}>
-              <h1 className="hero-h1" style={{
-                fontFamily:"'DM Serif Display',serif",
-                fontSize:"clamp(1.5rem, 7vw, 2.2rem)",
-                lineHeight:1.2, fontWeight:400, color:C.textPri,
-                letterSpacing:"-0.02em", marginBottom:0,
-              }}>
-                Hi, I'm<br />
-                <span style={{ fontStyle:"italic", color:C.mint500 }}>
-                  <DecryptedText 
-                    text="Alvaro Prayogo" 
-                    speed={50}
-                    maxIterations={50}
-                    sequential={true}
-                    revealDirection="center"
-                    animateOn="view"
-                    shouldStart={startAlvaro}
-                    className="decrypted-char"
-                    encryptedClassName="encrypted-char"
-                  />
-                </span>
-              </h1>
-            </div>
-          ) : (
-            <h1 className="hero-h1" style={{
-              fontFamily:"'DM Serif Display',serif",
-              fontSize:"clamp(3rem, 8vw, 7rem)",
-              lineHeight:0.9, fontWeight:400, color:C.textPri,
-              letterSpacing:"-0.02em",
-              marginBottom:"3rem",
-            }}>
-              <DecryptedText 
-                text="Alvaro" 
-                speed={100}
-                maxIterations={10}
-                sequential={true}
-                revealDirection="start"
-                animateOn="view"
-                shouldStart={startAlvaro}
-                className="decrypted-char"
-                encryptedClassName="encrypted-char"
-              /><br />
-              <span style={{ fontStyle:"italic", color:C.mint500 }}>
-                <DecryptedText 
-                  text="Prayogo." 
-                  speed={100}
-                  maxIterations={10}
-                  sequential={true}
-                  revealDirection="start"
-                  animateOn="view"
-                  shouldStart={startPrayogo}
-                  className="decrypted-char"
-                  encryptedClassName="encrypted-char"
-                />
-              </span>
-            </h1>
-          )}
+        {/* Bottom row */}
+        <div className="hero-bottom" style={{
+          display:"flex", alignItems:"flex-start", gap:"3rem",
+        }}>
+          {/* CTA buttons */}
+          <div className="btn-row" style={{ display:"flex",gap:".75rem",flexWrap:"wrap" }}>
+            <button className="btn-primary" onClick={() => document.getElementById("work")?.scrollIntoView({behavior:"smooth"})}>
+              ./view_projects.sh →
+            </button>
+            <button className="btn-ghost" onClick={() => document.getElementById("contact")?.scrollIntoView({behavior:"smooth"})}>
+              ./contact.sh
+            </button>
+          </div>
 
-          <div className="hero-bottom" style={{
-            display:"flex", justifyContent:"space-between",
-            borderTop:`1px solid ${C.border}`, paddingTop: isMobile ? "1.5rem" : "2rem",
-            gap: isMobile ? "1.5rem" : "3rem",
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "flex-start" : "flex-end",
+          {/* Right info strip */}
+          <div className="hero-bottom-right" style={{
+            display:"flex", alignItems:"center", gap:"2rem",
+            borderLeft:`1px solid ${C.border}`, paddingLeft:"2rem",
+            flexShrink:0,
           }}>
-            <div className="btn-row" style={{ 
-              display:"flex", gap:"0.75rem", flexWrap:"wrap",
-              width: isMobile ? "100%" : "auto"
-            }}>
-              <button className="btn-primary" onClick={scrollToWork} style={{ flex: isMobile ? 1 : "none" }}>
-                View Work ↓
-              </button>
-              <button className="btn-ghost" onClick={scrollToContact} style={{ flex: isMobile ? 1 : "none" }}>
-                Get in Touch
-              </button>
+            <UptimeCounter C={C} />
+            <div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.accent,lineHeight:1 }}>5+</div>
+              <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Projects</div>
+              <div className="mono" style={{ fontSize:".58rem",color:C.accent,opacity:.45,marginTop:".15rem" }}>shipped</div>
             </div>
-
-            <div className="hero-bottom-right" style={{
-              display:"flex", gap: isMobile ? "1rem" : "1.5rem", 
-              alignItems: isMobile ? "flex-start" : "flex-end",
-              flexDirection: isMobile ? "column" : "row",
-              borderLeft: isMobile ? "none" : `1px solid ${C.border}`,
-              paddingLeft: isMobile ? 0 : "1.5rem",
-            }}>
-              <p style={{
-                fontSize:"0.85rem", lineHeight:1.8, fontWeight:300, 
-                color:C.textSec, maxWidth:"270px",
-                borderLeft:`2px solid ${C.mint500}40`,
-                paddingLeft:"0.85rem",
-                fontStyle:"italic",
-              }}>
-                "Defending infrastructure, engineering resilient networks, and breaking things before the bad actors do."
-              </p>
-              <div className="stat-row" style={{ 
-                display:"flex", gap: isMobile ? "1.5rem" : "2rem",
-                flexWrap:"wrap"
-              }}>
-                <UptimeCounter C={C} />
-                {[["6","Projects"],["2","Certs"]].map(([n,l]) => (
-                  <div key={l} style={{ textAlign: isMobile ? "left" : "right" }}>
-                    <div style={{ 
-                      fontFamily:"'DM Serif Display',serif", 
-                      fontSize: isMobile ? "1.5rem" : "1.75rem", 
-                      color:C.mint500, lineHeight:1 
-                    }}>
-                      {n}
-                    </div>
-                    <div className="mono" style={{ 
-                      fontSize:"0.55rem", letterSpacing:"0.1em", 
-                      textTransform:"uppercase", color:C.textMuted, marginTop:"0.2rem" 
-                    }}>
-                      {l}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.amber,lineHeight:1 }}>10+</div>
+              <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Certs</div>
+              <div className="mono" style={{ fontSize:".58rem",color:C.amber,opacity:.45,marginTop:".15rem" }}>earned</div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Scroll cue */}
+      <div style={{
+        position:"absolute",bottom:"1.75rem",left:"50%",transform:"translateX(-50%)",
+        zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",gap:".35rem",
+        opacity:.35,
+      }}>
+        <div style={{ width:"1px",height:"28px",background:`linear-gradient(to bottom,transparent,${C.border})` }} />
+        <span className="mono" style={{ fontSize:".48rem",color:C.textMuted,letterSpacing:".12em" }}>SCROLL</span>
+      </div>
     </section>
   );
 });
 
-// ── Work Section ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// PROJECT BOTTOM SHEET (mobile)
+// ─────────────────────────────────────────────────────────────────
+const ProjectBottomSheet = memo(({ project, C, onClose }) => {
+  const accent = C[project.accent] || C.accent;
+  const startY = useRef(null);
+  const sheetRef = useRef(null);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY; };
+  const handleTouchEnd   = (e) => { if (e.changedTouches[0].clientY - startY.current > 60) onClose(); };
+
+  return (
+    <>
+      <div className="bottom-sheet-overlay" onClick={onClose} />
+      <div className="bottom-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="bottom-sheet-handle" />
+        <div style={{ padding:"1.25rem 1.5rem 2rem" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:".6rem",marginBottom:"1rem" }}>
+            <div style={{ width:"4px",height:"36px",borderRadius:"2px",background:accent,flexShrink:0 }} />
+            <div>
+              <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.35rem",fontWeight:400,color:C.textPri }}>{project.title}</h3>
+              <p className="mono" style={{ fontSize:".58rem",color:accent,opacity:.8,marginTop:".15rem" }}>{project.category}</p>
+            </div>
+          </div>
+
+          <p style={{ fontSize:".82rem",lineHeight:1.75,color:C.textSec,fontWeight:300,marginBottom:"1.25rem" }}>{project.desc}</p>
+
+          {/* Impact */}
+          <div style={{ marginBottom:"1.25rem" }}>
+            <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Impact</p>
+            <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
+              {project.impact.map((b,i) => (
+                <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
+                  <span style={{ color:accent,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>→</span>
+                  <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textSec,fontWeight:300 }}>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Technical challenge */}
+          <div style={{ marginBottom:"1.5rem" }}>
+            <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Technical Challenges</p>
+            <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
+              {project.challenges.map((b,i) => (
+                <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
+                  <span style={{ color:C.textMuted,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>⚡</span>
+                  <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textMuted,fontWeight:300 }}>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Stack */}
+          <div style={{ display:"flex",flexWrap:"wrap",gap:".4rem",marginBottom:"1.5rem" }}>
+            {project.stack.map(t => (
+              <span key={t} className="tag-pill" style={{ borderColor:`${accent}55`,color:accent }}>{t}</span>
+            ))}
+          </div>
+
+          <a href={project.repo} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
+            <button className="btn-primary" style={{ width:"100%",justifyContent:"center",background:accent }}>
+              View on GitHub →
+            </button>
+          </a>
+        </div>
+      </div>
+    </>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────
+// PROJECT EXPANDED PANEL (desktop)
+// ─────────────────────────────────────────────────────────────────
+const ProjectExpandedPanel = memo(({ project, C }) => {
+  const accent = C[project.accent] || C.accent;
+  return (
+    <div style={{
+      gridColumn:"1 / -1", background:`${accent}08`,
+      borderBottom:`1px solid ${C.border}`,
+      padding:"1.5rem 1.5rem 1.75rem 4rem",
+      display:"flex", flexDirection:"column", gap:"1.5rem",
+      animation:"fadeUp .22s ease both", width:"100%", boxSizing:"border-box",
+    }}>
+      {/* Top row: overview + stack */}
+      <div style={{ display:"flex",gap:"3rem",flexWrap:"wrap" }}>
+        <div style={{ flex:1,minWidth:"220px" }}>
+          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Overview</p>
+          <p style={{ fontSize:".82rem",lineHeight:1.75,color:C.textSec,fontWeight:300 }}>{project.desc}</p>
+        </div>
+        <div style={{ flexShrink:0,minWidth:"170px" }}>
+          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Stack</p>
+          <div style={{ display:"flex",flexWrap:"wrap",gap:".35rem",marginBottom:".75rem" }}>
+            {project.stack.map(t => <span key={t} className="tag-pill" style={{ borderColor:`${accent}44`,color:accent }}>{t}</span>)}
+          </div>
+          <p className="mono" style={{ fontSize:".52rem",color:C.textMuted,opacity:.5 }}>{project.year}</p>
+        </div>
+      </div>
+
+      {/* Impact + challenges */}
+      <div style={{ display:"flex",gap:"3rem",flexWrap:"wrap" }}>
+        <div style={{ flex:1,minWidth:"220px" }}>
+          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Impact</p>
+          <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
+            {project.impact.map((b,i) => (
+              <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
+                <span style={{ color:accent,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>→</span>
+                <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textSec,fontWeight:300 }}>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ flex:1,minWidth:"220px" }}>
+          <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Technical Challenges</p>
+          <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
+            {project.challenges.map((b,i) => (
+              <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
+                <span style={{ color:C.textMuted,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>⚡</span>
+                <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textMuted,fontWeight:300 }}>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Screenshot placeholder grid */}
+      <div>
+        <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Documentation</p>
+        <div style={{ display:"flex",gap:".6rem",flexWrap:"wrap" }}>
+          {[1,2,3].map(n => (
+            <div key={n} style={{
+              width:"130px",height:"80px",borderRadius:"6px",
+              background:C.bgCard2,border:`1px dashed ${C.border}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              flexShrink:0,
+            }}>
+              <span className="mono" style={{ fontSize:".52rem",color:C.textMuted,opacity:.4 }}>screenshot_{n}.png</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <a href={project.repo} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none",alignSelf:"flex-start" }}>
+        <button className="btn-ghost" style={{ borderColor:`${accent}50`,color:accent }}>
+          View on GitHub →
+        </button>
+      </a>
+    </div>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────
+// WORK SECTION
+// ─────────────────────────────────────────────────────────────────
 const Work = memo(({ C }) => {
   const { isMobile } = useTheme();
-  const [hovered, setHovered] = useState(null);
-  const [expanded, setExpanded] = useState(null);
-  const toggleExpand = useCallback((id) => setExpanded(p => p === id ? null : id), []);
+  const [hovered, setHovered]   = useState(null);
+  const [expanded, setExpanded] = useState(null);  // desktop
+  const [sheet, setSheet]       = useState(null);  // mobile
+
+  const toggleExpand = useCallback((id) => {
+    if (isMobile) { setSheet(id); return; }
+    setExpanded(p => p === id ? null : id);
+  }, [isMobile]);
 
   return (
     <section id="work" className="work-section" style={{
-      padding: isMobile ? "4rem 1rem" : "6rem 3rem",
-      maxWidth:"1200px", margin:"0 auto"
+      padding: isMobile ? "3.5rem 1rem" : "6rem 3rem",
+      borderTop:`1px solid ${C.border}`,
     }}>
-      {/* Header */}
-      <div className="reveal" style={{
-        display:"flex", justifyContent:"space-between",
-        alignItems:"flex-end", marginBottom: isMobile ? "2rem" : "3rem",
-        flexWrap:"wrap", gap:"1rem"
-      }}>
-        <div>
-          <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
-            <span style={{opacity:0.4}}>02 /</span>
-            <span>selected work</span>
+      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
+        {/* Header */}
+        <div className="reveal" style={{ marginBottom: isMobile?"2rem":"2.75rem" }}>
+          <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
+            <span style={{ opacity:.4 }}>02 /</span>
+            <span>featured projects</span>
           </p>
           <h2 style={{
             fontFamily:"'DM Serif Display',serif",
-            fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 3vw, 2.5rem)",
-            color:C.textPri, fontWeight:400
+            fontSize: isMobile ? "1.8rem" : "clamp(2rem,4vw,3rem)",
+            fontWeight:400,color:C.textPri,lineHeight:1.05,
           }}>
-            Things I've <em>built</em>
+            Things I've <em>Built</em>
           </h2>
         </div>
-        <div style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
-          <span className="mono" style={{
-            fontSize:"0.6rem", color:C.textMuted, padding:"0.22rem 0.6rem",
-            border:`1px solid ${C.border}`, borderRadius:"3px", letterSpacing:"0.06em",
-          }}>
-            {PROJECTS.length} projects
-          </span>
-          <span className="mono" style={{fontSize:"0.68rem", color:C.textMuted}}>2024 — 2026</span>
-        </div>
-      </div>
 
-      {/* Column header row — desktop only */}
-      {!isMobile && (
-        <div style={{
-          display:"grid", gridTemplateColumns:"52px 1fr 1fr auto",
-          gap:"2rem", padding:"0 1.5rem 0.75rem",
-          marginBottom:0,
-          borderBottom:`1px solid ${C.border}`,
-        }}>
-          {["#", "Project", "Description", "Stack"].map(h => (
-            <span key={h} className="mono" style={{
-              fontSize:"0.56rem", color:C.textMuted,
-              textTransform:"uppercase", letterSpacing:"0.14em", opacity:0.4,
-            }}>
-              {h}
-            </span>
-          ))}
-        </div>
-      )}
+        {/* Project list */}
+        <div>
+          {PROJECTS.map((p, i) => {
+            const accent = C[p.accent] || C.accent;
+            return (
+              <div key={p.id}>
+                <div
+                  className={`project-row reveal d${Math.min(i+1,5)}`}
+                  onMouseEnter={() => setHovered(p.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => toggleExpand(p.id)}
+                  style={{
+                    cursor:"pointer",
+                    background: expanded===p.id ? `${accent}10` : hovered===p.id ? `${accent}09` : "transparent",
+                    transition:"background .2s",
+                  }}
+                >
+                  {/* Accent left bar */}
+                  <div style={{
+                    position:"absolute",left:0,top:".5rem",bottom:".5rem",width:"2px",borderRadius:"2px",
+                    background: p.featured||hovered===p.id||expanded===p.id ? accent : "transparent",
+                    transition:"background .2s",
+                    opacity: p.featured && hovered!==p.id && expanded!==p.id ? .35 : 1,
+                  }} />
 
-      {/* Project rows */}
-      <div>
-        {PROJECTS.map((p, i) => (
-          <div
-            key={p.id}
-            className={`project-row reveal d${Math.min(i+1,5)}`}
-            onMouseEnter={() => setHovered(p.id)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={() => toggleExpand(p.id)}
-            style={{
-              cursor:"pointer",
-              background: expanded===p.id ? `${p.accent}12` : hovered===p.id ? `${p.accent}0d` : "transparent",
-              transition:"background 0.2s",
-              position:"relative",
-            }}
-          >
-            {/* Featured glow border */}
-            {p.featured && (
-              <div style={{
-                position:"absolute", inset:0, borderRadius:"0",
-                border:`1px solid ${p.accent}22`,
-                pointerEvents:"none", zIndex:0,
-              }} />
-            )}
+                  {/* ID */}
+                  <div className="mono" style={{
+                    fontSize:".68rem",color: hovered===p.id||expanded===p.id ? accent : C.textMuted,
+                    fontWeight:500,paddingTop:".15rem",paddingLeft:".75rem",
+                    transition:"color .2s",opacity: hovered===p.id||expanded===p.id ? 1 : .45,
+                  }}>{p.id}</div>
 
-            {/* Accent left bar — always visible for featured, hover for rest */}
-            <div style={{
-              position:"absolute", left:0, top:"0.5rem", bottom:"0.5rem",
-              width:"2px", borderRadius:"2px",
-              background: p.featured || hovered===p.id ? p.accent : "transparent",
-              transition:"background 0.2s",
-              opacity: p.featured && hovered!==p.id ? 0.45 : 1,
-            }} />
+                  {/* Title */}
+                  <div style={{ minWidth:0,overflow:"hidden" }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:".55rem",marginBottom:".25rem",flexWrap:"wrap" }}>
+                      <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1rem":"clamp(1.1rem,1.8vw,1.3rem)",fontWeight:400,color:C.textPri,lineHeight:1.2,margin:0 }}>
+                        {p.title}
+                      </h3>
+                      {p.status === "active" && (
+                        <span className="mono" style={{
+                          fontSize:".46rem",padding:".16rem .48rem",borderRadius:"20px",letterSpacing:".1em",textTransform:"uppercase",
+                          background:`${C.emerald}18`,color:C.emerald,border:`1px solid ${C.emerald}40`,
+                          display:"inline-flex",alignItems:"center",gap:".28rem",flexShrink:0,
+                        }}>
+                          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:C.emerald,display:"inline-block",animation:"pulse-dot 2s ease-in-out infinite" }} />
+                          active
+                        </span>
+                      )}
+                      {p.featured && (
+                        <span className="mono" style={{
+                          fontSize:".46rem",padding:".16rem .48rem",borderRadius:"20px",letterSpacing:".1em",textTransform:"uppercase",
+                          background:`${accent}18`,color:accent,border:`1px solid ${accent}40`,flexShrink:0,
+                        }}>featured</span>
+                      )}
+                    </div>
+                    <div style={{ display:"flex",alignItems:"center",gap:".4rem" }}>
+                      <span style={{ display:"inline-block",width:"5px",height:"5px",borderRadius:"1px",background:accent,flexShrink:0 }} />
+                      <p className="mono" style={{ fontSize:".58rem",color:accent,opacity:.8 }}>{p.category}</p>
+                    </div>
+                  </div>
 
-            {/* ID */}
-            <div className="mono" style={{
-              fontSize:"0.72rem", color: hovered===p.id ? p.accent : C.textMuted,
-              fontWeight:500, paddingTop:"0.2rem", paddingLeft:"0.75rem",
-              transition:"color 0.2s", opacity: hovered===p.id ? 1 : 0.5,
-            }}>
-              {p.id}
-            </div>
+                  {/* Description (desktop) */}
+                  <p className="proj-desc" style={{
+                    fontSize:".8rem",lineHeight:1.75,fontWeight:300,
+                    color: hovered===p.id ? C.textSec : C.textMuted,maxWidth:"360px",transition:"color .2s",
+                  }}>{p.desc}</p>
 
-            {/* Title + category + status */}
-            <div style={{minWidth:0, overflow:"hidden"}}>
-              <div style={{display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"0.3rem", flexWrap:"wrap"}}>
-                <h3 style={{
-                  fontFamily:"'DM Serif Display',serif",
-                  fontSize: isMobile ? "1.05rem" : "clamp(1.1rem, 2vw, 1.35rem)",
-                  fontWeight:400, color:C.textPri, lineHeight:1.2, margin:0,
-                }}>
-                  {p.title}
-                </h3>
-                {p.status === "active" && (
-                  <span className="mono" style={{
-                    fontSize:"0.48rem", padding:"0.18rem 0.5rem",
-                    borderRadius:"20px", letterSpacing:"0.1em", textTransform:"uppercase",
-                    background:`${ACCENT.mint500}18`, color: ACCENT.mint500,
-                    border:`1px solid ${ACCENT.mint500}40`,
-                    display:"inline-flex", alignItems:"center", gap:"0.3rem",
-                  }}>
-                    <span style={{width:"4px",height:"4px",borderRadius:"50%",background:ACCENT.mint500,display:"inline-block",animation:"pulse-dot 2s ease-in-out infinite"}}/>
-                    active
-                  </span>
-                )}
-                {p.featured && (
-                  <span className="mono" style={{
-                    fontSize:"0.48rem", padding:"0.18rem 0.5rem",
-                    borderRadius:"20px", letterSpacing:"0.1em", textTransform:"uppercase",
-                    background:`${p.accent}18`, color: p.accent,
-                    border:`1px solid ${p.accent}40`,
-                  }}>
-                    featured
-                  </span>
-                )}
-              </div>
-              <div style={{display:"flex", alignItems:"center", gap:"0.45rem"}}>
-                <span style={{
-                  display:"inline-block", width:"5px", height:"5px",
-                  borderRadius:"1px", background:p.accent, flexShrink:0,
-                }} />
-                <p className="mono" style={{
-                  fontSize:"0.6rem", color:p.accent, opacity:0.85,
-                }}>
-                  {p.category}
-                </p>
-              </div>
-            </div>
+                  {/* Year + tags (desktop) */}
+                  <div className="proj-meta" style={{ textAlign:"right" }}>
+                    <div className="mono" style={{ fontSize:".6rem",color:C.textMuted,marginBottom:".45rem",opacity:.4 }}>{p.year}</div>
+                    <div style={{ display:"flex",flexDirection:"column",gap:".25rem",alignItems:"flex-end" }}>
+                      {p.stack.slice(0,3).map(t => (
+                        <span key={t} className="tag-pill" style={{
+                          borderColor: hovered===p.id ? `${accent}50` : C.border,
+                          color: hovered===p.id ? accent : C.textMuted,transition:"color .2s,border-color .2s",
+                        }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
 
-            {/* Description */}
-            <p className="proj-desc" style={{
-              fontSize:"0.82rem", lineHeight:1.75, fontWeight:300,
-              color: hovered===p.id ? C.textSec : C.textMuted,
-              maxWidth:"380px", transition:"color 0.2s",
-            }}>
-              {p.desc}
-            </p>
-
-            {/* Year + tags */}
-            <div className="proj-meta" style={{textAlign:"right"}}>
-              <div className="mono" style={{
-                fontSize:"0.62rem", color:C.textMuted,
-                marginBottom:"0.5rem", opacity:0.45,
-              }}>
-                {p.year}
-              </div>
-              <div style={{display:"flex", flexDirection:"column", gap:"0.28rem", alignItems:"flex-end"}}>
-                {p.tags.map(t => (
-                  <span key={t} className="tag-pill" style={{
-                    borderColor: hovered===p.id ? `${p.accent}55` : C.border,
-                    color: hovered===p.id ? p.accent : C.textMuted,
-                    transition:"color 0.2s, border-color 0.2s",
-                  }}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-          {/* Expand chevron */}
-          <div style={{
-            position:"absolute", right:"1rem", top:"50%",
-            transform:"translateY(-50%)",
-            color: C.textMuted, fontSize:"0.55rem",
-            opacity: hovered===p.id ? 0.6 : 0.2,
-            transition:"opacity 0.2s",
-            pointerEvents:"none",
-            rotate: expanded===p.id ? "90deg" : "0deg",
-          }}>▶</div>
-
-          {/* Expanded detail panel */}
-          {expanded === p.id && (
-            <div style={{
-              gridColumn: "1 / -1",   /* span all grid columns */
-              borderBottom:`1px solid ${C.border}`,
-              background:`${p.accent}07`,
-              padding: isMobile ? "1rem 1rem 1.25rem 1rem" : "1.25rem 3rem 1.5rem 5rem",
-              display:"flex", flexDirection: isMobile ? "column" : "row",
-              gap: isMobile ? "1.25rem" : "3rem",
-              animation:"fadeUp 0.25s ease both",
-              width:"100%", boxSizing:"border-box",
-            }}>
-              <div style={{ flex:1, minWidth:0 }}>
-                <p className="mono" style={{
-                  fontSize:"0.58rem", color:p.accent, letterSpacing:"0.1em",
-                  textTransform:"uppercase", marginBottom:"0.6rem", opacity:0.7,
-                }}>overview</p>
-                <p style={{
-                  fontSize: isMobile ? "0.78rem" : "0.82rem",
-                  lineHeight:1.75, color:C.textSec, fontWeight:300,
-                  wordBreak:"break-word", overflowWrap:"break-word",
-                  whiteSpace:"normal", margin:0,
-                }}>
-                  {p.desc}
-                </p>
-              </div>
-              <div style={{ flexShrink:0, minWidth: isMobile ? "auto" : "180px" }}>
-                <p className="mono" style={{
-                  fontSize:"0.58rem", color:p.accent, letterSpacing:"0.1em",
-                  textTransform:"uppercase", marginBottom:"0.6rem", opacity:0.7,
-                }}>stack</p>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:"0.35rem" }}>
-                  {p.tags.map(t => (
-                    <span key={t} className="tag-pill" style={{ borderColor:`${p.accent}44`, color:p.accent }}>{t}</span>
-                  ))}
+                  {/* Chevron */}
+                  <div style={{
+                    position:"absolute",right:"1rem",top:"50%",transform:"translateY(-50%)",
+                    color:C.textMuted,fontSize:".52rem",
+                    opacity: hovered===p.id ? .55 : .18,transition:"opacity .2s",pointerEvents:"none",
+                    rotate: expanded===p.id ? "90deg" : "0deg",
+                  }}>▶</div>
                 </div>
-                <p className="mono" style={{ fontSize:"0.55rem", color:C.textMuted, marginTop:"0.85rem", opacity:0.5 }}>{p.year}</p>
+
+                {/* Expanded panel (desktop only) */}
+                {!isMobile && expanded===p.id && <ProjectExpandedPanel project={p} C={C} />}
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
-        ))}
       </div>
+
+      {/* Bottom sheet (mobile) */}
+      {isMobile && sheet && (
+        <ProjectBottomSheet project={PROJECTS.find(p=>p.id===sheet)} C={C} onClose={() => setSheet(null)} />
+      )}
     </section>
   );
 });
 
-// ── Skills Donut Chart ────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// SKILLS DONUT
+// ─────────────────────────────────────────────────────────────────
 const SkillsDonut = memo(({ C, isMobile }) => {
-  const canvasRef = useRef(null);
-  const [hovered, setHovered] = useState(null);
-  const animRef = useRef(null);
-  const progressRef = useRef(0);
-  const hoveredRef = useRef(null);
-  const ctxRef = useRef(null);
-  const sizeRef = useRef(0);
-  const anglesRef = useRef([]);
+  const canvasRef  = useRef(null);
+  const [hov, setHov] = useState(null);
+  const animRef    = useRef(null);
+  const progRef    = useRef(0);
+  const hovRef     = useRef(null);
+  const ctxRef     = useRef(null);
+  const sizeRef    = useRef(0);
+  const angRef     = useRef([]);
 
-  // Compute average level per category
-  const segments = useMemo(() => {
-    return SKILLS.map(g => ({
-      label: g.category,
-      color: g.accent,
-      value: Math.round(g.items.reduce((s, it) => s + it.level, 0) / g.items.length),
-    }));
-  }, []);
+  const segments = useMemo(() => SKILLS.map(g => ({
+    label: g.category,
+    color: C[g.accent] || C.accent,
+    value: Math.round(g.items.reduce((s,it) => s+it.level, 0) / g.items.length),
+  })), [C]);
 
-  // Keep hoveredRef in sync without re-running setup
-  useEffect(() => { hoveredRef.current = hovered; }, [hovered]);
+  useEffect(() => { hovRef.current = hov; }, [hov]);
 
-  const drawFrame = useCallback((progress) => {
-    const ctx = ctxRef.current;
-    const size = sizeRef.current;
-    const angles = anglesRef.current;
-    if (!ctx || !size || !angles.length) return;
-
-    const cx = size / 2, cy = size / 2;
-    const outerR = size * 0.42;
-    const innerR = size * 0.26;
-    const hov = hoveredRef.current;
-
-    ctx.clearRect(0, 0, size, size);
-
-    // Track ring background
-    ctx.beginPath();
-    ctx.arc(cx, cy, (outerR + innerR) / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(128,128,128,0.08)";
-    ctx.lineWidth = outerR - innerR;
-    ctx.stroke();
-
-    angles.forEach((seg, i) => {
-      const endAngle = seg.start + (seg.end - seg.start) * progress;
-      const isHov = hov === i;
-      const rOuter = isHov ? outerR + 6 : outerR;
-      const rInner = isHov ? innerR - 3 : innerR;
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter, seg.start, endAngle);
-      ctx.arc(cx, cy, rInner, endAngle, seg.start, true);
-      ctx.closePath();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = isHov ? seg.color : seg.color + "cc";
-      ctx.fill();
-
-      if (isHov) {
-        ctx.shadowColor = seg.color;
-        ctx.shadowBlur = 14;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
+  const draw = useCallback((prog) => {
+    const ctx=ctxRef.current, size=sizeRef.current, angs=angRef.current;
+    if (!ctx||!size||!angs.length) return;
+    const cx=size/2, cy=size/2, outerR=size*.42, innerR=size*.26;
+    ctx.clearRect(0,0,size,size);
+    ctx.beginPath(); ctx.arc(cx,cy,(outerR+innerR)/2,0,Math.PI*2);
+    ctx.strokeStyle="rgba(128,128,128,.08)"; ctx.lineWidth=outerR-innerR; ctx.stroke();
+    angs.forEach((seg,i) => {
+      const end=seg.start+(seg.end-seg.start)*prog;
+      const isH=hovRef.current===i;
+      const ro=isH?outerR+5:outerR, ri=isH?innerR-2:innerR;
+      ctx.beginPath(); ctx.arc(cx,cy,ro,seg.start,end); ctx.arc(cx,cy,ri,end,seg.start,true); ctx.closePath();
+      ctx.fillStyle=isH?seg.color:seg.color+"cc"; ctx.shadowBlur=0; ctx.fill();
+      if (isH){ ctx.shadowColor=seg.color; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0; }
     });
-
-    // Center text
-    ctx.textAlign = "center";
-    if (hov !== null && progress >= 1) {
-      const seg = angles[hov];
-      ctx.fillStyle = seg.color;
-      ctx.font = `600 ${isMobile ? 22 : 26}px 'JetBrains Mono', monospace`;
-      ctx.fillText(seg.value + "%", cx, cy + (isMobile ? 7 : 9));
-      ctx.fillStyle = "rgba(128,128,128,0.6)";
-      ctx.font = `400 ${isMobile ? 8 : 9}px 'JetBrains Mono', monospace`;
-      ctx.fillText(seg.label.toUpperCase(), cx, cy + (isMobile ? 20 : 24));
-    } else if (hov === null && progress >= 1) {
-      ctx.fillStyle = "rgba(128,128,128,0.35)";
-      ctx.font = `400 ${isMobile ? 8 : 9}px 'JetBrains Mono', monospace`;
-      ctx.fillText("HOVER TO INSPECT", cx, cy + 4);
+    ctx.textAlign="center";
+    const hh=hovRef.current;
+    if (hh!==null && prog>=1) {
+      const seg=angs[hh];
+      ctx.fillStyle=seg.color; ctx.font=`600 ${isMobile?20:24}px 'JetBrains Mono',monospace`;
+      ctx.fillText(seg.value+"%",cx,cy+(isMobile?7:9));
+      ctx.fillStyle="rgba(128,128,128,.55)"; ctx.font=`400 ${isMobile?7:8}px 'JetBrains Mono',monospace`;
+      ctx.fillText(seg.label.toUpperCase(),cx,cy+(isMobile?20:23));
+    } else if (hh===null && prog>=1) {
+      ctx.fillStyle="rgba(128,128,128,.3)"; ctx.font=`400 ${isMobile?7:8}px 'JetBrains Mono',monospace`;
+      ctx.fillText("HOVER TO INSPECT",cx,cy+4);
     }
   }, [isMobile]);
 
-  // Setup canvas ONCE (or when size changes)
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const size = isMobile ? 220 : 280;
-    sizeRef.current = size;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = size + "px";
-    canvas.style.height = size + "px";
-    const ctx = canvas.getContext("2d");
-    ctx.scale(dpr, dpr);
-    ctxRef.current = ctx;
-
-    const total = segments.reduce((s, seg) => s + seg.value, 0);
-    const gap = 0.025;
-    let cur = -Math.PI / 2;
-    anglesRef.current = segments.map(seg => {
-      const slice = (seg.value / total) * (Math.PI * 2 - gap * segments.length);
-      const a = { start: cur, end: cur + slice, ...seg };
-      cur += slice + gap;
-      return a;
-    });
-
-    // Animate in from scratch
-    progressRef.current = 0;
-    const start = performance.now();
-    const duration = 1100;
-    const ease = t => 1 - Math.pow(1 - t, 3);
+    const canvas=canvasRef.current; if (!canvas) return;
+    const dpr=devicePixelRatio||1, size=isMobile?210:270;
+    sizeRef.current=size; canvas.width=size*dpr; canvas.height=size*dpr;
+    canvas.style.width=size+"px"; canvas.style.height=size+"px";
+    const ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr); ctxRef.current=ctx;
+    const total=segments.reduce((s,seg)=>s+seg.value,0);
+    const gap=.025; let cur=-Math.PI/2;
+    angRef.current=segments.map(seg=>{ const sl=(seg.value/total)*(Math.PI*2-gap*segments.length); const a={start:cur,end:cur+sl,...seg}; cur+=sl+gap; return a; });
+    progRef.current=0;
+    const start=performance.now(), dur=1000, ease=t=>1-Math.pow(1-t,3);
     if (animRef.current) cancelAnimationFrame(animRef.current);
-    const animate = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      progressRef.current = ease(t);
-      drawFrame(progressRef.current);
-      if (t < 1) animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
+    const animate=(now)=>{ const t=Math.min((now-start)/dur,1); progRef.current=ease(t); draw(progRef.current); if (t<1) animRef.current=requestAnimationFrame(animate); };
+    animRef.current=requestAnimationFrame(animate);
+    return ()=>{ if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [segments, isMobile, draw]);
 
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [segments, isMobile, drawFrame]);
+  useEffect(() => { if (progRef.current>=1) draw(1); }, [hov, draw]);
 
-  // Redraw on hover change only (no canvas reset)
-  useEffect(() => {
-    if (progressRef.current >= 1) drawFrame(1);
-  }, [hovered, drawFrame]);
-
-  // Hit test for hover
   const handleMouseMove = useCallback((e) => {
-    const canvas = canvasRef.current;
-    if (!canvas || progressRef.current < 1) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const size = isMobile ? 220 : 280;
-    const cx = size / 2, cy = size / 2;
-    const dx = mx - cx, dy = my - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const outerR = size * 0.42 + 8, innerR = size * 0.26 - 5;
-    if (dist < innerR || dist > outerR) { setHovered(null); return; }
-    let angle = Math.atan2(dy, dx);
-    if (angle < -Math.PI / 2) angle += Math.PI * 2;
-    const total = segments.reduce((s, seg) => s + seg.value, 0);
-    const gap = 0.025;
-    let cur = -Math.PI / 2;
-    for (let i = 0; i < segments.length; i++) {
-      const slice = (segments[i].value / total) * (Math.PI * 2 - gap * segments.length);
-      if (angle >= cur && angle <= cur + slice) { setHovered(i); return; }
-      cur += slice + gap;
+    const canvas=canvasRef.current; if (!canvas||progRef.current<1) return;
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const size=isMobile?210:270, cx=size/2, cy=size/2;
+    const dx=mx-cx, dy=my-cy, dist=Math.sqrt(dx*dx+dy*dy);
+    const outerR=size*.42+7, innerR=size*.26-4;
+    if (dist<innerR||dist>outerR){ setHov(null); return; }
+    let ang=Math.atan2(dy,dx); if(ang<-Math.PI/2) ang+=Math.PI*2;
+    const total=segments.reduce((s,seg)=>s+seg.value,0);
+    const gap=.025; let cur=-Math.PI/2;
+    for(let i=0;i<segments.length;i++){
+      const sl=(segments[i].value/total)*(Math.PI*2-gap*segments.length);
+      if(ang>=cur&&ang<=cur+sl){ setHov(i); return; }
+      cur+=sl+gap;
     }
-    setHovered(null);
-  }, [segments, isMobile]);
-
-  const handleMouseLeave = useCallback(() => setHovered(null), []);
+    setHov(null);
+  }, [segments,isMobile]);
 
   return (
-    <div style={{
-      display:"flex", flexDirection: isMobile ? "column" : "row",
-      alignItems:"center", justifyContent:"center",
-      gap: isMobile ? "1.5rem" : "3rem",
-      padding: isMobile ? "1rem 0" : "1.5rem 0",
-    }}>
-      <canvas
-        ref={canvasRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={{ cursor:"crosshair", flexShrink:0 }}
-      />
-      {/* Legend */}
-      <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem", minWidth:"180px" }}>
-        {segments.map((seg, i) => (
-          <div
-            key={seg.label}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-            style={{
-              display:"flex", alignItems:"center", gap:"0.75rem",
-              cursor:"pointer", opacity: hovered !== null && hovered !== i ? 0.35 : 1,
-              transition:"opacity 0.2s",
-            }}
-          >
-            <div style={{
-              width:"10px", height:"10px", borderRadius:"2px", flexShrink:0,
-              background: seg.color,
-              boxShadow: hovered === i ? `0 0 8px ${seg.color}` : "none",
-              transition:"box-shadow 0.2s",
-            }} />
+    <div style={{ display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",justifyContent:"center",gap:isMobile?"1.25rem":"2.5rem",padding:isMobile?"1rem 0":"1.5rem 0" }}>
+      <canvas ref={canvasRef} onMouseMove={handleMouseMove} onMouseLeave={()=>setHov(null)} style={{ cursor:"crosshair",flexShrink:0 }} />
+      <div style={{ display:"flex",flexDirection:"column",gap:".65rem",minWidth:"185px" }}>
+        {segments.map((seg,i) => (
+          <div key={seg.label} onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)} style={{ display:"flex",alignItems:"center",gap:".65rem",cursor:"pointer",opacity:hov!==null&&hov!==i?.32:1,transition:"opacity .2s" }}>
+            <div style={{ width:"9px",height:"9px",borderRadius:"2px",flexShrink:0,background:seg.color,boxShadow:hov===i?`0 0 7px ${seg.color}`:"none",transition:"box-shadow .2s" }} />
             <div style={{ flex:1 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                <span className="mono" style={{ fontSize:"0.68rem", color: hovered === i ? seg.color : C.textSec, transition:"color 0.2s" }}>
-                  {seg.label}
-                </span>
-                <span className="mono" style={{ fontSize:"0.62rem", color: seg.color, fontWeight:500 }}>
-                  {seg.value}%
-                </span>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"baseline" }}>
+                <span className="mono" style={{ fontSize:".65rem",color:hov===i?seg.color:C.textSec,transition:"color .2s" }}>{seg.label}</span>
+                <span className="mono" style={{ fontSize:".6rem",color:seg.color,fontWeight:500 }}>{seg.value}%</span>
               </div>
-              <div style={{ height:"1px", background: C.border, marginTop:"0.25rem" }}>
-                <div style={{
-                  height:"100%", width: hovered === i ? `${seg.value}%` : "0%",
-                  background: seg.color, transition:"width 0.35s cubic-bezier(.16,1,.3,1)",
-                }} />
+              <div style={{ height:"1px",background:C.border,marginTop:".2rem" }}>
+                <div style={{ height:"100%",width:hov===i?`${seg.value}%`:"0%",background:seg.color,transition:"width .32s cubic-bezier(.16,1,.3,1)" }} />
               </div>
             </div>
           </div>
@@ -2372,420 +1625,215 @@ const SkillsDonut = memo(({ C, isMobile }) => {
   );
 });
 
-// ── Skills Section ────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// SKILLS SECTION
+// ─────────────────────────────────────────────────────────────────
 const Skills = memo(({ C }) => {
   const { isMobile } = useTheme();
+  const [viewMode, setViewMode] = useState("bar");
   const [activeFilter, setActiveFilter] = useState(null);
-  const [viewMode, setViewMode] = useState("bar"); // "bar" | "chart"
+
+  const filtered = activeFilter ? SKILLS.filter(s=>s.category===activeFilter) : SKILLS;
 
   return (
     <section id="skills" className="skills-section" style={{
-      padding: isMobile ? "4rem 1rem" : "6rem 3rem",
-      borderTop:`1px solid ${C.border}`
+      padding: isMobile ? "3.5rem 1rem" : "6rem 3rem",
+      borderTop:`1px solid ${C.border}`,
     }}>
-      <div style={{maxWidth:"1200px", margin:"0 auto"}}>
-
-        {/* Section header */}
-        <div className="reveal" style={{
-          display:"flex", justifyContent:"space-between",
-          alignItems:"flex-end", flexWrap:"wrap", gap:"1rem",
-          marginBottom: isMobile ? "2rem" : "2.5rem",
-        }}>
+      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
+        {/* Header */}
+        <div className="reveal" style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-end",flexWrap:"wrap",gap:"1rem",marginBottom:isMobile?"1.75rem":"2.5rem" }}>
           <div>
-            <p className="mono" style={{fontSize:"0.62rem", color:C.mint500, marginBottom:"0.5rem", letterSpacing:"0.12em", display:"flex", alignItems:"center", gap:"0.5rem"}}>
-              <span style={{opacity:0.4}}>03 /</span>
-              <span>tools & expertise</span>
+            <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
+              <span style={{ opacity:.4 }}>03 /</span>
+              <span>tools &amp; expertise</span>
             </p>
-            <h2 style={{
-              fontFamily:"'DM Serif Display',serif",
-              fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 2.5vw, 2.4rem)",
-              color:C.textPri, fontWeight:400, lineHeight:1.15,
-            }}>
-              Tools & <em>Expertise</em>
+            <h2 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1.8rem":"clamp(2rem,4vw,3rem)",fontWeight:400,color:C.textPri,lineHeight:1.05 }}>
+              What I <em>Work With</em>
             </h2>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"1rem" }}>
-            <p style={{
-              fontSize:"0.82rem", lineHeight:1.65, fontWeight:300,
-              color:C.textSec, maxWidth:"300px", textAlign: isMobile ? "left" : "right",
-            }}>
-              From Cisco ASA configs to Metasploit modules — operating across the full security and networking stack.
-            </p>
-            {/* View mode toggle */}
-            <div style={{
-              display:"flex", alignItems:"center",
-              border:`1px solid ${C.border}`, borderRadius:"6px", overflow:"hidden",
-            }}>
-              {[["bar","// bar"], ["chart","// chart"]].map(([mode, label]) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className="mono"
-                  style={{
-                    fontSize:"0.58rem", letterSpacing:"0.08em",
-                    padding:"0.38rem 0.85rem", cursor:"pointer",
-                    background: viewMode === mode ? `${C.mint500}18` : "transparent",
-                    color: viewMode === mode ? C.mint500 : C.textMuted,
-                    border:"none",
-                    borderLeft: mode === "chart" ? `1px solid ${C.border}` : "none",
-                    transition:"background 0.2s, color 0.2s",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bar mode: filter pills */}
-        {viewMode === "bar" && (
-          <div style={{
-            display:"flex", gap:"0.5rem", flexWrap:"wrap",
-            marginBottom: isMobile ? "2rem" : "2.5rem",
-          }}>
-            {SKILLS.map(s => {
-              const on = activeFilter === s.category;
-              return (
-                <button key={s.category}
-                  onClick={() => setActiveFilter(on ? null : s.category)}
-                  className="mono"
-                  style={{
-                    fontSize:"0.6rem", letterSpacing:"0.08em", textTransform:"uppercase",
-                    padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
-                    border:`1px solid ${on ? s.accent : C.border}`,
-                    background: on ? `${s.accent}14` : "transparent",
-                    color: on ? s.accent : C.textMuted,
-                    transition:"all 0.2s", display:"flex", alignItems:"center", gap:"0.4rem",
-                  }}>
-                  <span style={{
-                    width:"5px", height:"5px", borderRadius:"1px",
-                    background: on ? s.accent : C.textMuted,
-                    flexShrink:0, transition:"background 0.2s",
-                  }} />
-                  {s.category}
-                </button>
-              );
-            })}
-            {activeFilter && (
-              <button onClick={() => setActiveFilter(null)}
-                className="mono"
-                style={{
-                  fontSize:"0.6rem", letterSpacing:"0.08em",
-                  padding:"0.32rem 0.8rem", borderRadius:"4px", cursor:"pointer",
-                  border:`1px solid ${C.border}`,
-                  background:"transparent", color:C.textMuted,
-                  transition:"all 0.2s",
-                }}>
-                ✕ clear
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Bar mode: skill columns */}
-        {viewMode === "bar" && (
-          <div className="skills-grid" style={{
-            display:"grid",
-            gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
-            gap: isMobile ? "1.5rem" : "0",
-          }}>
-            {SKILLS.map((group, i) => {
-              const dimmed = activeFilter && activeFilter !== group.category;
-              return (
-                <div key={group.category} className={`reveal d${i+1}`} style={{
-                  borderLeft: !isMobile && i > 0 ? `1px solid ${C.border}` : "none",
-                  paddingLeft: !isMobile && i > 0 ? "2rem" : 0,
-                  paddingRight: !isMobile && i < SKILLS.length-1 ? "2rem" : 0,
-                  opacity: dimmed ? 0.28 : 1,
-                  transition:"opacity 0.25s",
-                }}>
-                  {/* Category heading */}
-                  <div style={{
-                    display:"flex", alignItems:"center", gap:"0.5rem",
-                    borderBottom:`2px solid ${group.accent}`,
-                    paddingBottom:"0.75rem", marginBottom:"0.85rem",
-                  }}>
-                    <span style={{
-                      width:"7px", height:"7px", borderRadius:"2px",
-                      background:group.accent, flexShrink:0,
-                    }} />
-                    <p className="mono" style={{
-                      fontSize:"0.62rem", textTransform:"uppercase",
-                      letterSpacing:"0.1em", color:group.accent, fontWeight:500,
-                    }}>
-                      {group.category}
-                    </p>
-                  </div>
-
-                  {/* Items */}
-                  <div style={{display:"flex", flexDirection:"column"}}>
-                    {group.items.map((item) => (
-                      <div key={item.name} style={{
-                        padding:"0.55rem 0",
-                        borderBottom:`1px solid ${C.border}`,
-                      }}>
-                        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"0.3rem"}}>
-                          <span className="mono" style={{
-                            fontSize:"0.75rem", fontWeight:400, color:C.textSec,
-                          }}>
-                            {item.name}
-                          </span>
-                          <span className="mono" style={{fontSize:"0.52rem", color:group.accent, opacity:0.6}}>
-                            {item.level}%
-                          </span>
-                        </div>
-                        <div style={{height:"2px", background:`${C.border}`, borderRadius:"2px", overflow:"hidden"}}>
-                          <div className="skill-bar" style={{
-                            height:"100%",
-                            width:`${item.level}%`,
-                            background:`linear-gradient(90deg, ${group.accent}99, ${group.accent})`,
-                            borderRadius:"2px",
-                            transition:"width 0.4s cubic-bezier(.16,1,.3,1)",
-                          }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Chart mode: donut */}
-        {viewMode === "chart" && (
-          <div>
-            <SkillsDonut C={C} isMobile={isMobile} />
-          </div>
-        )}
-
-      </div>
-
-        {/* Certifications */}
-        <div className="reveal" style={{ marginTop: isMobile ? "3rem" : "5rem" }}>
-          <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem" }}>
-            // certifications
-          </p>
-          <h3 style={{ 
-            fontFamily:"'DM Serif Display',serif", 
-            fontSize: isMobile ? "1.5rem" : "clamp(1.4rem, 2vw, 1.8rem)",
-            color:C.textPri, fontWeight:500, marginBottom:"1.5rem" 
-          }}>
-            Credentials & <em>Certs</em> (more upcoming)
-          </h3>
-          <div className="certs-grid" style={{ 
-            display:"grid", 
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", 
-            gap:"1rem" 
-          }}>
-            {CERTS.map((cert, i) => (
-              <div
-                key={cert.name}
-                className={`cert-card reveal-scale d${i+1}`}
-                style={{ "--cert-color": cert.color, position:"relative", overflow:"hidden" }}
-              >
-                {/* Top accent bar */}
-                <div style={{
-                  position:"absolute", top:0, left:0, right:0, height:"2px",
-                  background:`linear-gradient(90deg, ${cert.color}80, ${cert.color}20)`,
-                  borderRadius:"6px 6px 0 0",
-                }} />
-                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.75rem"}}>
-                  <div className="mono" style={{ 
-                    fontSize:"0.52rem", color:cert.color, opacity:0.65, 
-                    letterSpacing:"0.12em", textTransform:"uppercase",
-                    marginTop:"0.1rem",
-                  }}>
-                    {cert.issuer}
-                  </div>
-                  <div style={{
-                    width:"28px", height:"28px", borderRadius:"6px",
-                    background:`${cert.color}15`, border:`1px solid ${cert.color}30`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    flexShrink:0,
-                  }}>
-                    <div style={{width:"10px",height:"10px",borderRadius:"2px",background:cert.color,opacity:0.8}} />
-                  </div>
-                </div>
-                <div className="mono" style={{ 
-                  fontSize: isMobile ? "1.05rem" : "1.15rem", 
-                  fontWeight:500, color:cert.color, marginBottom:"0.2rem",
-                  letterSpacing:"-0.01em",
-                }}>
-                  {cert.name}
-                </div>
-                <div style={{ 
-                  fontSize:"0.72rem", color:C.textMuted, fontWeight:300, marginBottom:"1.25rem",
-                  letterSpacing:"0.01em",
-                }}>
-                  {cert.full}
-                </div>
-                {/* Action buttons */}
-                <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
-                  <a
-                    href={cert.credlyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mono"
-                    style={{
-                      fontSize:"0.6rem", color:cert.color, opacity:0.7,
-                      letterSpacing:"0.08em", textDecoration:"none",
-                      border:`1px solid ${cert.color}40`,
-                      padding:"0.3rem 0.65rem", borderRadius:"3px",
-                      transition:"opacity 0.2s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = "1"}
-                    onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    Verify on Credly ↗
-                  </a>
-                  {cert.pdfUrl && (
-                    <a
-                      href={cert.pdfUrl}
-                      download
-                      className="mono"
-                      style={{
-                        fontSize:"0.6rem", color:C.textMuted, opacity:0.6,
-                        letterSpacing:"0.08em", textDecoration:"none",
-                        border:`1px solid ${C.border}`,
-                        padding:"0.3rem 0.65rem", borderRadius:"3px",
-                        transition:"opacity 0.2s, color 0.2s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.color=cert.color; }}
-                      onMouseLeave={e => { e.currentTarget.style.opacity="0.6"; e.currentTarget.style.color=C.textMuted; }}
-                      onClick={e => e.stopPropagation()}
-                    >
-                      ./download.sh ↓
-                    </a>
-                  )}
-                </div>
-              </div>
+          {/* View mode toggle */}
+          <div style={{ display:"flex",gap:".4rem" }}>
+            {["bar","chart"].map(m => (
+              <button key={m} onClick={()=>setViewMode(m)} className="mono" style={{
+                fontSize:".6rem",padding:".4rem .8rem",borderRadius:"5px",border:`1px solid ${viewMode===m?C.accent:C.border}`,
+                background:viewMode===m?`${C.accent}18`:"transparent",color:viewMode===m?C.accentLight:C.textMuted,
+                cursor:"pointer",transition:"all .2s",minHeight:"36px",
+              }}>{m==="bar"?"≡ bar":"◯ chart"}</button>
             ))}
           </div>
         </div>
+
+        {viewMode === "chart" ? (
+          <div className="reveal">
+            <SkillsDonut C={C} isMobile={isMobile} />
+          </div>
+        ) : (
+          <div>
+            {/* Category filters */}
+            <div className="reveal" style={{ display:"flex",gap:".4rem",flexWrap:"wrap",marginBottom:"1.75rem" }}>
+              <button onClick={()=>setActiveFilter(null)} className="mono" style={{
+                fontSize:".58rem",padding:".32rem .75rem",borderRadius:"4px",border:`1px solid ${!activeFilter?C.accent:C.border}`,
+                background:!activeFilter?`${C.accent}18`:"transparent",color:!activeFilter?C.accentLight:C.textMuted,
+                cursor:"pointer",transition:"all .2s",minHeight:"36px",
+              }}>all</button>
+              {SKILLS.map(s => {
+                const ac = C[s.accent]||C.accent;
+                const isA = activeFilter===s.category;
+                return (
+                  <button key={s.category} onClick={()=>setActiveFilter(s.category===activeFilter?null:s.category)} className="mono" style={{
+                    fontSize:".58rem",padding:".32rem .75rem",borderRadius:"4px",
+                    border:`1px solid ${isA?ac:C.border}`,
+                    background:isA?`${ac}18`:"transparent",color:isA?ac:C.textMuted,
+                    cursor:"pointer",transition:"all .2s",minHeight:"36px",
+                  }}>{s.category.toLowerCase()}</button>
+                );
+              })}
+            </div>
+
+            {/* Bar grids */}
+            <div className="skills-grid reveal" style={{
+              display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:"1.5rem",
+            }}>
+              {filtered.map((group, gi) => {
+                const ac = C[group.accent]||C.accent;
+                return (
+                  <div key={group.category} className={`reveal d${gi+1}`} style={{ background:C.bgCard,border:`1px solid ${C.border}`,borderRadius:"8px",padding:"1.1rem",overflow:"hidden" }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:".4rem",marginBottom:".9rem" }}>
+                      <div style={{ width:"6px",height:"6px",borderRadius:"1px",background:ac,flexShrink:0 }} />
+                      <p className="mono" style={{ fontSize:".6rem",color:ac,letterSpacing:".06em",fontWeight:500 }}>{group.category}</p>
+                    </div>
+                    <div style={{ display:"flex",flexDirection:"column",gap:"0" }}>
+                      {group.items.map((it, idx) => (
+                        <div key={it.name} className="skill-item" style={{
+                          fontSize:".75rem",fontWeight:300,color:C.textSec,
+                          padding:".5rem 0",borderBottom:`1px solid ${C.borderFaint}`,
+                          fontFamily:"'JetBrains Mono',monospace",
+                        }}>
+                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:".3rem" }}>
+                            <span>{it.name}</span>
+                            <span style={{ fontSize:".55rem",color:ac,opacity:.7 }}>{it.level}%</span>
+                          </div>
+                          <div style={{ height:"2px",background:C.bgCard2,borderRadius:"1px",overflow:"hidden" }}>
+                            <div className="skill-bar" style={{
+                              height:"100%",background:`linear-gradient(90deg,${ac}aa,${ac})`,
+                              borderRadius:"1px",width:`${it.level}%`,
+                            }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Certs */}
+        <div style={{ marginTop: isMobile?"2.5rem":"3.5rem" }}>
+          <p className="mono reveal" style={{ fontSize:".62rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:"1.1rem",opacity:.6 }}>
+            Certifications
+          </p>
+          <div className="certs-grid reveal" style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:".5rem" }}>
+            {CERTS.map((cert, i) => {
+              const ac = C[cert.accent]||C.accent;
+              return (
+                <div key={i} className="cert-card" style={{ "--cert-color":ac } as React.CSSProperties}>
+                  <div style={{ display:"flex",alignItems:"flex-start",gap:".75rem" }}>
+                    <div style={{ width:"3px",height:"28px",borderRadius:"2px",background:ac,flexShrink:0,marginTop:".1rem" }} />
+                    <div>
+                      <p style={{ fontSize:".8rem",color:C.textPri,fontWeight:400,marginBottom:".15rem" }}>{cert.name}</p>
+                      <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".04em" }}>{cert.issuer}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </section>
   );
 });
 
-// ── Optimized Contact Section ──────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// CONTACT SECTION
+// ─────────────────────────────────────────────────────────────────
 const Contact = memo(({ C }) => {
-  const [form, setForm] = useState({ name:"", email:"", message:"" });
-  const [sent, setSent] = useState(false);
   const { isMobile } = useTheme();
+  const [form, setForm]     = useState({ name:"",email:"",message:"" });
+  const [sent, setSent]     = useState(false);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError]   = useState(null);
   const [copied, setCopied] = useState(null);
+
   const copy = useCallback((val, key) => {
-    navigator.clipboard.writeText(val).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 2000);
-    });
+    navigator.clipboard.writeText(val).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 2000); });
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!form.name || !form.email || !form.message) return;
-    setSending(true);
-    setError(null);
-    emailjs.send(
-      "service_vmsghvn",
-      "template_hsc6m9u",
-      { from_name: form.name, from_email: form.email, message: form.message },
+    if (!form.name||!form.email||!form.message) return;
+    setSending(true); setError(null);
+    emailjs.send("service_vmsghvn","template_hsc6m9u",
+      { from_name:form.name,from_email:form.email,message:form.message },
       "sruNPf6oBWFdmDHtA"
-    ).then(() => {
-      setSent(true);
-      setSending(false);
-    }).catch(() => {
-      setError("Failed to send. Please try again or email directly.");
-      setSending(false);
-    });
+    ).then(()=>{ setSent(true); setSending(false); })
+     .catch(()=>{ setError("Failed to send. Please email directly."); setSending(false); });
   }, [form]);
 
-  const handleChange = useCallback((key, value) => {
-    setForm(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const handleChange = useCallback((key, val) => setForm(p=>({...p,[key]:val})), []);
+
+  const contactInfo = [
+    ["Email",    "alvaroprayogo38@gmail.com",     C.emerald, true ],
+    ["Location", "Cikarang Selatan, West Java, ID", null,    false],
+    ["Org",      "teamitmivhs · @SpacedCode",     C.accent,  false],
+    ["Response", "Within 24h",                    null,      false],
+  ];
 
   return (
-    <section id="contact" className="contact-section" style={{ 
-      padding: isMobile ? "4rem 1rem" : "6rem 3rem", 
-      borderTop:`1px solid ${C.border}` 
-    }}>
-      <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
-        <div className="contact-grid" style={{ 
-          display:"grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: isMobile ? "2.5rem" : "6rem" 
-        }}>
+    <section id="contact" className="contact-section" style={{ padding: isMobile?"3.5rem 1rem":"6rem 3rem",borderTop:`1px solid ${C.border}` }}>
+      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
+        <div className="contact-grid" style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:isMobile?"2rem":"5rem" }}>
+
           {/* Left */}
           <div className="reveal-left">
-            <p className="mono" style={{ fontSize:"0.65rem", color:C.mint500, marginBottom:"0.5rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
-              <span style={{opacity:0.4}}>04 /</span>
+            <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
+              <span style={{ opacity:.4 }}>04 /</span>
               <span>get in touch</span>
             </p>
-            <h2 style={{ 
-              fontFamily:"'DM Serif Display',serif", 
-              fontSize: isMobile ? "1.75rem" : "clamp(1.8rem, 3vw, 2.8rem)",
-              color:C.textPri, fontWeight:400, lineHeight:1.1, marginBottom:"1.5rem" 
-            }}>
+            <h2 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1.75rem":"clamp(1.8rem,3vw,2.7rem)",color:C.textPri,fontWeight:400,lineHeight:1.1,marginBottom:"1.25rem" }}>
               Drop me<br />a <em>message</em>
             </h2>
-            <p style={{ 
-              fontSize:"0.85rem", lineHeight:1.7, fontWeight:300, 
-              color:C.textSec, maxWidth:"320px", marginBottom:"2rem" 
-            }}>
-              Open to infrastructure projects, security audits, network design engagements, or long-term ops roles.
+            <p style={{ fontSize:".83rem",lineHeight:1.7,fontWeight:300,color:C.textSec,maxWidth:"310px",marginBottom:"2rem" }}>
+              Open to SysAdmin, Junior Penetration Tester, Infrastructure Engineer, and SOC Analyst roles — remote or hybrid. Also happy to collaborate on open source Go and security tooling.
             </p>
-            
-            {[
-              ["Email","alvaroprayogo38@gmail.com",C.mint500, true],
-              ["Based in","Bekasi, Indonesia",null, false],
-              ["PGP Key","0xSH3L·L0WN·3D42·CAF",C.textMuted, true],
-              ["Response","Within 24h",null, false],
-            ].map(([label,value,accent,copyable]) => (
-              <div
-                key={label}
-                onClick={() => copyable && copy(value, label)}
-                style={{ 
-                  display:"flex", justifyContent:"space-between", 
-                  alignItems:"center", padding:"0.85rem 0",
-                  borderBottom:`1px solid ${C.border}`,
-                  gap:"1rem",
-                  cursor: copyable ? "pointer" : "default",
-                }}
-                title={copyable ? "Click to copy" : undefined}
-              >
-                <span className="mono" style={{ fontSize:"0.6rem", color:C.textMuted, letterSpacing:"0.08em", flexShrink:0 }}>
-                  {label}
-                </span>
-                <span className="mono" style={{ 
-                  fontSize:"0.72rem", color: copied===label ? C.mint500 : (accent||C.textSec), fontWeight:400,
-                  textAlign:"right", wordBreak:"break-all",
-                  transition:"color 0.2s",
-                  display:"flex", alignItems:"center", gap:"0.4rem",
+
+            {contactInfo.map(([label,value,accent,copyable]) => (
+              <div key={label} onClick={()=>copyable&&copy(value,label)} style={{
+                display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:".8rem 0",borderBottom:`1px solid ${C.border}`,gap:"1rem",
+                cursor:copyable?"pointer":"default",
+              }} title={copyable?"Click to copy":undefined}>
+                <span className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".07em",flexShrink:0 }}>{label}</span>
+                <span className="mono" style={{
+                  fontSize:".7rem",color:copied===label?C.emerald:(accent||C.textSec),fontWeight:400,
+                  textAlign:"right",wordBreak:"break-all",transition:"color .2s",
+                  display:"flex",alignItems:"center",gap:".35rem",
                 }}>
                   {copied===label ? "copied!" : value}
-                  {copyable && copied!==label && (
-                    <span style={{ fontSize:"0.5rem", opacity:0.4 }}>⎘</span>
-                  )}
+                  {copyable&&copied!==label&&<span style={{ fontSize:".48rem",opacity:.35 }}>⎘</span>}
                 </span>
               </div>
             ))}
-            
-            <div style={{ display:"flex", gap:"1.5rem", marginTop:"2rem", flexWrap:"wrap" }}>
+
+            <div style={{ display:"flex",gap:"1.25rem",marginTop:"1.75rem",flexWrap:"wrap" }}>
               {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
-                <a 
-                  key={label} 
-                  href={url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  style={{
-                    fontFamily:"'JetBrains Mono',monospace", 
-                    fontSize:"0.65rem", color:C.textMuted, 
-                    textDecoration:"none", transition:"color 0.2s",
-                    padding: "0.5rem 0",
-                  }}
-                >
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
+                  fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem",color:C.textMuted,
+                  textDecoration:"none",transition:"color .2s",padding:".4rem 0",
+                  minHeight:"44px",display:"inline-flex",alignItems:"center",
+                }}>
                   {label}
                 </a>
               ))}
@@ -2795,78 +1843,27 @@ const Contact = memo(({ C }) => {
           {/* Right: form */}
           <div className="reveal-right">
             {sent ? (
-              <div style={{ 
-                height:"100%", display:"flex", flexDirection:"column", 
-                justifyContent:"center", alignItems:"center", 
-                textAlign:"center", gap:"1.25rem",
-                padding: isMobile ? "2rem 0" : 0
-              }}>
-                <div style={{ 
-                  width:"48px", height:"48px", borderRadius:"50%", 
-                  background:`${C.mint500}18`, border:`1px solid ${C.mint500}55`,
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:"1.25rem", color:C.mint500 
-                }}>
-                  ✓
-                </div>
-                <h3 style={{ 
-                  fontFamily:"'DM Serif Display',serif", 
-                  fontSize:"1.4rem", color:C.textPri 
-                }}>
-                  Transmission received
-                </h3>
-                <p className="mono" style={{ fontSize:"0.7rem", color:C.textSec }}>
-                  I'll respond within 24 hours.
-                </p>
+              <div style={{ height:"100%",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center",gap:"1.1rem",padding:isMobile?"2rem 0":0 }}>
+                <div style={{ width:"48px",height:"48px",borderRadius:"50%",background:`${C.emerald}18`,border:`1px solid ${C.emerald}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",color:C.emerald }}>✓</div>
+                <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.4rem",color:C.textPri }}>Transmission received</h3>
+                <p className="mono" style={{ fontSize:".68rem",color:C.textSec }}>I'll respond within 24 hours.</p>
               </div>
             ) : (
-              <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
-                {[
-                  {key:"name", label:"full_name", type:"text"},
-                  {key:"email", label:"email_address", type:"email"}
-                ].map(f => (
-                  <div key={f.key} style={{ display:"flex", flexDirection:"column", gap:"0.4rem" }}>
-                    <label className="mono" style={{ 
-                      fontSize:"0.6rem", color:C.textMuted, letterSpacing:"0.06em" 
-                    }}>
-                      {f.label}
-                    </label>
-                    <input 
-                      className="form-input" 
-                      type={f.type} 
-                      value={form[f.key]} 
-                      onChange={e => handleChange(f.key, e.target.value)}
-                      autoComplete={f.key === "email" ? "email" : "name"}
-                    />
+              <div style={{ display:"flex",flexDirection:"column",gap:"1.1rem" }}>
+                {[{key:"name",label:"full_name",type:"text"},{key:"email",label:"email_address",type:"email"}].map(f => (
+                  <div key={f.key} style={{ display:"flex",flexDirection:"column",gap:".35rem" }}>
+                    <label className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".06em" }}>{f.label}</label>
+                    <input className="form-input" type={f.type} value={form[f.key]} onChange={e=>handleChange(f.key,e.target.value)} autoComplete={f.key==="email"?"email":"name"} />
                   </div>
                 ))}
-                <div style={{ display:"flex", flexDirection:"column", gap:"0.4rem" }}>
-                  <label className="mono" style={{ 
-                    fontSize:"0.6rem", color:C.textMuted, letterSpacing:"0.06em" 
-                  }}>
-                    message
-                  </label>
-                  <textarea 
-                    className="form-input" 
-                    rows={isMobile ? 4 : 5} 
-                    style={{ resize:"none" }} 
-                    value={form.message} 
-                    onChange={e => handleChange("message", e.target.value)}
-                  />
+                <div style={{ display:"flex",flexDirection:"column",gap:".35rem" }}>
+                  <label className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".06em" }}>message</label>
+                  <textarea className="form-input" rows={isMobile?4:5} style={{ resize:"none" }} value={form.message} onChange={e=>handleChange("message",e.target.value)} />
                 </div>
-                <button 
-                  className="btn-primary" 
-                  onClick={handleSubmit} 
-                  disabled={sending}
-                  style={{ alignSelf:"flex-start", opacity: sending ? 0.6 : 1, cursor: sending ? "not-allowed" : "pointer" }}
-                >
-                  {sending ? "Sending..." : "./send_message.sh →"}
+                <button className="btn-primary" onClick={handleSubmit} disabled={sending} style={{ alignSelf:"flex-start",opacity:sending?.6:1,cursor:sending?"not-allowed":"pointer" }}>
+                  {sending?"Sending...":"./send_message.sh →"}
                 </button>
-                {error && (
-                  <p className="mono" style={{ fontSize:"0.65rem", color:"#FF6B6B", marginTop:"0.5rem" }}>
-                    {error}
-                  </p>
-                )}
+                {error && <p className="mono" style={{ fontSize:".62rem",color:C.rose,marginTop:".35rem" }}>{error}</p>}
               </div>
             )}
           </div>
@@ -2876,186 +1873,145 @@ const Contact = memo(({ C }) => {
   );
 });
 
-// ── Optimized Footer ───────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// FOOTER
+// ─────────────────────────────────────────────────────────────────
 const Footer = memo(({ C }) => {
   const { isMobile } = useTheme();
   const [atTop, setAtTop] = useState(true);
   useEffect(() => {
     const fn = () => setAtTop(window.scrollY < 80);
-    window.addEventListener("scroll", fn, { passive: true });
+    window.addEventListener("scroll", fn, { passive:true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
-  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
-  
+
   return (
     <footer className="footer-inner" style={{
-      padding: isMobile ? "1.25rem" : "1.5rem 3rem",
+      padding: isMobile?"1rem":"1.25rem 3rem",
       borderTop:`1px solid ${C.border}`,
-      display:"flex", justifyContent:"space-between", 
-      flexWrap:"wrap", gap:"1rem",
-      flexDirection: isMobile ? "column" : "row",
-      alignItems: isMobile ? "flex-start" : "center",
+      display:"flex",justifyContent:"space-between",
+      flexWrap:"wrap",gap:".75rem",
+      flexDirection:isMobile?"column":"row",
+      alignItems:isMobile?"flex-start":"center",
     }}>
-      <span className="mono" style={{ fontSize:"0.75rem", color:C.textMuted }}>
-        <span style={{ color:C.mint500 }}>[</span>
+      <span className="mono" style={{ fontSize:".7rem",color:C.textMuted }}>
+        <span style={{ color:C.accent }}>[</span>
         paro@thegreat
-        <span style={{ color:C.coral }}>:~</span>
-        <span style={{ color:C.mint500 }}>]</span>
+        <span style={{ color:C.rose }}>:~</span>
+        <span style={{ color:C.accent }}>]</span>
         <span style={{ color:C.textMuted }}>$</span>
       </span>
-      
-      <div style={{ display:"flex", gap:"1.5rem" }}>
+
+      <div style={{ display:"flex",gap:"1.25rem" }}>
         {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
-          <a 
-            key={label} 
-            href={url} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            style={{
-              fontFamily:"'JetBrains Mono',monospace", 
-              fontSize:"0.65rem", color:C.mint, 
-              textDecoration:"none",
-              padding: "0.25rem 0",
-            }}
-          >
-            {label}
-          </a>
+          <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
+            fontFamily:"'JetBrains Mono',monospace",fontSize:".6rem",color:C.textMuted,
+            textDecoration:"none",padding:".35rem 0",minHeight:"44px",display:"inline-flex",alignItems:"center",
+          }}>{label}</a>
         ))}
       </div>
-      
-      <div style={{ display:"flex", alignItems:"center", gap:"1.5rem" }}>
-        <span className="mono" style={{ fontSize:"0.65rem", color:C.textMuted }}>
-          ©{new Date().getFullYear()} Alvaro Prayogo
-        </span>
-        <button
-          onClick={scrollTop}
-          className="mono"
-          style={{
-            fontSize:"0.6rem", color: atTop ? C.textMuted : C.mint500,
-            background:"transparent", border:`1px solid ${atTop ? C.border : C.mint500+"44"}`,
-            borderRadius:"4px", padding:"0.28rem 0.7rem", cursor:"pointer",
-            transition:"all 0.25s", letterSpacing:"0.06em",
-            opacity: atTop ? 0.4 : 1,
-          }}
-        >
-          ↑ top
-        </button>
+
+      <div style={{ display:"flex",alignItems:"center",gap:"1.25rem" }}>
+        <span className="mono" style={{ fontSize:".6rem",color:C.textMuted }}>©{new Date().getFullYear()} Alvaro Prayogo</span>
+        <button onClick={()=>window.scrollTo({top:0,behavior:"smooth"})} className="mono" style={{
+          fontSize:".58rem",color:atTop?C.textMuted:C.accent,
+          background:"transparent",border:`1px solid ${atTop?C.border:C.accent+"44"}`,
+          borderRadius:"4px",padding:".25rem .65rem",cursor:"pointer",transition:"all .22s",letterSpacing:".06em",
+          opacity:atTop?.35:1,minHeight:"36px",
+        }}>↑ top</button>
       </div>
     </footer>
   );
 });
 
-// ── Optimized Scroll Reveal Hook ───────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// DECORATIVE OVERLAYS
+// ─────────────────────────────────────────────────────────────────
+const Overlays = memo(({ C }) => (
+  <>
+    {/* Subtle top-left corner accent */}
+    <div style={{
+      position:"fixed",top:0,left:0,width:"320px",height:"320px",
+      background:`radial-gradient(ellipse at top left,${C.accent}0a 0%,transparent 70%)`,
+      pointerEvents:"none",zIndex:0,
+    }} />
+    {/* Bottom-right */}
+    <div style={{
+      position:"fixed",bottom:0,right:0,width:"280px",height:"280px",
+      background:`radial-gradient(ellipse at bottom right,${C.emerald}08 0%,transparent 70%)`,
+      pointerEvents:"none",zIndex:0,
+    }} />
+  </>
+));
+
+// ─────────────────────────────────────────────────────────────────
+// SCROLL HOOKS
+// ─────────────────────────────────────────────────────────────────
 function useScrollReveal() {
   useEffect(() => {
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add("vis");
-          obs.unobserve(e.target); // Only animate once
-        }
-      });
-    }, { 
-      threshold: 0.1, 
-      rootMargin: "0px 0px -50px 0px" 
-    });
-    
-    document.querySelectorAll(".reveal,.reveal-left,.reveal-right,.reveal-scale").forEach(el => {
-      obs.observe(el);
-    });
-    
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("vis"); obs.unobserve(e.target); } });
+    }, { threshold:.08, rootMargin:"0px 0px -40px 0px" });
+    document.querySelectorAll(".reveal,.reveal-left,.reveal-right,.reveal-scale").forEach(el => obs.observe(el));
     return () => obs.disconnect();
   }, []);
 }
 
-// ── Optimized Scroll Spy Hook ──────────────────────────────────
 function useScrollSpy() {
   const [active, setActive] = useState("Home");
-  
   useEffect(() => {
-    const sections = [
-      {id:"home", label:"Home"},
-      {id:"work", label:"Work"},
-      {id:"skills", label:"Skills"},
-      {id:"contact", label:"Contact"}
-    ];
-    
+    const sections = [{id:"home",label:"Home"},{id:"work",label:"Work"},{id:"skills",label:"Skills"},{id:"contact",label:"Contact"}];
     let rafId;
     const fn = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         const y = window.scrollY + 100;
-        for (let i = sections.length-1; i >= 0; i--) {
+        for (let i=sections.length-1; i>=0; i--) {
           const el = document.getElementById(sections[i].id);
-          if (el && el.offsetTop <= y) {
-            setActive(sections[i].label);
-            break;
-          }
+          if (el&&el.offsetTop<=y) { setActive(sections[i].label); break; }
         }
       });
     };
-    
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", fn);
-      cancelAnimationFrame(rafId);
-    };
+    window.addEventListener("scroll",fn,{passive:true});
+    return ()=>{ window.removeEventListener("scroll",fn); cancelAnimationFrame(rafId); };
   }, []);
-  
   return active;
 }
 
-// ── Main App Component ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// ROOT APP
+// ─────────────────────────────────────────────────────────────────
 export default function Portfolio() {
-  const [isDark, setIsDark] = useState(true);
-  const [booted, setBooted] = useState(false);
+  const [isDark, setIsDark]           = useState(true);
+  const [booted, setBooted]           = useState(false);
   const [startAlvaro, setStartAlvaro] = useState(false);
   const [startPrayogo, setStartPrayogo] = useState(false);
-  const sequenceStartedRef = useRef(false);
-  const { isMobile, isTouch } = useMobileDetect();
-  const C = useMemo(() => makeTokens(isDark), [isDark]);
-  const toggle = useCallback(() => setIsDark(d => !d), []);
-  const active = useScrollSpy();
-
+  const seqStarted                    = useRef(false);
+  const { isMobile, isTouch }         = useMobileDetect();
+  const C                             = useMemo(() => makeTokens(isDark), [isDark]);
+  const toggle                        = useCallback(() => setIsDark(d=>!d), []);
+  const active                        = useScrollSpy();
   useScrollReveal();
 
-  // Sequential decryption: Alvaro first, then Prayogo (only once on boot)
   useEffect(() => {
-    if (booted && !sequenceStartedRef.current) {
-      sequenceStartedRef.current = true;
+    if (booted && !seqStarted.current) {
+      seqStarted.current = true;
       setStartAlvaro(true);
-      // Start Prayogo after Alvaro finishes (6 chars * 150ms + buffer = ~1100ms)
-      const timer = setTimeout(() => {
-        setStartPrayogo(true);
-      }, 1100);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setStartPrayogo(true), 900);
+      return () => clearTimeout(t);
     }
   }, [booted]);
 
-  const themeValue = useMemo(() => ({
-    isDark,
-    toggle,
-    isMobile
-  }), [isDark, toggle, isMobile]);
+  const themeVal = useMemo(() => ({ isDark, toggle, isMobile }), [isDark, toggle, isMobile]);
 
   return (
-    <ThemeCtx.Provider value={themeValue}>
+    <ThemeCtx.Provider value={themeVal}>
       <GlobalStyles C={C} isMobile={isMobile} />
       {!booted && <BootScreen onDone={() => setBooted(true)} />}
       <ThemeFlash isDark={isDark} />
-
-      {/* Navbar always outside transform wrapper — fixed positioning must not have transform ancestors */}
       <Navbar active={active} C={C} />
-
-      {/* Page content fades in after boot — opacity only, NO transform (would break position:fixed children) */}
-      <div style={{                                    
-        opacity: booted ? 1 : 0,
-        transition: booted ? "opacity 0.8s cubic-bezier(.16,1,.3,1) 0.1s" : "none",
-      }}>
+      <div style={{ opacity:booted?1:0, transition:booted?"opacity .7s cubic-bezier(.16,1,.3,1) .1s":"none" }}>
         <Overlays C={C} />
         <Hero C={C} booted={booted} startAlvaro={startAlvaro} startPrayogo={startPrayogo} />
         <Work C={C} />
