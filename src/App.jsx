@@ -1,2024 +1,1479 @@
-import React, {
-  useState, useEffect, useLayoutEffect, useRef,
-  createContext, useContext, memo, useCallback, useMemo,
-} from "react";
-import { gsap } from "gsap";
+import React, { useEffect, useState } from "react";
 import emailjs from "@emailjs/browser";
-import ProfileCard from "./ProfileCard";
-import DecryptedText from "./DecryptedText";
 
-// ─────────────────────────────────────────────────────────────────
-// THEME CONTEXT
-// ─────────────────────────────────────────────────────────────────
-const ThemeCtx = createContext({ isDark: true, toggle: () => {}, isMobile: false });
-const useTheme = () => useContext(ThemeCtx);
+const SOCIAL_LINKS = {
+  GitHub: "https://github.com/parothegreat",
+  LinkedIn:
+    "https://www.linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a",
+  TryHackMe: "https://tryhackme.com/p/parothegreat",
+  LeetCode: "https://leetcode.com/parothegreat",
+};
 
-// ─────────────────────────────────────────────────────────────────
-// MOBILE DETECTION
-// ─────────────────────────────────────────────────────────────────
-function useMobileDetect() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTouch, setIsTouch]   = useState(false);
-  useEffect(() => {
-    const check = () => {
-      const ua = navigator.userAgent.toLowerCase();
-      const mob = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
-      const touch = window.matchMedia("(pointer: coarse)").matches;
-      const small = window.innerWidth < 900;
-      setIsMobile(mob || touch || small);
-      setIsTouch(touch || "ontouchstart" in window);
-    };
-    check();
-    window.addEventListener("resize", check, { passive: true });
-    return () => window.removeEventListener("resize", check);
-  }, []);
-  return { isMobile, isTouch };
-}
+const PROFILE_IMAGE = "/images/profile/pfp.jpeg";
 
-// ─────────────────────────────────────────────────────────────────
-// DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────────
-const makeTokens = (isDark) =>
-  isDark
-    ? {
-        // Dark: deep obsidian + refined slate borders + indigo/emerald accents
-        bgBase:       "#0D0D12",
-        bgCard:       "#13131A",
-        bgCard2:      "#1A1A24",
-        bgCard3:      "#1F1F2E",
-        border:       "#252535",
-        borderFaint:  "#1C1C2A",
-        textPri:      "#EEF0F6",
-        textSec:      "#8892A4",
-        textMuted:    "#4E566A",
-        navBg:        "rgba(13,13,18,0.40)",
-        navBgScr:     "rgba(13,13,18,0.92)",
-        overlayBg:    "rgba(13,13,18,0.60)",
-        heroOverlay:  "linear-gradient(to top,#0D0D12f8 0%,#0D0D12b0 38%,#0D0D1260 65%,transparent 100%)",
-        mobileMenuBg: "#0D0D12",
-        // Accent palette — indigo primary, emerald secondary
-        accent:       "#6366F1",   // indigo 500
-        accentLight:  "#818CF8",   // indigo 400
-        accentDark:   "#4F52D9",   // indigo 600
-        emerald:      "#10B981",   // emerald 500
-        emeraldLight: "#34D399",   // emerald 400
-        emeraldDark:  "#059669",   // emerald 600
-        amber:        "#F59E0B",   // amber
-        rose:         "#F43F5E",   // rose
-        sky:          "#38BDF8",   // sky
-      }
-    : {
-        // Light: warm parchment + ink text + sage/indigo accents
-        bgBase:       "#F8F7F3",
-        bgCard:       "#FFFFFF",
-        bgCard2:      "#F0EFE9",
-        bgCard3:      "#E8E6DF",
-        border:       "#D8D6CE",
-        borderFaint:  "#E8E6DF",
-        textPri:      "#18181F",
-        textSec:      "#4A4E5C",
-        textMuted:    "#8C909C",
-        navBg:        "rgba(248,247,243,0.82)",
-        navBgScr:     "rgba(248,247,243,0.96)",
-        overlayBg:    "rgba(248,247,243,0.78)",
-        heroOverlay:  "linear-gradient(to top,#F8F7F3f8 0%,#F8F7F3c0 40%,#F8F7F360 65%,transparent 100%)",
-        mobileMenuBg: "#F8F7F3",
-        accent:       "#4F52D9",
-        accentLight:  "#6366F1",
-        accentDark:   "#3730A3",
-        emerald:      "#059669",
-        emeraldLight: "#10B981",
-        emeraldDark:  "#047857",
-        amber:        "#D97706",
-        rose:         "#E11D48",
-        sky:          "#0284C7",
-      };
+const ROLE_CARDS = [
+  {
+    title: "SysAdmin",
+    kicker: "Linux-first operations",
+    accent: "teal",
+    description:
+      "Hardening services, managing access, and keeping systems observable.",
+  },
+  {
+    title: "Industrial Electronics Student",
+    kicker: "Engineering foundation",
+    accent: "amber",
+    description:
+      "Learning electronics, control systems, sensors, and practical hardware.",
+  },
+  {
+    title: "DevOps Engineer",
+    kicker: "Automation mindset",
+    accent: "blue",
+    description:
+      "CI/CD, containers, reverse proxies, and repeatable deployment flows.",
+  },
+  {
+    title: "Penetration Tester",
+    kicker: "Security validation",
+    accent: "rose",
+    description:
+      "Recon, enumeration, Linux/web testing, and clear remediation notes.",
+  },
+];
 
-// ─────────────────────────────────────────────────────────────────
-// DATA — SYNCED FROM README
-// ─────────────────────────────────────────────────────────────────
+const TERMINAL_SESSIONS = [
+  {
+    command: "whoami",
+    outputs: ["parothegreat — sysadmin, devops learner, pentest operator"],
+  },
+  {
+    command: "cat education.txt",
+    outputs: [
+      "Student of Industrial Electronics Engineering",
+      "Focus: control systems + secure infrastructure",
+    ],
+  },
+  {
+    command: "cat organization.md",
+    outputs: [
+      "IT Mitra Industri VHS — SysAdmin, Network Engineer, Backend, NetSec, DevOps",
+    ],
+  },
+  {
+    command: "systemctl status portfolio.service",
+    outputs: ["active (running) — Linux labs, Go tooling, CI/CD notes"],
+  },
+  {
+    command: "nmap --top-ports 1000 lab.local",
+    outputs: ["22/tcp ssh · 80/tcp http · report.md generated"],
+  },
+];
+
 const PROJECTS = [
   {
     id: "01",
-    title: "go-bot",
-    category: "Autonomous Reconnaissance Tool",
-    repo: "https://github.com/parothegreat/go-bot",
-    stack: ["Go", "goroutines", "HTTP client", "CLI"],
-    year: "2025",
-    status: "active",
+    title: "RFID Access Control System",
+    category: "Physical Access Platform",
+    repo: "https://github.com/teamitmivhs/rfid-access-control-system",
+    stack: ["Go", "RFID Hardware", "REST API", "PostgreSQL"],
+    year: "2024",
+    status: "Deployed",
     featured: true,
-    accent: "emerald",
-    desc: "An autonomous bot written in Go for penetration testing recon workflows. Concurrent goroutine-based request handling for fast target enumeration across systems.",
+    accent: "teal",
+    summary:
+      "Institutional RFID-based physical access control system for SMK Mitra Industri MM2100 with sub-200ms card read-to-response flow, role-based permissions, and auditable access logs.",
     impact: [
-      "Reduces manual reconnaissance time by eliminating repetitive enumeration steps",
-      "Modular plugin architecture allows new recon modules without touching core logic",
-      "Structured output for downstream analysis and reporting",
-    ],
-    challenges: [
-      "Designing a goroutine pool that avoids race conditions under high concurrency",
-      "Keeping the binary portable and dependency-free across Linux environments",
-      "Structuring extensibility without sacrificing simplicity of the core task runner",
+      "Replaced manual attendance and access tracking with an automated system.",
+      "Designed for daily use across multiple campus access points.",
+      "Integrated hardware reads with a Go backend and persistent audit trails.",
     ],
   },
   {
     id: "02",
-    title: "rfid-access-control-system",
-    category: "Institutional Physical Access Platform",
-    repo: "https://github.com/teamitmivhs/rfid-access-control-system",
-    stack: ["Go", "RFID hardware", "REST API", "PostgreSQL"],
-    year: "2024",
-    status: "completed",
+    title: "go-bot",
+    category: "Autonomous Reconnaissance Tool",
+    repo: "https://github.com/parothegreat/go-bot",
+    stack: ["Go", "Goroutines", "HTTP Client", "CLI"],
+    year: "2025",
+    status: "Active",
     featured: true,
-    accent: "accent",
-    desc: "Full RFID-based physical access control system for SMK Mitra Industri MM2100. Sub-200ms card read-to-response latency with role-based area permissions and full audit trail.",
+    accent: "blue",
+    summary:
+      "Concurrent reconnaissance bot written in Go for penetration testing workflows, built around modular task execution and structured output for downstream analysis.",
     impact: [
-      "Replaced manual attendance and access tracking with an automated, auditable system",
-      "Institutional deployment across multiple campus access points used daily by students and staff",
-      "Full audit trail per card read with timestamp and location logging",
-    ],
-    challenges: [
-      "Bridging physical RFID hardware reads with a Go backend in real time under sub-200ms SLA",
-      "Designing role-based permission mappings that stay manageable as access points scale",
-      "Ensuring the system degrades gracefully during network or DB interruptions",
+      "Automates repetitive recon steps for faster target enumeration.",
+      "Uses goroutine-based request handling for high-throughput checks.",
+      "Keeps the tool portable as a simple Linux-friendly binary.",
     ],
   },
   {
     id: "03",
     title: "go_http_checker",
-    category: "Infrastructure HTTP Monitor",
+    category: "Infrastructure Monitor",
     repo: "https://github.com/parothegreat/go_http_checker",
-    stack: ["Go", "net/http", "concurrent workers", "TLS"],
+    stack: ["Go", "net/http", "TLS", "Workers"],
     year: "2024",
-    status: "completed",
+    status: "Completed",
     featured: false,
-    accent: "sky",
-    desc: "Lightweight production-ready HTTP health checking utility. Monitors endpoint availability, response times, and status codes — single binary, no runtime dependencies.",
+    accent: "indigo",
+    summary:
+      "Lightweight HTTP health checking utility for monitoring endpoint availability, response times, and status codes without heavy observability overhead.",
     impact: [
-      "Operational visibility for self-hosted infrastructure without heavy observability overhead",
-      "Ships as a single binary deployable on any Linux server — zero install friction",
-      "Ideal for post-deploy smoke tests and lightweight uptime monitoring",
-    ],
-    challenges: [
-      "Implementing concurrent checks across many endpoints without goroutine leaks",
-      "Handling TLS edge cases and configurable retry/timeout policies correctly",
-      "Keeping memory footprint minimal even under continuous monitoring load",
+      "Useful for self-hosted infrastructure smoke tests.",
+      "Single-binary deployment with configurable timeouts and retries.",
     ],
   },
   {
     id: "04",
     title: "Mitra-Coffeeshop",
-    category: "Institutional Web Application",
+    category: "Full-stack Web App",
     repo: "https://github.com/teamitmivhs/Mitra-Coffeeshop",
     stack: ["TypeScript", "React", "Next.js", "Node.js"],
     year: "2024",
-    status: "completed",
+    status: "Completed",
     featured: false,
     accent: "amber",
-    desc: "Full-stack web platform for the Mitra Industri Vocational High School coffee shop. Handles product display, ordering workflow, and operational management.",
+    summary:
+      "Web platform for the Mitra Industri Vocational High School coffee shop, covering product display, ordering workflows, and operational management.",
     impact: [
-      "Digitalised the school coffee shop's full ordering and inventory workflow",
-      "Actively deployed and used daily by students and staff on campus",
-      "Role-based admin access for product, order, and session management",
-    ],
-    challenges: [
-      "Enforcing TypeScript type safety across a full-stack Next.js + Node.js codebase",
-      "Designing a UX that works reliably on low-spec school devices and slow networks",
-      "Coordinating a collaborative team build within the teamitmivhs org",
+      "Digitalised ordering and inventory workflows used in a school environment.",
+      "Built with a collaborative team under the teamitmivhs organization.",
     ],
   },
   {
     id: "05",
     title: "work-order",
-    category: "Digital Workflow Management System",
+    category: "Workflow Management",
     repo: "https://github.com/teamitmivhs/work-order",
-    stack: ["HTML", "CSS", "JavaScript", "backend API"],
+    stack: ["HTML", "CSS", "JavaScript", "Backend API"],
     year: "2023",
-    status: "completed",
+    status: "Completed",
     featured: false,
     accent: "rose",
-    desc: "Digital work order management for SMK Mitra Industri MM2100. Streamlines creation, assignment, tracking, and resolution of maintenance and technical tasks.",
+    summary:
+      "Digital work order management system for creating, assigning, tracking, and resolving maintenance or technical tasks inside a school environment.",
     impact: [
-      "Eliminated paper-based work orders — full digital audit trail per completed task",
-      "School-wide deployment across maintenance and technical departments",
-      "Real-time supervisor view of open tasks with searchable history",
-    ],
-    challenges: [
-      "Designing a simple enough workflow that non-technical staff could adopt without training",
-      "Building role-based approval stages (submit → assign → approve) that map to real ops",
-      "Ensuring reliability on the school's existing network infrastructure",
+      "Moved paper-based work orders into a searchable digital workflow.",
+      "Mapped submit, assign, and approve stages to real operational needs.",
     ],
   },
 ];
 
 const SKILLS = [
   {
-    category: "Linux & Sysadmin",
-    accent: "emerald",
+    category: "SysAdmin",
+    accent: "teal",
     items: [
-      { name: "Linux (Fedora/Ubuntu/CentOS)", level: 95 },
-      { name: "systemd / cgroups / hardening",  level: 88 },
-      { name: "Bash / Shell Scripting",          level: 92 },
-      { name: "Nginx / reverse proxy",           level: 82 },
-      { name: "User & permission management",    level: 90 },
+      ["Linux hardening", 95],
+      ["systemd services", 88],
+      ["Bash automation", 92],
+      ["Nginx / reverse proxy", 82],
+      ["Users, groups & permissions", 90],
+    ],
+  },
+  {
+    category: "DevOps Engineering",
+    accent: "blue",
+    items: [
+      ["Git / CI-CD workflows", 80],
+      ["Docker fundamentals", 68],
+      ["Deployment runbooks", 75],
+      ["Monitoring mindset", 70],
+      ["Infrastructure documentation", 86],
     ],
   },
   {
     category: "Penetration Testing",
     accent: "rose",
     items: [
-      { name: "Recon & enumeration",    level: 72 },
-      { name: "Go offensive tooling",   level: 68 },
-      { name: "CTF (web/linux/network)",level: 65 },
-      { name: "OWASP Top 10",           level: 60 },
-      { name: "CVE analysis",           level: 62 },
+      ["Recon & enumeration", 72],
+      ["Go offensive tooling", 68],
+      ["CTF web/linux/network", 65],
+      ["OWASP Top 10", 60],
+      ["Reporting & remediation", 70],
     ],
   },
   {
-    category: "Networking & Infra",
-    accent: "sky",
+    category: "Industrial Electronics",
+    accent: "amber",
     items: [
-      { name: "TCP/IP / DNS / DHCP",   level: 80 },
-      { name: "VPN / firewall rules",  level: 75 },
-      { name: "VLANs / routing basics",level: 72 },
-      { name: "Wireshark / traffic analysis", level: 70 },
-      { name: "Network hardening",     level: 68 },
-    ],
-  },
-  {
-    category: "Backend & Dev",
-    accent: "accent",
-    items: [
-      { name: "Go (REST / CLI / concurrent)", level: 78 },
-      { name: "TypeScript / React / Next.js", level: 75 },
-      { name: "Docker / containerisation",    level: 65 },
-      { name: "Git / GitHub Actions / CI-CD", level: 80 },
-      { name: "PostgreSQL / MySQL / Redis",   level: 62 },
+      ["Sensor & actuator basics", 76],
+      ["RFID hardware integration", 82],
+      ["Control systems mindset", 68],
+      ["Electrical troubleshooting", 70],
+      ["Hardware-software bridge", 78],
     ],
   },
 ];
-
-const SOCIAL_LINKS = {
-  GitHub:   "https://github.com/parothegreat",
-  LinkedIn: "https://linkedin.com/in/moehammad-alvaro-pirata-prayogo-842a8834a",
-  TryHackMe:"https://tryhackme.com/p/parothegreat",
-  LeetCode: "https://leetcode.com/parothegreat",
-};
 
 const CERTS = [
-  { name: "Networking Essentials",      issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
-  { name: "Linux Essentials",           issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
-  { name: "Cybersecurity Essentials",   issuer: "Cisco Networking Academy", group: "cisco",  accent: "sky" },
-  { name: "Ethical Hacking Essentials", issuer: "EC-Council / Cisco",       group: "sec",    accent: "rose" },
-  { name: "Network Defence Essentials", issuer: "EC-Council",               group: "sec",    accent: "rose" },
-  { name: "Introduction to Cybersecurity", issuer: "Cisco / NDG",           group: "sec",    accent: "accent" },
-  { name: "Google for Developers",      issuer: "Google",                   group: "google", accent: "emerald" },
-  { name: "Google Cloud Fundamentals",  issuer: "Google Cloud",             group: "google", accent: "emerald" },
-  { name: "NDG Linux Essentials",       issuer: "NDG / Cisco",              group: "linux",  accent: "amber" },
-  { name: "Linux Unhatched",            issuer: "NDG / Cisco",              group: "linux",  accent: "amber" },
+  ["Networking Essentials", "Cisco Networking Academy", "blue"],
+  ["Linux Essentials", "Cisco Networking Academy", "teal"],
+  ["Cybersecurity Essentials", "Cisco Networking Academy", "indigo"],
+  ["Ethical Hacking Essentials", "EC-Council / Cisco", "rose"],
+  ["Network Defence Essentials", "EC-Council", "rose"],
+  ["Introduction to Cybersecurity", "Cisco / NDG", "blue"],
+  ["Google for Developers", "Google", "teal"],
+  ["Google Cloud Fundamentals", "Google Cloud", "indigo"],
+  ["NDG Linux Essentials", "NDG / Cisco", "amber"],
+  ["Linux Unhatched", "NDG / Cisco", "amber"],
 ];
 
-// ─────────────────────────────────────────────────────────────────
-// GLOBAL STYLES
-// ─────────────────────────────────────────────────────────────────
-const GlobalStyles = memo(({ C, isMobile }) => {
-  useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap";
-    link.media = "print";
-    link.onload = () => { link.media = "all"; };
-    if (!document.querySelector(`link[href="${link.href}"]`)) document.head.appendChild(link);
-
-    let vp = document.querySelector('meta[name="viewport"]');
-    if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
-    vp.content = "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes";
-
-    let tc = document.querySelector('meta[name="theme-color"]');
-    if (!tc) { tc = document.createElement("meta"); tc.name = "theme-color"; document.head.appendChild(tc); }
-    tc.content = C.bgBase;
-  }, [C.bgBase]);
-
-  useEffect(() => {
-    const id = "__paro-styles";
-    let el = document.getElementById(id);
-    if (!el) { el = document.createElement("style"); el.id = id; document.head.appendChild(el); }
-    el.textContent = `
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-      body {
-        background: ${C.bgBase}; color: ${C.textPri};
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-        transition: background 0.3s ease, color 0.3s ease;
-        -webkit-tap-highlight-color: transparent;
-        overflow-x: hidden; touch-action: pan-y;
-      }
-      ::selection { background: ${C.accent}28; color: ${C.accentLight}; }
-      input, textarea { font-family: inherit; -webkit-appearance: none; border-radius: 0; }
-      input::placeholder, textarea::placeholder { color: ${C.textMuted}; }
-      button { cursor: pointer; font-family: inherit; touch-action: manipulation; }
-      a { touch-action: manipulation; }
-
-      @keyframes fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
-      @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
-      @keyframes scanline  { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
-      @keyframes crtFlicker { 0%{opacity:1} 3%{opacity:0.94} 5%{opacity:1} 22%{opacity:1} 23%{opacity:0.96} 24%{opacity:1} 100%{opacity:1} }
-      @keyframes bootTextIn { 0%{opacity:0;letter-spacing:.6em;filter:blur(6px)} 60%{opacity:1;letter-spacing:.22em;filter:blur(0)} 100%{opacity:1;letter-spacing:.22em;filter:blur(0)} }
-      @keyframes bootExit1  { 0%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)} 40%{opacity:1;transform:scale(1.05) translateY(-6px);filter:blur(0)} 100%{opacity:0;transform:scale(1.14) translateY(-20px);filter:blur(8px)} }
-      @keyframes pulse-dot  { 0%,100%{opacity:1;box-shadow:0 0 0 0 ${C.emerald}55} 50%{opacity:.6;box-shadow:0 0 0 5px ${C.emerald}00} }
-      @keyframes shimmer    { 0%{background-position:200% 50%} 100%{background-position:-200% 50%} }
-
-      .reveal        { opacity:0; transform:translateY(20px); transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); will-change:transform,opacity; }
-      .reveal-left   { opacity:0; transform:translateX(-18px); transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); }
-      .reveal-right  { opacity:0; transform:translateX(18px);  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1); }
-      .reveal-scale  { opacity:0; transform:scale(.96);  transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1); }
-      .reveal.vis, .reveal-left.vis, .reveal-right.vis { opacity:1; transform:translate(0,0); }
-      .reveal-scale.vis { opacity:1; transform:scale(1); }
-      .d1{transition-delay:.06s}.d2{transition-delay:.12s}.d3{transition-delay:.18s}.d4{transition-delay:.24s}.d5{transition-delay:.30s}
-
-      .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
-
-      .nav-link {
-        font-family:'JetBrains Mono',monospace; font-size:.7rem; font-weight:400;
-        letter-spacing:.07em; text-transform:uppercase; color:${C.textMuted};
-        background:none; border:none; transition:color .2s; padding:.5rem;
-        -webkit-tap-highlight-color:transparent; touch-action:manipulation;
-        min-height:44px; display:inline-flex; align-items:center;
-      }
-      .nav-link:hover,.nav-link:active { color:${C.textPri}; }
-      .nav-link.active { color:${C.accentLight}; }
-
-      .btn-primary {
-        display:inline-flex; align-items:center; gap:.5rem;
-        padding:.75rem 1.75rem; background:${C.accent}; color:#fff;
-        font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
-        letter-spacing:.06em; text-transform:uppercase; border:none; border-radius:6px;
-        transition:all .2s cubic-bezier(.16,1,.3,1); white-space:nowrap;
-        touch-action:manipulation; min-height:44px;
-      }
-      .btn-primary:hover:not(:active) { transform:translateY(-1px); box-shadow:0 6px 24px ${C.accent}45; filter:brightness(1.08); }
-      .btn-primary:active { transform:scale(.97); }
-
-      .btn-ghost {
-        display:inline-flex; align-items:center; gap:.5rem;
-        padding:.75rem 1.5rem; background:transparent; color:${C.textSec};
-        font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:400;
-        letter-spacing:.06em; text-transform:uppercase;
-        border:1px solid ${C.border}; border-radius:6px;
-        transition:all .2s ease; white-space:nowrap; min-height:44px;
-      }
-      .btn-ghost:hover { border-color:${C.accent}60; color:${C.accentLight}; background:${C.accent}08; }
-      .btn-ghost:active { background:${C.bgCard}; }
-
-      .form-input {
-        width:100%; padding:.85rem 1rem; background:${C.bgCard2};
-        border:1px solid ${C.border}; border-radius:6px; color:${C.textPri};
-        font-size:1rem; font-weight:300; outline:none;
-        transition:border-color .2s,box-shadow .2s;
-      }
-      .form-input:focus { border-color:${C.accent}70; box-shadow:0 0 0 3px ${C.accent}14; }
-      .form-input:focus-visible { outline:2px solid ${C.accent}; outline-offset:2px; }
-
-      .tag-pill {
-        display:inline-block; padding:.22rem .65rem;
-        background:${C.bgCard2}; border:1px solid ${C.border};
-        border-radius:4px; font-size:.6rem; color:${C.textMuted};
-        font-family:'JetBrains Mono',monospace; letter-spacing:.03em;
-        transition:background .15s, color .15s, border-color .15s;
-      }
-
-      .cert-card {
-        padding:1rem 1.25rem; background:${C.bgCard}; border:1px solid ${C.border};
-        border-radius:8px; transition:all .22s cubic-bezier(.16,1,.3,1); cursor:pointer;
-      }
-      .cert-card:hover { border-color:var(--cert-color); box-shadow:0 4px 28px color-mix(in srgb,var(--cert-color) 15%,transparent); transform:translateY(-2px); }
-      .cert-card:active { transform:scale(.98); }
-
-      .project-row {
-        display:grid; grid-template-columns:48px 1fr 1fr auto;
-        gap:1.75rem; align-items:start; padding:1.75rem 1.25rem;
-        border-top:1px solid ${C.border}; transition:background .2s;
-        position:relative;
-      }
-      .project-row:last-child { border-bottom:1px solid ${C.border}; }
-      .project-row:active { background:${C.bgCard}44; }
-
-      .skill-bar { transition:width .42s cubic-bezier(.16,1,.3,1); }
-
-      /* Bottom sheet for mobile project details */
-      .bottom-sheet-overlay {
-        position:fixed; inset:0; z-index:9990;
-        background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
-        animation:fadeIn .2s ease;
-      }
-      .bottom-sheet {
-        position:fixed; left:0; right:0; bottom:0; z-index:9991;
-        background:${C.bgCard}; border-radius:16px 16px 0 0;
-        border-top:1px solid ${C.border};
-        max-height:82vh; overflow-y:auto;
-        animation:fadeUp .28s cubic-bezier(.16,1,.3,1);
-        padding-bottom:env(safe-area-inset-bottom,0px);
-      }
-      .bottom-sheet-handle {
-        width:36px; height:4px; border-radius:2px;
-        background:${C.border}; margin:0.75rem auto 0;
-      }
-
-      /* Responsive */
-      @media (max-width: 900px) {
-        .project-row { grid-template-columns:36px 1fr; gap:.5rem; padding:.9rem .75rem; }
-        .proj-desc,.proj-meta { display:none; }
-        .lanyard-wrap { display:none !important; }
-        .hero-bottom { flex-direction:column !important; align-items:flex-start !important; gap:1.25rem !important; }
-        .hero-bottom-right { border-left:none !important; padding-left:0 !important; flex-direction:column !important; align-items:flex-start !important; gap:.75rem !important; }
-        .skills-inner { flex-direction:column !important; gap:2rem !important; }
-        .skills-left { flex:none !important; width:100% !important; }
-        .skills-grid { grid-template-columns:1fr 1fr !important; gap:1.25rem !important; }
-        .contact-grid { grid-template-columns:1fr !important; gap:2rem !important; }
-        .certs-grid { grid-template-columns:1fr 1fr !important; }
-        .hero-section { padding:0 1rem 3rem !important; min-height:auto !important; }
-        .work-section { padding:3.5rem 1rem !important; max-width:100% !important; }
-        .skills-section { padding:3.5rem 1rem !important; }
-        .contact-section { padding:3.5rem 1rem !important; }
-        .footer-inner { padding:1rem !important; flex-direction:column !important; align-items:flex-start !important; gap:.75rem !important; }
-        nav { padding:0 1rem !important; height:58px !important; }
-        .hero-h1 { font-size:clamp(2.4rem,10vw,3.6rem) !important; margin-bottom:1.75rem !important; }
-      }
-      @media (max-width: 560px) {
-        .skills-grid { grid-template-columns:1fr !important; }
-        .certs-grid { grid-template-columns:1fr !important; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
-        html { scroll-behavior:auto; }
-        .reveal,.reveal-left,.reveal-right,.reveal-scale { opacity:1 !important; transform:none !important; }
-      }
-    `;
-  }, [C]);
-  return null;
-});
-
-// ─────────────────────────────────────────────────────────────────
-// ACCENT RESOLVER (maps string key → token color)
-// ─────────────────────────────────────────────────────────────────
-function useAccent(key, C) {
-  return C[key] || C.accent;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// BOOT SCREEN
-// ─────────────────────────────────────────────────────────────────
-const BOOT_LINES = [
-  { t: "Initialising system environment...",        accent: false },
-  { t: "Loading kernel modules... [OK]",            accent: false },
-  { t: "Mounting /proc /sys /dev... [OK]",          accent: false },
-  { t: "Starting network interfaces... [OK]",       accent: false },
-  { t: ">> PAROTHEGREAT OS v2.6 — READY",           accent: true  },
+const EXPERIENCES = [
+  {
+    organization: "IT Mitra Industri Vocational Highschool",
+    role: "System Administrator · Network Engineer · Backend Developer · Network Security Engineer · DevOps",
+    period: "Ongoing",
+    location: "Cikarang, Indonesia",
+    accent: "blue",
+    summary:
+      "Part of the school IT organization handling infrastructure operations, internal tooling, backend services, network administration, and security-focused improvements.",
+    responsibilities: [
+      "Maintain Linux-based services, users, permissions, and operational documentation.",
+      "Support network planning, troubleshooting, segmentation basics, and connectivity reliability.",
+      "Build backend utilities and school-oriented systems with practical deployment flows.",
+      "Improve security posture through hardening, recon practice, and incident-aware documentation.",
+      "Support DevOps workflows around version control, deployment notes, and repeatable maintenance.",
+    ],
+    tags: ["SysAdmin", "Network", "Backend", "NetSec", "DevOps"],
+  },
+  {
+    organization: "Denso Manufacturing",
+    role: "System Development & IT Support Intern / PKL",
+    period: "Internship",
+    location: "Manufacturing environment",
+    accent: "teal",
+    summary:
+      "Supported daily IT operations in a large-scale manufacturing environment across system development support, user support, network troubleshooting, and IT asset documentation.",
+    responsibilities: [
+      "Provided daily technical support for hardware (PCs, printers, peripherals) and software issues across manufacturing departments.",
+      "Installed, configured, and maintained operating systems and standard company applications on workstations.",
+      "Assisted in monitoring the internal network, troubleshooting connectivity issues, and enforcing basic security baselines.",
+      "Maintained IT asset documentation including device inventory records and software license tracking.",
+      "Supported implementation of IT policies including scheduled data backups and system update procedures.",
+    ],
+    achievements: [
+      "Gained hands-on understanding of IT infrastructure operations at large-scale manufacturing scale.",
+      "Developed problem-solving and cross-department communication skills in a professional environment.",
+      "Directly involved in system maintenance workflows that supported daily production continuity.",
+    ],
+    tags: ["IT Support", "System Development", "Networking", "Asset Docs"],
+  },
 ];
 
-const BootScreen = memo(({ onDone }) => {
-  const [typedLines, setTypedLines]   = useState(Array(BOOT_LINES.length).fill(""));
-  const [linePhase,  setLinePhase]    = useState(0);
-  const [titleVis,   setTitleVis]     = useState(false);
-  const [subtitleVis,setSubtitleVis]  = useState(false);
-  const [loadPct,    setLoadPct]      = useState(0);
-  const [exiting,    setExiting]      = useState(false);
-  const timers    = useRef([]);
-  const intervals = useRef([]);
+const NAV_ITEMS = [
+  ["Home", "home"],
+  ["About", "about"],
+  ["Experience", "experience"],
+  ["Work", "work"],
+  ["Skills", "skills"],
+  ["Contact", "contact"],
+];
 
-  const skip = useCallback(() => {
-    if (exiting) return;
-    setExiting(true);
-    timers.current.push(setTimeout(onDone, 820));
-  }, [exiting, onDone]);
+const ACCENTS = {
+  blue: "#2563EB",
+  indigo: "#4F46E5",
+  teal: "#0F766E",
+  amber: "#D97706",
+  rose: "#E11D48",
+};
 
-  const typeLine = useCallback((idx, text, done) => {
-    let i = 0;
-    const iv = setInterval(() => {
-      i++;
-      setTypedLines(p => { const n = [...p]; n[idx] = text.slice(0, i); return n; });
-      if (i >= text.length) { clearInterval(iv); done?.(); }
-    }, 28);
-    return iv;
-  }, []);
+function useActiveSection() {
+  const [active, setActive] = useState("home");
 
   useEffect(() => {
-    timers.current = []; intervals.current = [];
-    timers.current.push(setTimeout(() => setTitleVis(true), 150));
-    timers.current.push(setTimeout(() => setSubtitleVis(true), 500));
-
-    let pStart = null;
-    const piv = setInterval(() => {
-      if (!pStart) pStart = Date.now();
-      setLoadPct(Math.min(100, Math.round(((Date.now() - pStart) / 3200) * 100)));
-    }, 16);
-    intervals.current.push(piv);
-
-    const typeNext = (idx) => {
-      if (idx >= BOOT_LINES.length) { setLoadPct(100); timers.current.push(setTimeout(skip, 500)); return; }
-      setLinePhase(p => Math.max(p, idx + 1));
-      const iv = typeLine(idx, BOOT_LINES[idx].t, () => {
-        timers.current.push(setTimeout(() => typeNext(idx + 1), idx === BOOT_LINES.length - 1 ? 200 : 80));
+    const onScroll = () => {
+      const offset = window.scrollY + 130;
+      const current = [...NAV_ITEMS].reverse().find(([, id]) => {
+        const el = document.getElementById(id);
+        return el && el.offsetTop <= offset;
       });
-      intervals.current.push(iv);
+      if (current) setActive(current[1]);
     };
-    timers.current.push(setTimeout(() => typeNext(0), 900));
-    timers.current.push(setTimeout(skip, 7000));
-    window.addEventListener("keydown", skip, { once: true });
-    window.addEventListener("pointerdown", skip, { once: true });
-    return () => {
-      timers.current.forEach(clearTimeout); intervals.current.forEach(clearInterval);
-      window.removeEventListener("keydown", skip); window.removeEventListener("pointerdown", skip);
-    };
-  }, []);  // eslint-disable-line
 
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 99999, background: "#000",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      overflow: "hidden", animation: "crtFlicker 6s infinite",
-      pointerEvents: exiting ? "none" : "auto",
-    }}>
-      {/* CRT scanlines */}
-      <div style={{ position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
-        backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px)" }} />
-      {/* Moving beam */}
-      <div style={{ position:"absolute",left:0,right:0,height:"100px",zIndex:3,pointerEvents:"none",
-        background:"linear-gradient(to bottom,transparent,rgba(99,102,241,0.04),transparent)",
-        animation:"scanline 5s linear infinite" }} />
-      {/* Vignette */}
-      <div style={{ position:"absolute",inset:0,zIndex:4,pointerEvents:"none",
-        background:"radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.85) 100%)" }} />
-
-      <div style={{
-        position:"relative",zIndex:5,display:"flex",flexDirection:"column",alignItems:"center",
-        width:"100%",padding:"0 2rem",
-        animation: exiting ? "bootExit1 0.82s cubic-bezier(.4,0,.2,1) both" : "none",
-      }}>
-        {/* Title */}
-        <div style={{
-          fontFamily:"'JetBrains Mono',monospace", fontSize:"clamp(1.1rem,5vw,3.6rem)",
-          fontWeight:600, color:"#6366F1", letterSpacing:".22em", textAlign:"center",
-          textShadow:"0 0 28px #6366F140,0 0 60px #6366F120", userSelect:"none",
-          opacity: titleVis ? 1 : 0,
-          animation: titleVis ? "bootTextIn 1s cubic-bezier(.16,1,.3,1) both" : "none",
-          marginBottom:".75rem",
-        }}>PAROTHEGREAT</div>
-
-        <div style={{
-          fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(.52rem,1.1vw,.66rem)",
-          color:"#555",letterSpacing:".2em",textTransform:"uppercase",marginBottom:"2.25rem",
-          textAlign:"center",opacity: subtitleVis ? 1 : 0,transition:"opacity .3s ease",
-        }}>SysAdmin · Penetration Tester · Infrastructure Engineer</div>
-
-        {/* Boot lines */}
-        <div style={{ display:"flex",flexDirection:"column",gap:".28rem",alignItems:"flex-start",
-          width:"min(480px,90vw)",marginBottom:"1.5rem",minHeight:`${BOOT_LINES.length*1.55}rem` }}>
-          {BOOT_LINES.map((l, i) => {
-            const isVis    = linePhase >= i + 1;
-            const isActive = linePhase === i + 1 && (typedLines[i]?.length ?? 0) < l.t.length;
-            return (
-              <div key={i} style={{
-                fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(.56rem,1vw,.65rem)",
-                letterSpacing:".04em",
-                color: l.accent ? "#6366F1" : "#999",
-                textShadow: l.accent ? "0 0 10px #6366F150" : "none",
-                fontWeight: l.accent ? 500 : 400,
-                opacity: isVis ? 1 : 0, minHeight:"1.15em",
-                display:"flex",alignItems:"center",
-              }}>
-                {isVis && (<>
-                  {!l.accent && <span style={{color:"#444",marginRight:".4em"}}>$</span>}
-                  <span>{typedLines[i] ?? ""}</span>
-                  {isActive && <span style={{ display:"inline-block",width:".48em",height:"1em",
-                    background: l.accent ? "#6366F1" : "#888",marginLeft:"1px",verticalAlign:"middle",
-                    animation:"blink .7s step-end infinite" }} />}
-                </>)}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Loading bar */}
-        <div style={{ width:"min(480px,90vw)",opacity:linePhase>0?1:0,transition:"opacity .3s ease" }}>
-          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:".3rem" }}>
-            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".48rem",color:"#444",letterSpacing:".1em" }}>LOADING SYSTEM</span>
-            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".48rem",color:"#6366F1",letterSpacing:".08em" }}>{loadPct}%</span>
-          </div>
-          <div style={{ width:"100%",height:"2px",background:"#111",borderRadius:"1px",overflow:"hidden" }}>
-            <div style={{ height:"100%",width:`${loadPct}%`,
-              background:"linear-gradient(90deg,#4F52D9,#6366F1,#818CF8)",
-              borderRadius:"1px",transition:"width .2s ease",boxShadow:"0 0 6px #6366F155" }} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ position:"absolute",bottom:"1.5rem",fontFamily:"'JetBrains Mono',monospace",
-        fontSize:".48rem",color:"#2a2a2a",letterSpacing:".15em",zIndex:5 }}>
-        PRESS ANY KEY TO SKIP
-      </div>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// THEME FLASH
-// ─────────────────────────────────────────────────────────────────
-const ThemeFlash = memo(({ isDark }) => {
-  const [flash, setFlash] = useState(false);
-  const prev = useRef(null);
-  useEffect(() => {
-    if (prev.current === null) { prev.current = isDark; return; }
-    if (prev.current !== isDark) {
-      setFlash(true);
-      const t = setTimeout(() => setFlash(false), 350);
-      prev.current = isDark;
-      return () => clearTimeout(t);
-    }
-  }, [isDark]);
-  return (
-    <div style={{
-      position:"fixed",inset:0,zIndex:9997,pointerEvents:"none",
-      background: isDark ? "#000" : "#fff",
-      opacity: flash ? 0.10 : 0,
-      transition: flash ? "opacity .05s ease" : "opacity .3s ease",
-    }} />
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// THEME TOGGLE
-// ─────────────────────────────────────────────────────────────────
-const ThemeToggle = memo(({ C }) => {
-  const { isDark, toggle } = useTheme();
-  return (
-    <button
-      onClick={toggle}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{
-        background: "transparent", border:`1px solid ${C.border}`,
-        borderRadius:"6px", padding:".4rem .6rem", color:C.textMuted,
-        fontSize:".8rem", transition:"all .2s ease", cursor:"pointer",
-        minWidth:"44px", minHeight:"44px", display:"inline-flex",
-        alignItems:"center", justifyContent:"center",
-      }}
-    >
-      {isDark ? "☀" : "◑"}
-    </button>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// STAGGERED MENU (GSAP mobile overlay)
-// ─────────────────────────────────────────────────────────────────
-const StaggeredMenu = memo(({ C, items, socialItems, accentColor, onMenuOpen, onMenuClose, onItemClick }) => {
-  const [open, setOpen] = useState(false);
-  const openRef  = useRef(false);
-  const panelRef = useRef(null);
-  const preRef   = useRef(null);
-  const plusH    = useRef(null);
-  const plusV    = useRef(null);
-  const iconRef  = useRef(null);
-  const btnRef   = useRef(null);
-  const openTl   = useRef(null);
-  const closeTw  = useRef(null);
-  const busyRef  = useRef(false);
-
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const panel = panelRef.current;
-      const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
-      if (!panel) return;
-      gsap.set([panel, ...prelayers], { xPercent: 100 });
-      gsap.set(plusH.current,  { transformOrigin:"50% 50%", rotate:0 });
-      gsap.set(plusV.current,  { transformOrigin:"50% 50%", rotate:90 });
-      gsap.set(iconRef.current,{ rotate:0, transformOrigin:"50% 50%" });
-      if (btnRef.current) gsap.set(btnRef.current, { color: accentColor });
-    });
-    return () => ctx.revert();
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    if (panelRef.current) panelRef.current.style.background = C.mobileMenuBg;
-  }, [C]);
-
-  const doOpen = useCallback(() => {
-    if (busyRef.current || openRef.current) return;
-    busyRef.current = true; openRef.current = true; setOpen(true);
-    onMenuOpen?.();
-    const panel = panelRef.current;
-    const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
-    const items_ = Array.from(panel.querySelectorAll(".sm-item-label"));
-    if (items_.length) gsap.set(items_, { yPercent:140, rotate:8 });
-    const tl = gsap.timeline({ onComplete: () => { busyRef.current = false; } });
-    prelayers.forEach((el, i) => tl.fromTo(el, { xPercent:100 }, { xPercent:0, duration:.45, ease:"power4.out" }, i*.06));
-    tl.fromTo(panel, { xPercent:100 }, { xPercent:0, duration:.55, ease:"power4.out" }, prelayers.length*.06+.05);
-    if (items_.length) tl.to(items_, { yPercent:0, rotate:0, duration:.7, ease:"power4.out", stagger:{ each:.08, from:"start" } }, "-=.3");
-    gsap.to(iconRef.current, { rotate:45, duration:.35, ease:"power2.out" });
-    openTl.current = tl;
-  }, [onMenuOpen]);
-
-  const doClose = useCallback(() => {
-    if (busyRef.current || !openRef.current) return;
-    busyRef.current = true; openRef.current = false; setOpen(false);
-    onMenuClose?.();
-    const panel = panelRef.current;
-    const prelayers = preRef.current ? Array.from(preRef.current.querySelectorAll(".sm-pre")) : [];
-    const tl = gsap.timeline({ onComplete: () => { busyRef.current = false; } });
-    tl.to([panel, ...prelayers], { xPercent:100, duration:.4, ease:"power3.in", stagger:{ each:.04, from:"end" } });
-    gsap.to(iconRef.current, { rotate:0, duration:.3, ease:"power2.out" });
-    closeTw.current = tl;
-  }, [onMenuClose]);
-
-  const toggle = useCallback(() => {
-    if (openRef.current) doClose(); else doOpen();
-  }, [doOpen, doClose]);
-
-  const handleItemClick = useCallback((item) => {
-    doClose();
-    setTimeout(() => onItemClick?.(item), 200);
-  }, [doClose, onItemClick]);
-
-  return (
-    <>
-      {/* Toggle button */}
-      <button
-        ref={btnRef}
-        onClick={toggle}
-        aria-label="Menu"
-        style={{
-          position:"fixed", top:"9px", right:"1rem", zIndex:1006,
-          background:"transparent", border:"none", cursor:"pointer",
-          padding:".5rem", display:"flex", alignItems:"center", gap:".45rem",
-          minWidth:"44px", minHeight:"44px",
-        }}
-      >
-        <svg ref={iconRef} width="20" height="20" viewBox="0 0 20 20" style={{ overflow:"visible" }}>
-          <rect ref={plusH} x="3" y="9.5" width="14" height="1.5" rx=".75" fill={accentColor} />
-          <rect ref={plusV} x="9.25" y="3" width="1.5" height="14" rx=".75" fill={accentColor} />
-        </svg>
-      </button>
-
-      {/* Pre-layers */}
-      <div ref={preRef} style={{ position:"fixed",inset:0,zIndex:1007,pointerEvents:"none" }}>
-        {[C.bgCard2, C.bgCard].map((bg, i) => (
-          <div key={i} className="sm-pre" style={{ position:"absolute",inset:0,background:bg }} />
-        ))}
-      </div>
-
-      {/* Panel */}
-      <div ref={panelRef} style={{
-        position:"fixed",inset:0,zIndex:1008,background:C.mobileMenuBg,
-        display:"flex",flexDirection:"column",justifyContent:"center",
-        padding:"2rem 2.5rem",pointerEvents:open?"auto":"none",
-      }}>
-        <nav style={{ display:"flex",flexDirection:"column",gap:"1rem",marginBottom:"3rem" }}>
-          {items.map((item, i) => (
-            <div key={item.label} style={{ overflow:"hidden",paddingBottom:".1em" }}>
-              <button
-                className="sm-item-label"
-                onClick={() => handleItemClick(item)}
-                style={{
-                  fontFamily:"'DM Serif Display',serif", fontSize:"clamp(2rem,8vw,3.5rem)",
-                  color:C.textPri, background:"transparent", border:"none",
-                  cursor:"pointer", display:"flex", alignItems:"center", gap:"1rem",
-                  letterSpacing:"-.01em",
-                }}
-              >
-                <span className="mono" style={{ fontSize:".6rem",color:accentColor,opacity:.5,marginTop:".3em" }}>
-                  0{i+1}
-                </span>
-                {item.label}
-              </button>
-            </div>
-          ))}
-        </nav>
-        <div style={{ display:"flex",gap:"1.5rem",flexWrap:"wrap" }}>
-          {socialItems.map(s => (
-            <a key={s.label} href={s.link} target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:".65rem",
-                color:C.textMuted,textDecoration:"none",padding:".5rem 0",
-                transition:"color .2s",minHeight:"44px",display:"inline-flex",alignItems:"center" }}>
-              {s.label}
-            </a>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// NAVBAR
-// ─────────────────────────────────────────────────────────────────
-const NAV_LINKS = ["Home","Work","Skills","Contact"];
-
-const Navbar = memo(({ active, C }) => {
-  const { isMobile } = useTheme();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", fn, { passive:true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  const go = useCallback((label) => {
-    document.body.style.overflow = "";
-    const id = label === "Work" ? "work" : label.toLowerCase();
-    document.getElementById(id)?.scrollIntoView({ behavior: isMobile ? "auto" : "smooth" });
-  }, [isMobile]);
-
-  return (
-    <>
-      <nav style={{
-        position:"fixed",top:0,left:0,right:0,zIndex:1003,
-        display:"flex",alignItems:"center",justifyContent:"space-between",
-        padding: isMobile ? "0 1rem" : "0 2rem",
-        height: isMobile ? "58px" : (scrolled ? "52px" : "64px"),
-        background: scrolled ? C.navBgScr : C.navBg,
-        backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-        borderBottom:`1px solid ${scrolled ? C.border : C.accent+"18"}`,
-        transition:"height .3s cubic-bezier(.16,1,.3,1),background .3s,border-color .3s",
-      }}>
-        {/* Logo */}
-        <div style={{ display:"flex",alignItems:"center",gap:".6rem" }}>
-          {isMobile && <ThemeToggle C={C} />}
-          <div className="mono" style={{ fontSize:".78rem",display:"flex",alignItems:"center",gap:".2rem",letterSpacing:".01em" }}>
-            <span style={{ color:C.accent,fontWeight:600 }}>[</span>
-            <span style={{ color:C.textSec }}>paro</span>
-            <span style={{ color:C.rose }}>@</span>
-            <span style={{ color:C.textPri,fontWeight:600 }}>thegreat</span>
-            <span style={{ color:C.accent,fontWeight:600 }}>]</span>
-            <span style={{ color:C.accent,fontSize:".7rem",marginLeft:"2px",animation:"blink 1.4s step-end infinite" }}>█</span>
-          </div>
-        </div>
-
-        {/* Desktop links */}
-        {!isMobile && (
-          <div style={{ display:"flex",gap:0 }}>
-            {NAV_LINKS.map(l => (
-              <button key={l} onClick={() => go(l)} style={{
-                fontFamily:"'JetBrains Mono',monospace",fontSize:".65rem",letterSpacing:".07em",
-                textTransform:"uppercase",background:"none",border:"none",padding:".5rem 1rem",
-                position:"relative",color: active===l ? C.accentLight : C.textMuted,
-                transition:"color .2s",cursor:"pointer",minHeight:"44px",
-              }}>
-                {l}
-                <span style={{
-                  position:"absolute",bottom:"-1px",left:"50%",
-                  transform: active===l ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
-                  transformOrigin:"center",width:"24px",height:"2px",
-                  background:C.accent,borderRadius:"1px",
-                  boxShadow: active===l ? `0 0 6px ${C.accent}80` : "none",
-                  transition:"transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s",display:"block",
-                }} />
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Desktop right */}
-        {!isMobile && (
-          <div style={{ display:"flex",alignItems:"center",gap:".75rem" }}>
-            <div style={{
-              display:"flex",alignItems:"center",gap:".45rem",padding:".25rem .65rem",
-              border:`1px solid ${C.emerald}28`,borderRadius:"20px",background:`${C.emerald}0a`,
-            }}>
-              <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:C.emerald,
-                display:"inline-block",animation:"pulse-dot 2.5s ease-in-out infinite" }} />
-              <span className="mono" style={{ fontSize:".58rem",color:C.emerald,opacity:.85,letterSpacing:".05em" }}>
-                available_for_hire
-              </span>
-            </div>
-            <ThemeToggle C={C} />
-          </div>
-        )}
-      </nav>
-
-      {/* Mobile menu */}
-      {isMobile && (
-        <div style={{ position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:1004,pointerEvents:"none" }}>
-          <StaggeredMenu
-            C={C}
-            items={NAV_LINKS.map(l => ({ label:l }))}
-            socialItems={Object.entries(SOCIAL_LINKS).map(([label,link]) => ({ label,link }))}
-            accentColor={C.accent}
-            onMenuOpen={() => { document.body.style.overflow = "hidden"; }}
-            onMenuClose={() => { document.body.style.overflow = ""; }}
-            onItemClick={(it) => go(it.label)}
-          />
-        </div>
-      )}
-    </>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// UPTIME COUNTER
-// ─────────────────────────────────────────────────────────────────
-const START_DATE = new Date("2024-09-16T00:00:00");
-const UptimeCounter = memo(({ C }) => {
-  const [u, setU] = useState({ years:0,months:0,days:0,hours:0,minutes:0,seconds:0 });
-  const ref = useRef();
-  useEffect(() => {
-    const calc = () => {
-      const diff = Date.now() - START_DATE.getTime();
-      const ts = Math.floor(diff/1000), tm = Math.floor(ts/60), th = Math.floor(tm/60), td = Math.floor(th/24);
-      setU({ years:Math.floor(td/365),months:Math.floor((td%365)/30),days:td%30,hours:th%24,minutes:tm%60,seconds:ts%60 });
-    };
-    calc(); ref.current = setInterval(calc, 1000);
-    const vis = () => { clearInterval(ref.current); ref.current = setInterval(calc, document.hidden ? 5000 : 1000); if (!document.hidden) calc(); };
-    document.addEventListener("visibilitychange", vis);
-    return () => { clearInterval(ref.current); document.removeEventListener("visibilitychange", vis); };
-  }, []);
-  const pad = n => String(n).padStart(2,"0");
-  const display = u.years>0 ? `${u.years}y ${u.months}m` : u.months>0 ? `${u.months}m ${u.days}d` : `${u.days}d`;
-  return (
-    <div>
-      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.emerald,lineHeight:1 }}>{display}</div>
-      <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Uptime</div>
-      <div className="mono" style={{ fontSize:".58rem",color:C.emerald,opacity:.45,marginTop:".15rem" }}>{pad(u.hours)}:{pad(u.minutes)}:{pad(u.seconds)}</div>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// DITHER BACKGROUND (WebGL)
-// ─────────────────────────────────────────────────────────────────
-const Dither = memo(({ waveColor=[0.388,0.4,0.945], isMobile=false }) => {
-  const canvasRef = useRef(null);
-  const state = useRef({ mouse:[.5,.5],time:0,raf:null,gl:null,prog:null,locs:{} });
-
-  useEffect(() => {
-    if (isMobile) return;
-    const canvas = canvasRef.current;
-    const gl = canvas.getContext("webgl",{ antialias:false,alpha:true,powerPreference:"low-power" });
-    if (!gl) return;
-    const s = state.current; s.gl = gl;
-    const vert = `attribute vec2 a_pos; void main(){gl_Position=vec4(a_pos,0.,1.);}`;
-    const frag = `
-      precision lowp float;
-      uniform vec2 u_res; uniform float u_time; uniform vec2 u_mouse;
-      uniform vec3 u_waveColor; uniform float u_pixelSize;
-      float bayer(vec2 p){int x=int(mod(p.x,4.)),y=int(mod(p.y,4.));return float(x*3+y*5)/16.;}
-      void main(){
-        vec2 pxUV=floor(gl_FragCoord.xy/u_pixelSize)*u_pixelSize;
-        vec2 uv=pxUV/u_res;
-        float wave=sin(uv.x*10.+u_time)*.28+sin(uv.y*7.5+u_time*.7)*.18;
-        float brightness=.5+wave;
-        float dist=length(uv-u_mouse);
-        brightness=mix(brightness,1.,smoothstep(.3,.0,dist)*.15);
-        float t=bayer(gl_FragCoord.xy/u_pixelSize);
-        float q=floor(brightness*3.+t)/3.;
-        vec3 dark=vec3(0.051,0.051,0.071);
-        gl_FragColor=vec4(mix(dark,u_waveColor,q),1.);
-      }`;
-    const compile=(type,src)=>{ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); return sh; };
-    const prog=gl.createProgram();
-    gl.attachShader(prog,compile(gl.VERTEX_SHADER,vert));
-    gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,frag));
-    gl.linkProgram(prog); gl.useProgram(prog); s.prog=prog;
-    const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-    const loc=gl.getAttribLocation(prog,"a_pos"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-    s.locs={ res:gl.getUniformLocation(prog,"u_res"),time:gl.getUniformLocation(prog,"u_time"),mouse:gl.getUniformLocation(prog,"u_mouse"),waveColor:gl.getUniformLocation(prog,"u_waveColor"),pixelSize:gl.getUniformLocation(prog,"u_pixelSize") };
-    const resize=()=>{ const dpr=Math.min(devicePixelRatio,1.5); canvas.width=Math.floor(canvas.offsetWidth*dpr); canvas.height=Math.floor(canvas.offsetHeight*dpr); gl.viewport(0,0,canvas.width,canvas.height); };
-    resize(); const ro=new ResizeObserver(resize); ro.observe(canvas);
-    canvas.addEventListener("mousemove",e=>{ const r=canvas.getBoundingClientRect(); s.mouse=[(e.clientX-r.left)/r.width,1.-(e.clientY-r.top)/r.height]; },{passive:true});
-    let last=0;
-    const render=(ts)=>{
-      if (ts-last<34){ s.raf=requestAnimationFrame(render); return; } last=ts;
-      s.time+=.025; const{locs}=s;
-      gl.uniform2f(locs.res,canvas.width,canvas.height); gl.uniform1f(locs.time,s.time);
-      gl.uniform2f(locs.mouse,s.mouse[0],s.mouse[1]); gl.uniform3f(locs.waveColor,...waveColor);
-      gl.uniform1f(locs.pixelSize,4.); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-      s.raf=requestAnimationFrame(render);
-    };
-    render(0);
-    return ()=>{ cancelAnimationFrame(s.raf); ro.disconnect(); gl.deleteProgram(prog); };
-  },[waveColor,isMobile]);
-
-  if (isMobile) {
-    return <div style={{ position:"absolute",inset:0,
-      background:`radial-gradient(ellipse at 25% 18%,#6366F115 0%,transparent 50%),radial-gradient(ellipse at 75% 82%,#10B98110 0%,transparent 50%)`,zIndex:0 }} />;
-  }
-  return <canvas ref={canvasRef} style={{ position:"absolute",inset:0,width:"100%",height:"100%",display:"block",zIndex:0 }} />;
-});
-
-// ─────────────────────────────────────────────────────────────────
-// LINUX TERMINAL ANIMATION
-// ─────────────────────────────────────────────────────────────────
-const LinuxTerminal = memo(({ C, isMobile, start }) => {
-  const SEQUENCE = useMemo(() => [
-    { cmd:"whoami", output:"parothegreat — SysAdmin · Penetration Tester · Infrastructure Engineer", outColor:C.rose },
-    { cmd:"cat role.txt", output:"securing networks · hardening Linux · building Go recon tools", outColor:C.emeraldDark },
-    { cmd:"uptime --since 2024-09-16", output:"status: operational-student | org: teamitmivhs | loc: Cikarang, ID", outColor:C.accentLight },
-  ], [C, isMobile]);
-
-  const [phase, setPhase]       = useState(-1);
-  const [typed, setTyped]       = useState(0);
-  const [showOut, setShowOut]   = useState(false);
-  const [done, setDone]         = useState(false);
-  const timerRef                = useRef();
-  const skipAnim = useMemo(() => typeof window !== "undefined" && window.matchMedia("(pointer:coarse)").matches, []);
-
-  useEffect(() => {
-    if (!start) return;
-    if (skipAnim) { setDone(true); return; }
-    timerRef.current = setTimeout(() => setPhase(0), 300);
-    return () => clearTimeout(timerRef.current);
-  }, [start]); // eslint-disable-line
-
-  useEffect(() => {
-    if (skipAnim || phase < 0 || phase >= SEQUENCE.length) return;
-    setTyped(0); setShowOut(false);
-    const cmd = SEQUENCE[phase].cmd; let i = 0;
-    const tick = () => {
-      i++; setTyped(i);
-      if (i < cmd.length) { timerRef.current = setTimeout(tick, 32+Math.random()*20); }
-      else { timerRef.current = setTimeout(() => {
-        setShowOut(true);
-        timerRef.current = setTimeout(() => {
-          if (phase+1 < SEQUENCE.length) setPhase(p=>p+1); else setDone(true);
-        }, 440);
-      }, 150); }
-    };
-    timerRef.current = setTimeout(tick, 30);
-    return () => clearTimeout(timerRef.current);
-  }, [phase]); // eslint-disable-line
-
-  const fz = isMobile ? ".62rem" : ".7rem";
-  const Prompt = () => (
-    <span style={{ userSelect:"none",whiteSpace:"nowrap" }}>
-      <span style={{ color:"#22C55E" }}>paro@thegreat</span>
-      <span style={{ color:C.textMuted }}>:</span>
-      <span style={{ color:C.accent }}>~</span>
-      <span style={{ color:C.textMuted }}> $ </span>
-    </span>
-  );
-
-  const allDone = done || skipAnim;
-
-  return (
-    <div className="hero-terminal" style={{
-      background:`${C.bgCard}cc`, border:`1px solid ${C.border}`,
-      borderRadius:"8px", padding:isMobile?".7rem .85rem":".9rem 1.1rem",
-      marginBottom:isMobile?"1.25rem":"1.5rem",
-      backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)",
-    }}>
-      {/* Window chrome */}
-      <div style={{ display:"flex",gap:".4rem",marginBottom:".6rem" }}>
-        {["#FF5F57","#FFBD2E","#28C840"].map((c,i) => <div key={i} style={{ width:"9px",height:"9px",borderRadius:"50%",background:c,opacity:.7 }} />)}
-      </div>
-
-      {allDone ? (
-        SEQUENCE.map((s, i) => (
-          <div key={i} style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
-            <div><Prompt /><span style={{ color:C.textPri }}>{s.cmd}</span></div>
-            <div style={{ color:s.outColor,opacity:.8,paddingLeft:isMobile?0:".5rem" }}>{s.output}</div>
-          </div>
-        ))
-      ) : (
-        <>
-          {SEQUENCE.slice(0, phase).map((s, i) => (
-            <div key={i} style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
-              <div><Prompt /><span style={{ color:C.textPri }}>{s.cmd}</span></div>
-              <div style={{ color:s.outColor,opacity:.8 }}>{s.output}</div>
-            </div>
-          ))}
-          {phase >= 0 && phase < SEQUENCE.length && (
-            <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:fz,lineHeight:1.7 }}>
-              <div>
-                <Prompt />
-                <span style={{ color:C.textPri }}>{SEQUENCE[phase].cmd.slice(0, typed)}</span>
-                <span style={{ display:"inline-block",width:".45em",height:"1em",background:C.accent,marginLeft:"1px",verticalAlign:"middle",animation:"blink .7s step-end infinite" }} />
-              </div>
-              {showOut && <div style={{ color:SEQUENCE[phase].outColor,opacity:.8 }}>{SEQUENCE[phase].output}</div>}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// HERO
-// ─────────────────────────────────────────────────────────────────
-const Hero = memo(({ C, booted, startAlvaro, startPrayogo }) => {
-  const { isMobile } = useTheme();
-  const navH = isMobile ? 58 : 64;
-
-  return (
-    <section id="home" className="hero-section" style={{
-      position:"relative", minHeight:`calc(100dvh - ${navH}px)`,
-      padding: isMobile ? `${navH+40}px 1rem 3.5rem` : `${navH+80}px 3rem 4rem`,
-      display:"flex", flexDirection:"column", justifyContent:"flex-end",
-      overflow:"hidden",
-    }}>
-      <Dither waveColor={[0.388,0.4,0.945]} isMobile={isMobile} />
-      <div style={{ position:"absolute",inset:0,background:C.heroOverlay,zIndex:1,pointerEvents:"none" }} />
-
-      {/* ProfileCard / Lanyard placeholder — top right on desktop */}
-      {!isMobile && (
-        <div className="lanyard-wrap" style={{
-          position:"absolute", top:navH+20, right:"3rem", zIndex:2,
-          width:"300px", height:"420px",
-        }}>
-          <ProfileCard
-            name="Alvaro Prayogo"
-            title="SysAdmin & Penetration Tester"
-            handle="parothegreat"
-            avatarUrl={null}
-            C={C}
-          />
-        </div>
-      )}
-
-      {/* Content */}
-      <div style={{ position:"relative",zIndex:2,maxWidth:"900px" }}>
-
-        {/* Eyebrow */}
-        <div className="mono" style={{
-          fontSize: isMobile ? ".62rem" : ".68rem",
-          color:C.textMuted, letterSpacing:".12em", marginBottom:"1.1rem",
-          display:"flex", alignItems:"center", gap:".6rem",
-        }}>
-          <span style={{ display:"inline-block",width:"18px",height:"1px",background:C.border }} />
-          <span>parothegreat.site — systems &amp; security</span>
-        </div>
-
-        {/* H1 with DecryptedText */}
-        <h1 className="hero-h1" style={{
-          fontFamily:"'DM Serif Display',serif",
-          fontSize:"clamp(2.8rem,7.5vw,5.5rem)",
-          fontWeight:400,lineHeight:1.0,letterSpacing:"-.02em",
-          color:C.textPri,marginBottom:"2rem",
-        }}>
-          <span style={{ display:"block" }}>
-            <DecryptedText text="Moehammad" start={startAlvaro} animateOn="mount" speed={90} revealDirection="start" className="" style={{ color:C.textPri }} />
-          </span>
-          <span style={{ display:"block",color:C.accent }}>
-            <DecryptedText text="Alvaro" start={startAlvaro} animateOn="mount" speed={90} revealDirection="start" style={{ color:C.accent }} />
-          </span>
-          <span style={{ display:"block",color:C.textSec,fontStyle:"italic" }}>
-            <DecryptedText text="Pirata Prayogo" start={startPrayogo} animateOn="mount" speed={80} revealDirection="start" style={{ color:C.textSec }} />
-          </span>
-        </h1>
-
-        {/* Terminal */}
-        <LinuxTerminal C={C} isMobile={isMobile} start={booted} />
-
-        {/* Bottom row */}
-        <div className="hero-bottom" style={{
-          display:"flex", alignItems:"flex-start", gap:"3rem",
-        }}>
-          {/* CTA buttons */}
-          <div className="btn-row" style={{ display:"flex",gap:".75rem",flexWrap:"wrap" }}>
-            <button className="btn-primary" onClick={() => document.getElementById("work")?.scrollIntoView({behavior:"smooth"})}>
-              ./view_projects.sh →
-            </button>
-            <button className="btn-ghost" onClick={() => document.getElementById("contact")?.scrollIntoView({behavior:"smooth"})}>
-              ./contact.sh
-            </button>
-          </div>
-
-          {/* Right info strip */}
-          <div className="hero-bottom-right" style={{
-            display:"flex", alignItems:"center", gap:"2rem",
-            borderLeft:`1px solid ${C.border}`, paddingLeft:"2rem",
-            flexShrink:0,
-          }}>
-            <UptimeCounter C={C} />
-            <div>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.accent,lineHeight:1 }}>5+</div>
-              <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Projects</div>
-              <div className="mono" style={{ fontSize:".58rem",color:C.accent,opacity:.45,marginTop:".15rem" }}>shipped</div>
-            </div>
-            <div>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:C.amber,lineHeight:1 }}>10+</div>
-              <div className="mono" style={{ fontSize:".52rem",letterSpacing:".1em",textTransform:"uppercase",color:C.textMuted,marginTop:".2rem" }}>Certs</div>
-              <div className="mono" style={{ fontSize:".58rem",color:C.amber,opacity:.45,marginTop:".15rem" }}>earned</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scroll cue */}
-      <div style={{
-        position:"absolute",bottom:"1.75rem",left:"50%",transform:"translateX(-50%)",
-        zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",gap:".35rem",
-        opacity:.35,
-      }}>
-        <div style={{ width:"1px",height:"28px",background:`linear-gradient(to bottom,transparent,${C.border})` }} />
-        <span className="mono" style={{ fontSize:".48rem",color:C.textMuted,letterSpacing:".12em" }}>SCROLL</span>
-      </div>
-    </section>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// PROJECT BOTTOM SHEET (mobile)
-// ─────────────────────────────────────────────────────────────────
-const ProjectBottomSheet = memo(({ project, C, onClose }) => {
-  const accent = C[project.accent] || C.accent;
-  const startY = useRef(null);
-  const sheetRef = useRef(null);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
-  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY; };
-  const handleTouchEnd   = (e) => { if (e.changedTouches[0].clientY - startY.current > 60) onClose(); };
-
-  return (
-    <>
-      <div className="bottom-sheet-overlay" onClick={onClose} />
-      <div className="bottom-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div className="bottom-sheet-handle" />
-        <div style={{ padding:"1.25rem 1.5rem 2rem" }}>
-          <div style={{ display:"flex",alignItems:"center",gap:".6rem",marginBottom:"1rem" }}>
-            <div style={{ width:"4px",height:"36px",borderRadius:"2px",background:accent,flexShrink:0 }} />
-            <div>
-              <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.35rem",fontWeight:400,color:C.textPri }}>{project.title}</h3>
-              <p className="mono" style={{ fontSize:".58rem",color:accent,opacity:.8,marginTop:".15rem" }}>{project.category}</p>
-            </div>
-          </div>
-
-          <p style={{ fontSize:".82rem",lineHeight:1.75,color:C.textSec,fontWeight:300,marginBottom:"1.25rem" }}>{project.desc}</p>
-
-          {/* Impact */}
-          <div style={{ marginBottom:"1.25rem" }}>
-            <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Impact</p>
-            <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
-              {project.impact.map((b,i) => (
-                <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
-                  <span style={{ color:accent,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>→</span>
-                  <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textSec,fontWeight:300 }}>{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Technical challenge */}
-          <div style={{ marginBottom:"1.5rem" }}>
-            <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Technical Challenges</p>
-            <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
-              {project.challenges.map((b,i) => (
-                <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
-                  <span style={{ color:C.textMuted,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>⚡</span>
-                  <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textMuted,fontWeight:300 }}>{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Stack */}
-          <div style={{ display:"flex",flexWrap:"wrap",gap:".4rem",marginBottom:"1.5rem" }}>
-            {project.stack.map(t => (
-              <span key={t} className="tag-pill" style={{ borderColor:`${accent}55`,color:accent }}>{t}</span>
-            ))}
-          </div>
-
-          <a href={project.repo} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
-            <button className="btn-primary" style={{ width:"100%",justifyContent:"center",background:accent }}>
-              View on GitHub →
-            </button>
-          </a>
-        </div>
-      </div>
-    </>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// PROJECT EXPANDED PANEL (desktop)
-// ─────────────────────────────────────────────────────────────────
-const ProjectExpandedPanel = memo(({ project, C }) => {
-  const accent = C[project.accent] || C.accent;
-  return (
-    <div style={{
-      gridColumn:"1 / -1", background:`${accent}08`,
-      borderBottom:`1px solid ${C.border}`,
-      padding:"1.5rem 1.5rem 1.75rem 4rem",
-      display:"flex", flexDirection:"column", gap:"1.5rem",
-      animation:"fadeUp .22s ease both", width:"100%", boxSizing:"border-box",
-    }}>
-      {/* Top row: overview + stack */}
-      <div style={{ display:"flex",gap:"3rem",flexWrap:"wrap" }}>
-        <div style={{ flex:1,minWidth:"220px" }}>
-          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Overview</p>
-          <p style={{ fontSize:".82rem",lineHeight:1.75,color:C.textSec,fontWeight:300 }}>{project.desc}</p>
-        </div>
-        <div style={{ flexShrink:0,minWidth:"170px" }}>
-          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".5rem",opacity:.7 }}>Stack</p>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:".35rem",marginBottom:".75rem" }}>
-            {project.stack.map(t => <span key={t} className="tag-pill" style={{ borderColor:`${accent}44`,color:accent }}>{t}</span>)}
-          </div>
-          <p className="mono" style={{ fontSize:".52rem",color:C.textMuted,opacity:.5 }}>{project.year}</p>
-        </div>
-      </div>
-
-      {/* Impact + challenges */}
-      <div style={{ display:"flex",gap:"3rem",flexWrap:"wrap" }}>
-        <div style={{ flex:1,minWidth:"220px" }}>
-          <p className="mono" style={{ fontSize:".55rem",color:accent,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Impact</p>
-          <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
-            {project.impact.map((b,i) => (
-              <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
-                <span style={{ color:accent,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>→</span>
-                <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textSec,fontWeight:300 }}>{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div style={{ flex:1,minWidth:"220px" }}>
-          <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Technical Challenges</p>
-          <ul style={{ listStyle:"none",display:"flex",flexDirection:"column",gap:".4rem" }}>
-            {project.challenges.map((b,i) => (
-              <li key={i} style={{ display:"flex",gap:".6rem",alignItems:"flex-start" }}>
-                <span style={{ color:C.textMuted,flexShrink:0,marginTop:".3em",fontSize:".7rem" }}>⚡</span>
-                <span style={{ fontSize:".78rem",lineHeight:1.65,color:C.textMuted,fontWeight:300 }}>{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Screenshot placeholder grid */}
-      <div>
-        <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:".6rem",opacity:.7 }}>Documentation</p>
-        <div style={{ display:"flex",gap:".6rem",flexWrap:"wrap" }}>
-          {[1,2,3].map(n => (
-            <div key={n} style={{
-              width:"130px",height:"80px",borderRadius:"6px",
-              background:C.bgCard2,border:`1px dashed ${C.border}`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              flexShrink:0,
-            }}>
-              <span className="mono" style={{ fontSize:".52rem",color:C.textMuted,opacity:.4 }}>screenshot_{n}.png</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <a href={project.repo} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none",alignSelf:"flex-start" }}>
-        <button className="btn-ghost" style={{ borderColor:`${accent}50`,color:accent }}>
-          View on GitHub →
-        </button>
-      </a>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// WORK SECTION
-// ─────────────────────────────────────────────────────────────────
-const Work = memo(({ C }) => {
-  const { isMobile } = useTheme();
-  const [hovered, setHovered]   = useState(null);
-  const [expanded, setExpanded] = useState(null);  // desktop
-  const [sheet, setSheet]       = useState(null);  // mobile
-
-  const toggleExpand = useCallback((id) => {
-    if (isMobile) { setSheet(id); return; }
-    setExpanded(p => p === id ? null : id);
-  }, [isMobile]);
-
-  return (
-    <section id="work" className="work-section" style={{
-      padding: isMobile ? "3.5rem 1rem" : "6rem 3rem",
-      borderTop:`1px solid ${C.border}`,
-    }}>
-      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
-        {/* Header */}
-        <div className="reveal" style={{ marginBottom: isMobile?"2rem":"2.75rem" }}>
-          <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
-            <span style={{ opacity:.4 }}>02 /</span>
-            <span>featured projects</span>
-          </p>
-          <h2 style={{
-            fontFamily:"'DM Serif Display',serif",
-            fontSize: isMobile ? "1.8rem" : "clamp(2rem,4vw,3rem)",
-            fontWeight:400,color:C.textPri,lineHeight:1.05,
-          }}>
-            Things I've <em>Built</em>
-          </h2>
-        </div>
-
-        {/* Project list */}
-        <div>
-          {PROJECTS.map((p, i) => {
-            const accent = C[p.accent] || C.accent;
-            return (
-              <div key={p.id}>
-                <div
-                  className={`project-row reveal d${Math.min(i+1,5)}`}
-                  onMouseEnter={() => setHovered(p.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => toggleExpand(p.id)}
-                  style={{
-                    cursor:"pointer",
-                    background: expanded===p.id ? `${accent}10` : hovered===p.id ? `${accent}09` : "transparent",
-                    transition:"background .2s",
-                  }}
-                >
-                  {/* Accent left bar */}
-                  <div style={{
-                    position:"absolute",left:0,top:".5rem",bottom:".5rem",width:"2px",borderRadius:"2px",
-                    background: p.featured||hovered===p.id||expanded===p.id ? accent : "transparent",
-                    transition:"background .2s",
-                    opacity: p.featured && hovered!==p.id && expanded!==p.id ? .35 : 1,
-                  }} />
-
-                  {/* ID */}
-                  <div className="mono" style={{
-                    fontSize:".68rem",color: hovered===p.id||expanded===p.id ? accent : C.textMuted,
-                    fontWeight:500,paddingTop:".15rem",paddingLeft:".75rem",
-                    transition:"color .2s",opacity: hovered===p.id||expanded===p.id ? 1 : .45,
-                  }}>{p.id}</div>
-
-                  {/* Title */}
-                  <div style={{ minWidth:0,overflow:"hidden" }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:".55rem",marginBottom:".25rem",flexWrap:"wrap" }}>
-                      <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1rem":"clamp(1.1rem,1.8vw,1.3rem)",fontWeight:400,color:C.textPri,lineHeight:1.2,margin:0 }}>
-                        {p.title}
-                      </h3>
-                      {p.status === "active" && (
-                        <span className="mono" style={{
-                          fontSize:".46rem",padding:".16rem .48rem",borderRadius:"20px",letterSpacing:".1em",textTransform:"uppercase",
-                          background:`${C.emerald}18`,color:C.emerald,border:`1px solid ${C.emerald}40`,
-                          display:"inline-flex",alignItems:"center",gap:".28rem",flexShrink:0,
-                        }}>
-                          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:C.emerald,display:"inline-block",animation:"pulse-dot 2s ease-in-out infinite" }} />
-                          active
-                        </span>
-                      )}
-                      {p.featured && (
-                        <span className="mono" style={{
-                          fontSize:".46rem",padding:".16rem .48rem",borderRadius:"20px",letterSpacing:".1em",textTransform:"uppercase",
-                          background:`${accent}18`,color:accent,border:`1px solid ${accent}40`,flexShrink:0,
-                        }}>featured</span>
-                      )}
-                    </div>
-                    <div style={{ display:"flex",alignItems:"center",gap:".4rem" }}>
-                      <span style={{ display:"inline-block",width:"5px",height:"5px",borderRadius:"1px",background:accent,flexShrink:0 }} />
-                      <p className="mono" style={{ fontSize:".58rem",color:accent,opacity:.8 }}>{p.category}</p>
-                    </div>
-                  </div>
-
-                  {/* Description (desktop) */}
-                  <p className="proj-desc" style={{
-                    fontSize:".8rem",lineHeight:1.75,fontWeight:300,
-                    color: hovered===p.id ? C.textSec : C.textMuted,maxWidth:"360px",transition:"color .2s",
-                  }}>{p.desc}</p>
-
-                  {/* Year + tags (desktop) */}
-                  <div className="proj-meta" style={{ textAlign:"right" }}>
-                    <div className="mono" style={{ fontSize:".6rem",color:C.textMuted,marginBottom:".45rem",opacity:.4 }}>{p.year}</div>
-                    <div style={{ display:"flex",flexDirection:"column",gap:".25rem",alignItems:"flex-end" }}>
-                      {p.stack.slice(0,3).map(t => (
-                        <span key={t} className="tag-pill" style={{
-                          borderColor: hovered===p.id ? `${accent}50` : C.border,
-                          color: hovered===p.id ? accent : C.textMuted,transition:"color .2s,border-color .2s",
-                        }}>{t}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Chevron */}
-                  <div style={{
-                    position:"absolute",right:"1rem",top:"50%",transform:"translateY(-50%)",
-                    color:C.textMuted,fontSize:".52rem",
-                    opacity: hovered===p.id ? .55 : .18,transition:"opacity .2s",pointerEvents:"none",
-                    rotate: expanded===p.id ? "90deg" : "0deg",
-                  }}>▶</div>
-                </div>
-
-                {/* Expanded panel (desktop only) */}
-                {!isMobile && expanded===p.id && <ProjectExpandedPanel project={p} C={C} />}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Bottom sheet (mobile) */}
-      {isMobile && sheet && (
-        <ProjectBottomSheet project={PROJECTS.find(p=>p.id===sheet)} C={C} onClose={() => setSheet(null)} />
-      )}
-    </section>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// SKILLS DONUT
-// ─────────────────────────────────────────────────────────────────
-const SkillsDonut = memo(({ C, isMobile }) => {
-  const canvasRef  = useRef(null);
-  const [hov, setHov] = useState(null);
-  const animRef    = useRef(null);
-  const progRef    = useRef(0);
-  const hovRef     = useRef(null);
-  const ctxRef     = useRef(null);
-  const sizeRef    = useRef(0);
-  const angRef     = useRef([]);
-
-  const segments = useMemo(() => SKILLS.map(g => ({
-    label: g.category,
-    color: C[g.accent] || C.accent,
-    value: Math.round(g.items.reduce((s,it) => s+it.level, 0) / g.items.length),
-  })), [C]);
-
-  useEffect(() => { hovRef.current = hov; }, [hov]);
-
-  const draw = useCallback((prog) => {
-    const ctx=ctxRef.current, size=sizeRef.current, angs=angRef.current;
-    if (!ctx||!size||!angs.length) return;
-    const cx=size/2, cy=size/2, outerR=size*.42, innerR=size*.26;
-    ctx.clearRect(0,0,size,size);
-    ctx.beginPath(); ctx.arc(cx,cy,(outerR+innerR)/2,0,Math.PI*2);
-    ctx.strokeStyle="rgba(128,128,128,.08)"; ctx.lineWidth=outerR-innerR; ctx.stroke();
-    angs.forEach((seg,i) => {
-      const end=seg.start+(seg.end-seg.start)*prog;
-      const isH=hovRef.current===i;
-      const ro=isH?outerR+5:outerR, ri=isH?innerR-2:innerR;
-      ctx.beginPath(); ctx.arc(cx,cy,ro,seg.start,end); ctx.arc(cx,cy,ri,end,seg.start,true); ctx.closePath();
-      ctx.fillStyle=isH?seg.color:seg.color+"cc"; ctx.shadowBlur=0; ctx.fill();
-      if (isH){ ctx.shadowColor=seg.color; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0; }
-    });
-    ctx.textAlign="center";
-    const hh=hovRef.current;
-    if (hh!==null && prog>=1) {
-      const seg=angs[hh];
-      ctx.fillStyle=seg.color; ctx.font=`600 ${isMobile?20:24}px 'JetBrains Mono',monospace`;
-      ctx.fillText(seg.value+"%",cx,cy+(isMobile?7:9));
-      ctx.fillStyle="rgba(128,128,128,.55)"; ctx.font=`400 ${isMobile?7:8}px 'JetBrains Mono',monospace`;
-      ctx.fillText(seg.label.toUpperCase(),cx,cy+(isMobile?20:23));
-    } else if (hh===null && prog>=1) {
-      ctx.fillStyle="rgba(128,128,128,.3)"; ctx.font=`400 ${isMobile?7:8}px 'JetBrains Mono',monospace`;
-      ctx.fillText("HOVER TO INSPECT",cx,cy+4);
-    }
-  }, [isMobile]);
-
-  useEffect(() => {
-    const canvas=canvasRef.current; if (!canvas) return;
-    const dpr=devicePixelRatio||1, size=isMobile?210:270;
-    sizeRef.current=size; canvas.width=size*dpr; canvas.height=size*dpr;
-    canvas.style.width=size+"px"; canvas.style.height=size+"px";
-    const ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr); ctxRef.current=ctx;
-    const total=segments.reduce((s,seg)=>s+seg.value,0);
-    const gap=.025; let cur=-Math.PI/2;
-    angRef.current=segments.map(seg=>{ const sl=(seg.value/total)*(Math.PI*2-gap*segments.length); const a={start:cur,end:cur+sl,...seg}; cur+=sl+gap; return a; });
-    progRef.current=0;
-    const start=performance.now(), dur=1000, ease=t=>1-Math.pow(1-t,3);
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-    const animate=(now)=>{ const t=Math.min((now-start)/dur,1); progRef.current=ease(t); draw(progRef.current); if (t<1) animRef.current=requestAnimationFrame(animate); };
-    animRef.current=requestAnimationFrame(animate);
-    return ()=>{ if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [segments, isMobile, draw]);
-
-  useEffect(() => { if (progRef.current>=1) draw(1); }, [hov, draw]);
-
-  const handleMouseMove = useCallback((e) => {
-    const canvas=canvasRef.current; if (!canvas||progRef.current<1) return;
-    const rect=canvas.getBoundingClientRect();
-    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
-    const size=isMobile?210:270, cx=size/2, cy=size/2;
-    const dx=mx-cx, dy=my-cy, dist=Math.sqrt(dx*dx+dy*dy);
-    const outerR=size*.42+7, innerR=size*.26-4;
-    if (dist<innerR||dist>outerR){ setHov(null); return; }
-    let ang=Math.atan2(dy,dx); if(ang<-Math.PI/2) ang+=Math.PI*2;
-    const total=segments.reduce((s,seg)=>s+seg.value,0);
-    const gap=.025; let cur=-Math.PI/2;
-    for(let i=0;i<segments.length;i++){
-      const sl=(segments[i].value/total)*(Math.PI*2-gap*segments.length);
-      if(ang>=cur&&ang<=cur+sl){ setHov(i); return; }
-      cur+=sl+gap;
-    }
-    setHov(null);
-  }, [segments,isMobile]);
-
-  return (
-    <div style={{ display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",justifyContent:"center",gap:isMobile?"1.25rem":"2.5rem",padding:isMobile?"1rem 0":"1.5rem 0" }}>
-      <canvas ref={canvasRef} onMouseMove={handleMouseMove} onMouseLeave={()=>setHov(null)} style={{ cursor:"crosshair",flexShrink:0 }} />
-      <div style={{ display:"flex",flexDirection:"column",gap:".65rem",minWidth:"185px" }}>
-        {segments.map((seg,i) => (
-          <div key={seg.label} onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)} style={{ display:"flex",alignItems:"center",gap:".65rem",cursor:"pointer",opacity:hov!==null&&hov!==i?.32:1,transition:"opacity .2s" }}>
-            <div style={{ width:"9px",height:"9px",borderRadius:"2px",flexShrink:0,background:seg.color,boxShadow:hov===i?`0 0 7px ${seg.color}`:"none",transition:"box-shadow .2s" }} />
-            <div style={{ flex:1 }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"baseline" }}>
-                <span className="mono" style={{ fontSize:".65rem",color:hov===i?seg.color:C.textSec,transition:"color .2s" }}>{seg.label}</span>
-                <span className="mono" style={{ fontSize:".6rem",color:seg.color,fontWeight:500 }}>{seg.value}%</span>
-              </div>
-              <div style={{ height:"1px",background:C.border,marginTop:".2rem" }}>
-                <div style={{ height:"100%",width:hov===i?`${seg.value}%`:"0%",background:seg.color,transition:"width .32s cubic-bezier(.16,1,.3,1)" }} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// SKILLS SECTION
-// ─────────────────────────────────────────────────────────────────
-const Skills = memo(({ C }) => {
-  const { isMobile } = useTheme();
-  const [viewMode, setViewMode] = useState("bar");
-  const [activeFilter, setActiveFilter] = useState(null);
-
-  const filtered = activeFilter ? SKILLS.filter(s=>s.category===activeFilter) : SKILLS;
-
-  return (
-    <section id="skills" className="skills-section" style={{
-      padding: isMobile ? "3.5rem 1rem" : "6rem 3rem",
-      borderTop:`1px solid ${C.border}`,
-    }}>
-      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
-        {/* Header */}
-        <div className="reveal" style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-end",flexWrap:"wrap",gap:"1rem",marginBottom:isMobile?"1.75rem":"2.5rem" }}>
-          <div>
-            <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
-              <span style={{ opacity:.4 }}>03 /</span>
-              <span>tools &amp; expertise</span>
-            </p>
-            <h2 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1.8rem":"clamp(2rem,4vw,3rem)",fontWeight:400,color:C.textPri,lineHeight:1.05 }}>
-              What I <em>Work With</em>
-            </h2>
-          </div>
-          {/* View mode toggle */}
-          <div style={{ display:"flex",gap:".4rem" }}>
-            {["bar","chart"].map(m => (
-              <button key={m} onClick={()=>setViewMode(m)} className="mono" style={{
-                fontSize:".6rem",padding:".4rem .8rem",borderRadius:"5px",border:`1px solid ${viewMode===m?C.accent:C.border}`,
-                background:viewMode===m?`${C.accent}18`:"transparent",color:viewMode===m?C.accentLight:C.textMuted,
-                cursor:"pointer",transition:"all .2s",minHeight:"36px",
-              }}>{m==="bar"?"≡ bar":"◯ chart"}</button>
-            ))}
-          </div>
-        </div>
-
-        {viewMode === "chart" ? (
-          <div className="reveal">
-            <SkillsDonut C={C} isMobile={isMobile} />
-          </div>
-        ) : (
-          <div>
-            {/* Category filters */}
-            <div className="reveal" style={{ display:"flex",gap:".4rem",flexWrap:"wrap",marginBottom:"1.75rem" }}>
-              <button onClick={()=>setActiveFilter(null)} className="mono" style={{
-                fontSize:".58rem",padding:".32rem .75rem",borderRadius:"4px",border:`1px solid ${!activeFilter?C.accent:C.border}`,
-                background:!activeFilter?`${C.accent}18`:"transparent",color:!activeFilter?C.accentLight:C.textMuted,
-                cursor:"pointer",transition:"all .2s",minHeight:"36px",
-              }}>all</button>
-              {SKILLS.map(s => {
-                const ac = C[s.accent]||C.accent;
-                const isA = activeFilter===s.category;
-                return (
-                  <button key={s.category} onClick={()=>setActiveFilter(s.category===activeFilter?null:s.category)} className="mono" style={{
-                    fontSize:".58rem",padding:".32rem .75rem",borderRadius:"4px",
-                    border:`1px solid ${isA?ac:C.border}`,
-                    background:isA?`${ac}18`:"transparent",color:isA?ac:C.textMuted,
-                    cursor:"pointer",transition:"all .2s",minHeight:"36px",
-                  }}>{s.category.toLowerCase()}</button>
-                );
-              })}
-            </div>
-
-            {/* Bar grids */}
-            <div className="skills-grid reveal" style={{
-              display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:"1.5rem",
-            }}>
-              {filtered.map((group, gi) => {
-                const ac = C[group.accent]||C.accent;
-                return (
-                  <div key={group.category} className={`reveal d${gi+1}`} style={{ background:C.bgCard,border:`1px solid ${C.border}`,borderRadius:"8px",padding:"1.1rem",overflow:"hidden" }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:".4rem",marginBottom:".9rem" }}>
-                      <div style={{ width:"6px",height:"6px",borderRadius:"1px",background:ac,flexShrink:0 }} />
-                      <p className="mono" style={{ fontSize:".6rem",color:ac,letterSpacing:".06em",fontWeight:500 }}>{group.category}</p>
-                    </div>
-                    <div style={{ display:"flex",flexDirection:"column",gap:"0" }}>
-                      {group.items.map((it, idx) => (
-                        <div key={it.name} className="skill-item" style={{
-                          fontSize:".75rem",fontWeight:300,color:C.textSec,
-                          padding:".5rem 0",borderBottom:`1px solid ${C.borderFaint}`,
-                          fontFamily:"'JetBrains Mono',monospace",
-                        }}>
-                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:".3rem" }}>
-                            <span>{it.name}</span>
-                            <span style={{ fontSize:".55rem",color:ac,opacity:.7 }}>{it.level}%</span>
-                          </div>
-                          <div style={{ height:"2px",background:C.bgCard2,borderRadius:"1px",overflow:"hidden" }}>
-                            <div className="skill-bar" style={{
-                              height:"100%",background:`linear-gradient(90deg,${ac}aa,${ac})`,
-                              borderRadius:"1px",width:`${it.level}%`,
-                            }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Certs */}
-        <div style={{ marginTop: isMobile?"2.5rem":"3.5rem" }}>
-          <p className="mono reveal" style={{ fontSize:".62rem",color:C.textMuted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:"1.1rem",opacity:.6 }}>
-            Certifications
-          </p>
-          <div className="certs-grid reveal" style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:".5rem" }}>
-            {CERTS.map((cert, i) => {
-              const ac = C[cert.accent]||C.accent;
-              return (
-                <div key={i} className="cert-card" style={{ "--cert-color":ac } as React.CSSProperties}>
-                  <div style={{ display:"flex",alignItems:"flex-start",gap:".75rem" }}>
-                    <div style={{ width:"3px",height:"28px",borderRadius:"2px",background:ac,flexShrink:0,marginTop:".1rem" }} />
-                    <div>
-                      <p style={{ fontSize:".8rem",color:C.textPri,fontWeight:400,marginBottom:".15rem" }}>{cert.name}</p>
-                      <p className="mono" style={{ fontSize:".55rem",color:C.textMuted,letterSpacing:".04em" }}>{cert.issuer}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// CONTACT SECTION
-// ─────────────────────────────────────────────────────────────────
-const Contact = memo(({ C }) => {
-  const { isMobile } = useTheme();
-  const [form, setForm]     = useState({ name:"",email:"",message:"" });
-  const [sent, setSent]     = useState(false);
-  const [sending, setSending] = useState(false);
-  const [error, setError]   = useState(null);
-  const [copied, setCopied] = useState(null);
-
-  const copy = useCallback((val, key) => {
-    navigator.clipboard.writeText(val).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 2000); });
-  }, []);
-
-  const handleSubmit = useCallback(() => {
-    if (!form.name||!form.email||!form.message) return;
-    setSending(true); setError(null);
-    emailjs.send("service_vmsghvn","template_hsc6m9u",
-      { from_name:form.name,from_email:form.email,message:form.message },
-      "sruNPf6oBWFdmDHtA"
-    ).then(()=>{ setSent(true); setSending(false); })
-     .catch(()=>{ setError("Failed to send. Please email directly."); setSending(false); });
-  }, [form]);
-
-  const handleChange = useCallback((key, val) => setForm(p=>({...p,[key]:val})), []);
-
-  const contactInfo = [
-    ["Email",    "alvaroprayogo38@gmail.com",     C.emerald, true ],
-    ["Location", "Cikarang Selatan, West Java, ID", null,    false],
-    ["Org",      "teamitmivhs · @SpacedCode",     C.accent,  false],
-    ["Response", "Within 24h",                    null,      false],
-  ];
-
-  return (
-    <section id="contact" className="contact-section" style={{ padding: isMobile?"3.5rem 1rem":"6rem 3rem",borderTop:`1px solid ${C.border}` }}>
-      <div style={{ maxWidth:"1200px",margin:"0 auto" }}>
-        <div className="contact-grid" style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:isMobile?"2rem":"5rem" }}>
-
-          {/* Left */}
-          <div className="reveal-left">
-            <p className="mono" style={{ fontSize:".62rem",color:C.accent,marginBottom:".45rem",letterSpacing:".12em",display:"flex",alignItems:"center",gap:".45rem" }}>
-              <span style={{ opacity:.4 }}>04 /</span>
-              <span>get in touch</span>
-            </p>
-            <h2 style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?"1.75rem":"clamp(1.8rem,3vw,2.7rem)",color:C.textPri,fontWeight:400,lineHeight:1.1,marginBottom:"1.25rem" }}>
-              Drop me<br />a <em>message</em>
-            </h2>
-            <p style={{ fontSize:".83rem",lineHeight:1.7,fontWeight:300,color:C.textSec,maxWidth:"310px",marginBottom:"2rem" }}>
-              Open to SysAdmin, Junior Penetration Tester, Infrastructure Engineer, and SOC Analyst roles — remote or hybrid. Also happy to collaborate on open source Go and security tooling.
-            </p>
-
-            {contactInfo.map(([label,value,accent,copyable]) => (
-              <div key={label} onClick={()=>copyable&&copy(value,label)} style={{
-                display:"flex",justifyContent:"space-between",alignItems:"center",
-                padding:".8rem 0",borderBottom:`1px solid ${C.border}`,gap:"1rem",
-                cursor:copyable?"pointer":"default",
-              }} title={copyable?"Click to copy":undefined}>
-                <span className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".07em",flexShrink:0 }}>{label}</span>
-                <span className="mono" style={{
-                  fontSize:".7rem",color:copied===label?C.emerald:(accent||C.textSec),fontWeight:400,
-                  textAlign:"right",wordBreak:"break-all",transition:"color .2s",
-                  display:"flex",alignItems:"center",gap:".35rem",
-                }}>
-                  {copied===label ? "copied!" : value}
-                  {copyable&&copied!==label&&<span style={{ fontSize:".48rem",opacity:.35 }}>⎘</span>}
-                </span>
-              </div>
-            ))}
-
-            <div style={{ display:"flex",gap:"1.25rem",marginTop:"1.75rem",flexWrap:"wrap" }}>
-              {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
-                <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
-                  fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem",color:C.textMuted,
-                  textDecoration:"none",transition:"color .2s",padding:".4rem 0",
-                  minHeight:"44px",display:"inline-flex",alignItems:"center",
-                }}>
-                  {label}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: form */}
-          <div className="reveal-right">
-            {sent ? (
-              <div style={{ height:"100%",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center",gap:"1.1rem",padding:isMobile?"2rem 0":0 }}>
-                <div style={{ width:"48px",height:"48px",borderRadius:"50%",background:`${C.emerald}18`,border:`1px solid ${C.emerald}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",color:C.emerald }}>✓</div>
-                <h3 style={{ fontFamily:"'DM Serif Display',serif",fontSize:"1.4rem",color:C.textPri }}>Transmission received</h3>
-                <p className="mono" style={{ fontSize:".68rem",color:C.textSec }}>I'll respond within 24 hours.</p>
-              </div>
-            ) : (
-              <div style={{ display:"flex",flexDirection:"column",gap:"1.1rem" }}>
-                {[{key:"name",label:"full_name",type:"text"},{key:"email",label:"email_address",type:"email"}].map(f => (
-                  <div key={f.key} style={{ display:"flex",flexDirection:"column",gap:".35rem" }}>
-                    <label className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".06em" }}>{f.label}</label>
-                    <input className="form-input" type={f.type} value={form[f.key]} onChange={e=>handleChange(f.key,e.target.value)} autoComplete={f.key==="email"?"email":"name"} />
-                  </div>
-                ))}
-                <div style={{ display:"flex",flexDirection:"column",gap:".35rem" }}>
-                  <label className="mono" style={{ fontSize:".58rem",color:C.textMuted,letterSpacing:".06em" }}>message</label>
-                  <textarea className="form-input" rows={isMobile?4:5} style={{ resize:"none" }} value={form.message} onChange={e=>handleChange("message",e.target.value)} />
-                </div>
-                <button className="btn-primary" onClick={handleSubmit} disabled={sending} style={{ alignSelf:"flex-start",opacity:sending?.6:1,cursor:sending?"not-allowed":"pointer" }}>
-                  {sending?"Sending...":"./send_message.sh →"}
-                </button>
-                {error && <p className="mono" style={{ fontSize:".62rem",color:C.rose,marginTop:".35rem" }}>{error}</p>}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// FOOTER
-// ─────────────────────────────────────────────────────────────────
-const Footer = memo(({ C }) => {
-  const { isMobile } = useTheme();
-  const [atTop, setAtTop] = useState(true);
-  useEffect(() => {
-    const fn = () => setAtTop(window.scrollY < 80);
-    window.addEventListener("scroll", fn, { passive:true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  return (
-    <footer className="footer-inner" style={{
-      padding: isMobile?"1rem":"1.25rem 3rem",
-      borderTop:`1px solid ${C.border}`,
-      display:"flex",justifyContent:"space-between",
-      flexWrap:"wrap",gap:".75rem",
-      flexDirection:isMobile?"column":"row",
-      alignItems:isMobile?"flex-start":"center",
-    }}>
-      <span className="mono" style={{ fontSize:".7rem",color:C.textMuted }}>
-        <span style={{ color:C.accent }}>[</span>
-        paro@thegreat
-        <span style={{ color:C.rose }}>:~</span>
-        <span style={{ color:C.accent }}>]</span>
-        <span style={{ color:C.textMuted }}>$</span>
-      </span>
-
-      <div style={{ display:"flex",gap:"1.25rem" }}>
-        {Object.entries(SOCIAL_LINKS).map(([label,url]) => (
-          <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{
-            fontFamily:"'JetBrains Mono',monospace",fontSize:".6rem",color:C.textMuted,
-            textDecoration:"none",padding:".35rem 0",minHeight:"44px",display:"inline-flex",alignItems:"center",
-          }}>{label}</a>
-        ))}
-      </div>
-
-      <div style={{ display:"flex",alignItems:"center",gap:"1.25rem" }}>
-        <span className="mono" style={{ fontSize:".6rem",color:C.textMuted }}>©{new Date().getFullYear()} Alvaro Prayogo</span>
-        <button onClick={()=>window.scrollTo({top:0,behavior:"smooth"})} className="mono" style={{
-          fontSize:".58rem",color:atTop?C.textMuted:C.accent,
-          background:"transparent",border:`1px solid ${atTop?C.border:C.accent+"44"}`,
-          borderRadius:"4px",padding:".25rem .65rem",cursor:"pointer",transition:"all .22s",letterSpacing:".06em",
-          opacity:atTop?.35:1,minHeight:"36px",
-        }}>↑ top</button>
-      </div>
-    </footer>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────
-// DECORATIVE OVERLAYS
-// ─────────────────────────────────────────────────────────────────
-const Overlays = memo(({ C }) => (
-  <>
-    {/* Subtle top-left corner accent */}
-    <div style={{
-      position:"fixed",top:0,left:0,width:"320px",height:"320px",
-      background:`radial-gradient(ellipse at top left,${C.accent}0a 0%,transparent 70%)`,
-      pointerEvents:"none",zIndex:0,
-    }} />
-    {/* Bottom-right */}
-    <div style={{
-      position:"fixed",bottom:0,right:0,width:"280px",height:"280px",
-      background:`radial-gradient(ellipse at bottom right,${C.emerald}08 0%,transparent 70%)`,
-      pointerEvents:"none",zIndex:0,
-    }} />
-  </>
-));
-
-// ─────────────────────────────────────────────────────────────────
-// SCROLL HOOKS
-// ─────────────────────────────────────────────────────────────────
-function useScrollReveal() {
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("vis"); obs.unobserve(e.target); } });
-    }, { threshold:.08, rootMargin:"0px 0px -40px 0px" });
-    document.querySelectorAll(".reveal,.reveal-left,.reveal-right,.reveal-scale").forEach(el => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-}
-
-function useScrollSpy() {
-  const [active, setActive] = useState("Home");
-  useEffect(() => {
-    const sections = [{id:"home",label:"Home"},{id:"work",label:"Work"},{id:"skills",label:"Skills"},{id:"contact",label:"Contact"}];
-    let rafId;
-    const fn = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const y = window.scrollY + 100;
-        for (let i=sections.length-1; i>=0; i--) {
-          const el = document.getElementById(sections[i].id);
-          if (el&&el.offsetTop<=y) { setActive(sections[i].label); break; }
-        }
-      });
-    };
-    window.addEventListener("scroll",fn,{passive:true});
-    return ()=>{ window.removeEventListener("scroll",fn); cancelAnimationFrame(rafId); };
-  }, []);
   return active;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// ROOT APP
-// ─────────────────────────────────────────────────────────────────
-export default function Portfolio() {
-  const [isDark, setIsDark]           = useState(true);
-  const [booted, setBooted]           = useState(false);
-  const [startAlvaro, setStartAlvaro] = useState(false);
-  const [startPrayogo, setStartPrayogo] = useState(false);
-  const seqStarted                    = useRef(false);
-  const { isMobile, isTouch }         = useMobileDetect();
-  const C                             = useMemo(() => makeTokens(isDark), [isDark]);
-  const toggle                        = useCallback(() => setIsDark(d=>!d), []);
-  const active                        = useScrollSpy();
-  useScrollReveal();
+function scrollToSection(id) {
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
+function useRevealOnScroll() {
   useEffect(() => {
-    if (booted && !seqStarted.current) {
-      seqStarted.current = true;
-      setStartAlvaro(true);
-      const t = setTimeout(() => setStartPrayogo(true), 900);
-      return () => clearTimeout(t);
-    }
-  }, [booted]);
+    const elements = document.querySelectorAll("[data-reveal]");
 
-  const themeVal = useMemo(() => ({ isDark, toggle, isMobile }), [isDark, toggle, isMobile]);
+    if (!elements.length) return undefined;
+
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("is-visible"));
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -72px 0px", threshold: 0.12 },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+}
+
+function GlobalStyles() {
+  return (
+    <style>{`
+      :root {
+        --bg: #F7F3EA;
+        --bg-soft: #EFE8DA;
+        --surface: rgba(255,255,255,.78);
+        --surface-solid: #FFFFFF;
+        --ink: #111827;
+        --ink-soft: #334155;
+        --muted: #64748B;
+        --line: rgba(15, 23, 42, .12);
+        --line-strong: rgba(15, 23, 42, .2);
+        --navy: #0F172A;
+        --navy-2: #1E293B;
+        --accent: #2563EB;
+        --accent-soft: rgba(37, 99, 235, .1);
+        --teal: #0F766E;
+        --amber: #D97706;
+        --rose: #E11D48;
+        --radius: 28px;
+        --shadow: 0 24px 80px rgba(15, 23, 42, .12);
+        --container: 1160px;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Geist Variable', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: geometricPrecision;
+      }
+      body::selection { background: var(--accent-soft); color: var(--accent); }
+      a { color: inherit; }
+      button, input, textarea { font: inherit; }
+      button { cursor: pointer; }
+      button:disabled { cursor: not-allowed; }
+
+      .opening-screen { position: fixed; inset: 0; z-index: 999; display: grid; place-items: center; pointer-events: none; background:
+          radial-gradient(circle at 16% 12%, rgba(37,99,235,.18), transparent 28rem),
+          radial-gradient(circle at 82% 18%, rgba(15,118,110,.16), transparent 28rem),
+          linear-gradient(180deg, #F9F6EF 0%, #F7F3EA 100%); animation: openingExit .65s ease 1.85s forwards; }
+      .opening-card { width: min(520px, calc(100% - 40px)); padding: 1.2rem; border: 1px solid rgba(255,255,255,.78); border-radius: 32px; background: rgba(255,255,255,.72); box-shadow: var(--shadow); backdrop-filter: blur(22px); animation: openingCardIn .72s cubic-bezier(.16,1,.3,1) both; }
+      .opening-mark { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 20px; background: linear-gradient(135deg, var(--navy), var(--accent)); color: #fff; font-weight: 950; font-size: 1.2rem; box-shadow: 0 20px 50px rgba(37,99,235,.24); }
+      .opening-card h2 { margin: 1rem 0 .45rem; color: var(--ink); font-size: clamp(1.65rem, 5vw, 2.45rem); line-height: .98; letter-spacing: -.06em; }
+      .opening-card p { margin: 0; color: var(--muted); line-height: 1.65; }
+      .opening-progress { position: relative; overflow: hidden; height: 8px; margin-top: 1.2rem; border-radius: 999px; background: rgba(15,23,42,.08); }
+      .opening-progress::before { content: ''; position: absolute; inset: 0; width: 42%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--teal)); animation: openingProgress 1.55s ease-in-out .18s forwards; }
+      @keyframes openingCardIn { from { opacity: 0; transform: translateY(18px) scale(.97); filter: blur(8px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+      @keyframes openingProgress { to { width: 100%; } }
+      @keyframes openingExit { to { opacity: 0; visibility: hidden; transform: scale(1.02); } }
+      @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes softScaleIn { from { opacity: 0; transform: translateY(22px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+      .portfolio-app {
+        position: relative;
+        min-height: 100dvh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .13), transparent 30rem),
+          radial-gradient(circle at 90% 12%, rgba(15, 118, 110, .13), transparent 34rem),
+          linear-gradient(180deg, #F9F6EF 0%, #F6F1E7 44%, #F8FAFC 100%);
+      }
+      .container { width: min(var(--container), calc(100% - 40px)); margin: 0 auto; }
+      .section { padding: clamp(4.5rem, 8vw, 7.5rem) 0; scroll-margin-top: 92px; }
+      .section-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 360px); gap: 2rem; align-items: end; margin-bottom: 2rem; animation: riseIn .7s ease both; }
+      .eyebrow { display: inline-flex; align-items: center; gap: .65rem; margin: 0 0 .85rem; color: var(--accent); font-size: .76rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+      .eyebrow::before { content: ''; width: 34px; height: 1px; background: currentColor; opacity: .45; }
+      .section-title { margin: 0; font-size: clamp(2rem, 4.7vw, 4rem); line-height: .98; letter-spacing: -.055em; color: var(--ink); }
+      .section-copy { margin: 0; color: var(--muted); line-height: 1.75; font-size: 1rem; }
+      [data-reveal] { opacity: 0; transform: translateY(20px); transition: opacity .65s ease, transform .65s cubic-bezier(.16,1,.3,1); transition-delay: var(--reveal-delay, 0s); }
+      [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+      .role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 1.45rem; max-width: 760px; }
+      .role-card { position: relative; overflow: hidden; min-height: 132px; padding: 1rem; border: 1px solid var(--line); border-radius: 24px; background: rgba(255,255,255,.58); box-shadow: 0 16px 46px rgba(15, 23, 42, .06); transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease, background .28s ease; }
+      .role-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--role-accent, var(--accent)); }
+      .role-card::after { content: ''; position: absolute; inset: -45% -35% auto auto; width: 150px; height: 150px; border-radius: 999px; background: color-mix(in srgb, var(--role-accent, var(--accent)) 22%, transparent); opacity: 0; transform: translate(18px, -18px); transition: opacity .28s ease, transform .28s ease; pointer-events: none; }
+      .role-card span { display: block; color: var(--muted); font-size: .72rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+      .role-card strong { display: block; margin-top: .55rem; color: var(--ink); font-size: 1.02rem; letter-spacing: -.035em; }
+      .role-card p { margin: .45rem 0 0; color: var(--ink-soft); font-size: .88rem; line-height: 1.55; }
+
+      .site-nav { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--line); backdrop-filter: blur(22px); background: rgba(247, 243, 234, .78); animation: riseIn .65s ease .1s both; }
+      .nav-inner { height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+      .brand { display: inline-flex; align-items: center; gap: .75rem; border: 0; background: transparent; padding: 0; color: inherit; text-decoration: none; font-weight: 800; letter-spacing: -.03em; }
+      .brand-mark { width: 38px; height: 38px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--navy), var(--accent)); box-shadow: 0 16px 35px rgba(37, 99, 235, .25); }
+      .brand span:last-child { display: grid; line-height: 1.05; }
+      .brand small { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .02em; }
+      .nav-links { display: flex; align-items: center; gap: .35rem; padding: .32rem; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.55); }
+      .nav-link { display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 999px; padding: .62rem .95rem; color: var(--muted); font-size: .86rem; font-weight: 700; transition: .2s ease; }
+      .nav-link:hover, .nav-link.active { color: var(--ink); background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, .08); }
+      .nav-cta { display: inline-flex; align-items: center; gap: .5rem; padding: .78rem 1rem; border-radius: 999px; border: 1px solid var(--navy); background: var(--navy); color: #fff; text-decoration: none; font-weight: 800; font-size: .9rem; }
+      .menu-toggle { display: none; border: 1px solid var(--line); background: #fff; border-radius: 14px; width: 44px; height: 44px; color: var(--ink); }
+      .mobile-menu { display: none; }
+
+      .hero { padding: clamp(4.75rem, 9vw, 7.5rem) 0 clamp(3.5rem, 7vw, 5.5rem); }
+      .hero-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(340px, .9fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+      .hero-grid > * { min-width: 0; }
+      .availability { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .65rem; padding: .48rem .82rem; border: 1px solid rgba(15,118,110,.18); border-radius: 999px; background: rgba(15,118,110,.08); color: var(--teal); font-size: .82rem; font-weight: 800; animation: riseIn .65s ease .18s both; }
+      .availability::before { content: ''; width: .55rem; height: .55rem; border-radius: 999px; background: var(--teal); box-shadow: 0 0 0 6px rgba(15,118,110,.12); }
+      .hero-title { max-width: 780px; margin: 1.25rem 0 1.25rem; font-size: clamp(3.1rem, 8vw, 7.25rem); line-height: .88; letter-spacing: -.082em; color: var(--ink); animation: riseIn .72s ease .28s both; }
+      .hero-title .accent { color: var(--accent); }
+      .hero-lede { max-width: 700px; margin: 0; color: var(--ink-soft); font-size: clamp(1.05rem, 2.2vw, 1.32rem); line-height: 1.72; animation: riseIn .72s ease .38s both; }
+      .hero-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; animation: riseIn .72s ease .5s both; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-height: 48px; padding: .86rem 1.15rem; border-radius: 16px; text-decoration: none; border: 1px solid var(--line); font-weight: 850; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+      .btn:not(:disabled):hover { transform: translateY(-2px); }
+      .btn:disabled { opacity: .68; box-shadow: none; }
+      .btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 18px 35px rgba(15, 23, 42, .22); }
+      .btn-primary:hover { box-shadow: 0 24px 50px rgba(15, 23, 42, .28); }
+      .btn-secondary { background: rgba(255,255,255,.7); color: var(--ink); }
+      .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-top: 2rem; max-width: 620px; }
+      .stat-card { padding: 1rem; border: 1px solid var(--line); border-radius: 22px; background: rgba(255,255,255,.62); transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease; }
+      .stat-card strong { display: block; font-size: 1.6rem; letter-spacing: -.06em; color: var(--ink); }
+      .stat-card span { display: block; margin-top: .25rem; color: var(--muted); font-size: .82rem; font-weight: 700; }
+
+      .profile-panel { position: relative; display: grid; gap: 1rem; border-radius: 34px; padding: 1rem; background: linear-gradient(145deg, rgba(255,255,255,.85), rgba(255,255,255,.42)); border: 1px solid rgba(255,255,255,.76); box-shadow: var(--shadow); animation: softScaleIn .82s cubic-bezier(.16,1,.3,1) .35s both; }
+      .profile-card { overflow: hidden; border-radius: 28px; background: var(--navy); color: #fff; }
+      .profile-top { padding: 1.05rem; min-height: 360px; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; background:
+          radial-gradient(circle at 0% 0%, rgba(37,99,235,.55), transparent 17rem),
+          radial-gradient(circle at 100% 25%, rgba(15,118,110,.45), transparent 15rem),
+          linear-gradient(160deg, #0F172A, #111827 70%); }
+      .profile-photo-wrap { position: relative; min-height: 218px; overflow: hidden; border-radius: 24px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); }
+      .profile-photo { width: 100%; height: 100%; min-height: 218px; object-fit: cover; object-position: center; filter: saturate(1.02) contrast(1.02); }
+      .profile-badge-row { position: absolute; left: .8rem; right: .8rem; bottom: .8rem; display: flex; flex-wrap: wrap; gap: .42rem; }
+      .profile-badge { padding: .34rem .55rem; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(15,23,42,.5); backdrop-filter: blur(12px); color: rgba(255,255,255,.86); font-size: .68rem; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+      .profile-role { margin: 0; color: rgba(255,255,255,.64); font-size: .82rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+      .profile-card h2 { margin: .45rem 0 0; font-size: 2.35rem; line-height: .96; letter-spacing: -.06em; }
+      .profile-bottom { display: grid; gap: .85rem; padding: 1.35rem; background: rgba(255,255,255,.04); border-top: 1px solid rgba(255,255,255,.1); }
+      .focus-item { display: flex; justify-content: space-between; gap: 1rem; color: rgba(255,255,255,.72); font-size: .92rem; }
+      .focus-item strong { color: #fff; text-align: right; }
+
+      .terminal-shell { overflow: hidden; border: 1px solid rgba(148,163,184,.2); border-radius: 24px; background: linear-gradient(180deg, #0B1120, #0F172A); box-shadow: 0 28px 70px rgba(15,23,42,.24); color: #D1D5DB; }
+      .terminal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .78rem .95rem; border-bottom: 1px solid rgba(148,163,184,.16); background: rgba(255,255,255,.04); }
+      .terminal-controls { display: inline-flex; gap: .42rem; }
+      .terminal-dot { width: .7rem; height: .7rem; border-radius: 999px; background: #EF4444; }
+      .terminal-dot:nth-child(2) { background: #F59E0B; }
+      .terminal-dot:nth-child(3) { background: #22C55E; }
+      .terminal-titlebar { color: rgba(226,232,240,.7); font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+      .terminal-body { min-height: 260px; padding: 1rem; font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, ui-monospace, monospace; font-size: .78rem; line-height: 1.7; }
+      .terminal-group + .terminal-group { margin-top: .74rem; }
+      .terminal-line { display: flex; min-width: 0; align-items: baseline; gap: .45rem; white-space: nowrap; overflow: hidden; }
+      .terminal-prompt { flex: 0 0 auto; color: #7DD3FC; font-weight: 800; }
+      .terminal-command { display: inline-block; overflow: hidden; width: 0; max-width: 100%; border-right: 2px solid rgba(125,211,252,.9); color: #F8FAFC; vertical-align: bottom; animation: terminalTyping .95s steps(var(--characters), end) forwards, terminalCaret .85s step-end infinite; animation-delay: var(--delay), var(--delay); }
+      .terminal-output { margin-left: 1.2rem; color: rgba(203,213,225,.78); opacity: 0; transform: translateY(4px); animation: terminalReveal .35s ease forwards; animation-delay: var(--output-delay); }
+      .terminal-output::before { content: '↳'; margin-right: .5rem; color: #34D399; }
+      @keyframes terminalTyping { from { width: 0; } to { width: var(--command-width); } }
+      @keyframes terminalReveal { to { opacity: 1; transform: translateY(0); } }
+      @keyframes terminalCaret { 50% { border-color: transparent; } }
+
+      .about-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 1rem; }
+      .about-card, .info-card, .project-card, .skill-card, .cert-card, .experience-card, .contact-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 18px 60px rgba(15, 23, 42, .06); }
+      .about-card, .info-card, .project-card, .skill-card, .cert-card, .experience-card { position: relative; overflow: hidden; transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease, background .28s ease; }
+      .about-card { padding: clamp(1.4rem, 3vw, 2rem); }
+      .about-card h3 { margin: 0 0 1rem; font-size: clamp(1.4rem, 3vw, 2.05rem); line-height: 1.08; letter-spacing: -.045em; }
+      .about-card p { margin: 0 0 1rem; color: var(--ink-soft); line-height: 1.78; }
+      .org-highlight { margin-top: 1.25rem; padding: 1rem; border: 1px solid rgba(37,99,235,.18); border-radius: 22px; background: rgba(37,99,235,.07); }
+      .org-highlight span { display: block; color: var(--accent); font-size: .76rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+      .org-highlight strong { display: block; margin-top: .55rem; color: var(--ink); font-size: 1.03rem; line-height: 1.45; }
+      .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      .info-card { padding: 1.25rem; }
+      .info-card span { color: var(--muted); font-weight: 800; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+      .info-card strong { display: block; margin-top: .65rem; color: var(--ink); font-size: 1.08rem; line-height: 1.35; }
+
+      .experience-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); gap: 1rem; align-items: start; }
+      .experience-card { padding: clamp(1.25rem, 2.4vw, 1.65rem); }
+      .experience-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--experience-accent, var(--accent)); }
+      .experience-top { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+      .experience-meta { display: grid; gap: .25rem; color: var(--muted); font-size: .78rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+      .experience-period { flex: 0 0 auto; padding: .42rem .65rem; border-radius: 999px; background: rgba(15,23,42,.06); color: var(--ink-soft); font-size: .76rem; font-weight: 900; }
+      .experience-card h3 { margin: 0 0 .45rem; color: var(--ink); font-size: clamp(1.35rem, 2.8vw, 2rem); line-height: 1.06; letter-spacing: -.05em; }
+      .experience-role { margin: 0 0 1rem; color: var(--ink-soft); font-weight: 850; line-height: 1.55; }
+      .experience-summary { margin: 0 0 1.1rem; color: var(--muted); line-height: 1.72; }
+      .experience-list { display: grid; gap: .7rem; padding: 0; margin: 0; list-style: none; }
+      .experience-list li { display: flex; gap: .65rem; color: var(--ink-soft); line-height: 1.58; font-size: .94rem; }
+      .experience-list li::before { content: '•'; color: var(--experience-accent, var(--accent)); font-weight: 950; }
+      .achievement-block { margin-top: 1.15rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+      .achievement-block h4 { margin: 0 0 .75rem; color: var(--ink); font-size: .88rem; letter-spacing: .08em; text-transform: uppercase; }
+      .experience-tags { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.15rem; }
+      .experience-tags span { padding: .38rem .58rem; border-radius: 999px; background: color-mix(in srgb, var(--experience-accent, var(--accent)) 10%, white); color: var(--ink-soft); font-size: .76rem; font-weight: 850; }
+
+      .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      .project-card { position: relative; display: flex; flex-direction: column; min-height: 100%; padding: clamp(1.2rem, 2.5vw, 1.6rem); overflow: hidden; }
+      .project-card.featured { grid-column: span 1; min-height: 440px; background: linear-gradient(160deg, #0F172A, #172033); color: #fff; border-color: rgba(255,255,255,.12); }
+      .project-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--card-accent, var(--accent)); opacity: .88; }
+      .project-meta { display: flex; justify-content: space-between; gap: 1rem; align-items: center; color: var(--muted); font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      .featured .project-meta { color: rgba(255,255,255,.6); }
+      .project-card h3 { margin: 1.2rem 0 .7rem; font-size: clamp(1.35rem, 3vw, 2.15rem); line-height: 1.05; letter-spacing: -.05em; }
+      .project-card p { margin: 0; color: var(--ink-soft); line-height: 1.72; }
+      .featured p { color: rgba(255,255,255,.72); }
+      .tag-row { display: flex; flex-wrap: wrap; gap: .45rem; margin: 1.15rem 0; }
+      .tag { padding: .42rem .62rem; border-radius: 999px; background: rgba(15,23,42,.05); color: var(--ink-soft); font-size: .78rem; font-weight: 800; }
+      .featured .tag { background: rgba(255,255,255,.09); color: rgba(255,255,255,.78); }
+      .impact-list { display: grid; gap: .65rem; padding: 0; margin: 0 0 1.4rem; list-style: none; }
+      .impact-list li { display: flex; gap: .65rem; color: var(--ink-soft); line-height: 1.55; font-size: .92rem; }
+      .featured .impact-list li { color: rgba(255,255,255,.72); }
+      .impact-list li::before { content: '→'; color: var(--card-accent, var(--accent)); font-weight: 900; }
+      .project-link { margin-top: auto; display: inline-flex; align-items: center; width: fit-content; gap: .4rem; color: var(--card-accent, var(--accent)); font-weight: 900; text-decoration: none; transition: transform .22s ease; }
+
+      .skills-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+      .skill-card { padding: 1.25rem; }
+      .skill-card h3 { margin: 0 0 1rem; font-size: 1rem; letter-spacing: -.02em; }
+      .skill-list { display: grid; gap: .85rem; }
+      .skill-head { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .36rem; color: var(--ink-soft); font-size: .82rem; font-weight: 800; }
+      .skill-bar { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(15,23,42,.08); }
+      .skill-bar span { display: block; height: 100%; border-radius: inherit; background: var(--skill-accent, var(--accent)); }
+      .cert-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
+      .cert-card { padding: 1rem; min-height: 118px; display: flex; flex-direction: column; justify-content: space-between; }
+      .cert-card::before { content: ''; width: 32px; height: 4px; border-radius: 99px; background: var(--cert-accent, var(--accent)); }
+      .cert-card strong { display: block; margin-top: 1rem; font-size: .95rem; line-height: 1.3; }
+      .cert-card span { color: var(--muted); font-size: .78rem; font-weight: 700; }
+
+      @media (hover: hover) and (pointer: fine) {
+        .role-card:hover, .stat-card:hover, .about-card:hover, .info-card:hover, .project-card:hover, .skill-card:hover, .cert-card:hover, .experience-card:hover { transform: translateY(-6px); border-color: rgba(37,99,235,.22); box-shadow: 0 28px 75px rgba(15, 23, 42, .12); }
+        .role-card:hover::after { opacity: 1; transform: translate(0, 0); }
+        .project-card:hover .project-link { transform: translateX(4px); }
+      }
+
+      .contact-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 1rem; align-items: start; }
+      .contact-panel { padding: clamp(1.25rem, 3vw, 1.8rem); }
+      .contact-list { display: grid; gap: .75rem; margin-top: 1.4rem; }
+      .contact-row { display: flex; justify-content: space-between; gap: 1rem; padding: .95rem 0; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+      .contact-row span:first-child { color: var(--muted); font-weight: 800; }
+      .contact-row a { font-weight: 850; text-decoration: none; color: var(--ink); word-break: break-word; text-align: right; }
+      .contact-form { display: grid; gap: .95rem; }
+      .field { display: grid; gap: .45rem; }
+      .field label { color: var(--muted); font-size: .78rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+      .field input, .field textarea { width: 100%; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.82); color: var(--ink); outline: none; padding: .96rem 1rem; resize: vertical; transition: border-color .2s ease, box-shadow .2s ease; }
+      .field input:focus, .field textarea:focus { border-color: rgba(37,99,235,.45); box-shadow: 0 0 0 4px rgba(37,99,235,.1); }
+      .form-note { min-height: 1.2rem; color: var(--rose); font-size: .88rem; font-weight: 750; }
+      .success-box { border: 1px solid rgba(15,118,110,.18); border-radius: 20px; padding: 1rem; background: rgba(15,118,110,.08); color: var(--teal); font-weight: 850; }
+      /* ── Terminal Band ── */
+      .terminal-band {
+        background: linear-gradient(180deg, #080E1C 0%, #0B1425 50%, #0A1020 100%);
+        padding: clamp(3.5rem, 6vw, 5.5rem) 0;
+        border-top: 1px solid rgba(255,255,255,.05);
+        border-bottom: 1px solid rgba(255,255,255,.05);
+        position: relative; overflow: hidden;
+      }
+      .terminal-band::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 20% 50%, rgba(37,99,235,.12), transparent 55%), radial-gradient(ellipse at 80% 50%, rgba(15,118,110,.10), transparent 55%);
+        pointer-events: none;
+      }
+      .terminal-band-inner { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+      .terminal-band-meta { padding-top: .5rem; }
+      .terminal-band-label { display: inline-block; font-family: 'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size: .72rem; font-weight: 700; color: #34D399; letter-spacing: .1em; margin-bottom: 1rem; }
+      .terminal-band-desc { margin: 0 0 1.5rem; color: rgba(203,213,225,.6); font-size: .88rem; line-height: 1.72; }
+      .terminal-band-tags { display: flex; flex-wrap: wrap; gap: .42rem; }
+      .terminal-band-tags span { padding: .28rem .62rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: rgba(203,213,225,.75); font-size: .72rem; font-weight: 700; font-family: 'JetBrains Mono',monospace; letter-spacing: .04em; }
+
+      /* ── Profile Socials ── */
+      .profile-socials { display: grid; gap: .3rem; padding: .75rem; background: rgba(255,255,255,.06); border-radius: 20px; border: 1px solid rgba(255,255,255,.1); }
+      .profile-social-link { display: flex; justify-content: space-between; align-items: center; padding: .55rem .8rem; border-radius: 12px; text-decoration: none; color: rgba(255,255,255,.7); font-size: .82rem; font-weight: 700; transition: background .18s ease, color .18s ease; }
+      .profile-social-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+      .profile-social-arrow { color: rgba(255,255,255,.3); font-size: .76rem; transition: transform .18s ease, color .18s ease; }
+      .profile-social-link:hover .profile-social-arrow { transform: translate(2px,-2px); color: rgba(255,255,255,.65); }
+
+      .footer { padding: 2rem 0; color: var(--muted); border-top: 1px solid var(--line); }
+      .footer-inner { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+      .footer a { text-decoration: none; font-weight: 850; color: var(--ink); }
+
+      @media (max-width: 1020px) {
+        .hero-grid, .about-grid, .experience-grid, .contact-grid { grid-template-columns: 1fr; }
+        .profile-panel { width: 100%; max-width: 640px; margin: 0 auto; }
+        .skills-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .cert-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 960px) {
+        .container { width: min(100% - 28px, var(--container)); }
+        .nav-links, .nav-cta { display: none; }
+        .menu-toggle { display: inline-grid; place-items: center; }
+        .mobile-menu { display: grid; gap: .45rem; padding: 0 0 1rem; }
+        .mobile-menu .nav-link { width: 100%; justify-content: flex-start; border: 1px solid var(--line); background: rgba(255,255,255,.68); }
+        .section-header { grid-template-columns: 1fr; }
+        .project-grid { grid-template-columns: 1fr; }
+        .project-card.featured { min-height: auto; }
+        .hero-stats { grid-template-columns: 1fr; }
+        .role-grid { grid-template-columns: 1fr; }
+        .info-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 560px) {
+        .container { width: min(100% - 24px, var(--container)); }
+        .section { padding: 3.5rem 0; }
+        .section-header { gap: 1rem; margin-bottom: 1.35rem; }
+        .section-title { font-size: clamp(2rem, 13vw, 3rem); letter-spacing: -.06em; }
+        .hero { padding-top: 3.45rem; }
+        .availability { border-radius: 18px; font-size: .75rem; line-height: 1.45; }
+        .hero-title { font-size: clamp(2.75rem, 16vw, 4.45rem); letter-spacing: -.075em; }
+        .hero-lede { font-size: 1rem; line-height: 1.68; }
+        .role-card { min-height: auto; border-radius: 20px; }
+        .hero-actions { flex-direction: column; }
+        .btn { width: 100%; }
+        .profile-panel { padding: .72rem; border-radius: 28px; }
+        .profile-card { border-radius: 22px; }
+        .profile-top { min-height: auto; padding: .85rem; }
+        .profile-photo-wrap { min-height: 220px; border-radius: 18px; }
+        .profile-card h2 { font-size: 2rem; }
+        .skills-grid, .cert-grid { grid-template-columns: 1fr; }
+        .experience-top, .project-meta, .contact-row { flex-direction: column; align-items: flex-start; }
+        .experience-period { width: fit-content; }
+        .experience-card, .about-card, .info-card, .project-card, .skill-card, .cert-card, .contact-panel { border-radius: 22px; }
+        .experience-list li, .impact-list li { font-size: .9rem; }
+        .contact-row a { text-align: left; }
+        .terminal-body { min-height: auto; font-size: .7rem; padding: .85rem; }
+        .terminal-line { display: block; white-space: normal; }
+        .terminal-command { margin-left: .35rem; }
+        .terminal-output { margin-left: 0; }
+        .focus-item { flex-direction: column; }
+        .focus-item strong { text-align: left; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .opening-screen { display: none; }
+        [data-reveal] { opacity: 1; transform: none; transition: none; }
+        .site-nav, .section-header, .availability, .hero-title, .hero-lede, .hero-actions, .role-card, .stat-card, .profile-panel, .about-card, .info-card, .experience-card { animation: none; }
+        .role-card, .stat-card, .about-card, .info-card, .project-card, .skill-card, .cert-card, .experience-card, .btn { transition: none; }
+        .terminal-command { width: auto; border-right: 0; animation: none; }
+        .terminal-output { opacity: 1; transform: none; animation: none; }
+      }
+    `}</style>
+  );
+}
+
+function OpeningSequence() {
+  return (
+    <div className="opening-screen" aria-hidden="true">
+      <div className="opening-card">
+        <div className="opening-mark">AP</div>
+        <h2>Initializing secure portfolio.</h2>
+        <p>
+          Loading SysAdmin, DevOps, Network Security, and Industrial Electronics
+          experience.
+        </p>
+        <div className="opening-progress" />
+      </div>
+    </div>
+  );
+}
+
+function Navbar({ active }) {
+  const [open, setOpen] = useState(false);
+
+  const handleNav = (id) => {
+    setOpen(false);
+    scrollToSection(id);
+  };
 
   return (
-    <ThemeCtx.Provider value={themeVal}>
-      <GlobalStyles C={C} isMobile={isMobile} />
-      {!booted && <BootScreen onDone={() => setBooted(true)} />}
-      <ThemeFlash isDark={isDark} />
-      <Navbar active={active} C={C} />
-      <div style={{ opacity:booted?1:0, transition:booted?"opacity .7s cubic-bezier(.16,1,.3,1) .1s":"none" }}>
-        <Overlays C={C} />
-        <Hero C={C} booted={booted} startAlvaro={startAlvaro} startPrayogo={startPrayogo} />
-        <Work C={C} />
-        <Skills C={C} />
-        <Contact C={C} />
-        <Footer C={C} />
+    <header className="site-nav">
+      <div className="container nav-inner">
+        <button
+          className="brand"
+          onClick={() => handleNav("home")}
+          aria-label="Go to home"
+        >
+          <span className="brand-mark">P</span>
+          <span>
+            parothegreat
+            <small>systems · security · infra</small>
+          </span>
+        </button>
+
+        <nav className="nav-links" aria-label="Primary navigation">
+          {NAV_ITEMS.map(([label, id]) => (
+            <button
+              key={id}
+              className={`nav-link ${active === id ? "active" : ""}`}
+              onClick={() => handleNav(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <a className="nav-cta" href="mailto:alvaroprayogo38@gmail.com">
+          Let&apos;s talk
+        </a>
+
+        <button
+          className="menu-toggle"
+          onClick={() => setOpen((value) => !value)}
+          aria-label="Menu"
+        >
+          {open ? "×" : "☰"}
+        </button>
       </div>
-    </ThemeCtx.Provider>
+
+      {open && (
+        <div className="container mobile-menu">
+          {NAV_ITEMS.map(([label, id]) => (
+            <button key={id} className="nav-link" onClick={() => handleNav(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </header>
+  );
+}
+
+function AceternityTerminal({
+  username = "alvaro",
+  commands = TERMINAL_SESSIONS,
+}) {
+  return (
+    <div className="terminal-shell" aria-label="Terminal preview">
+      <div className="terminal-header">
+        <span className="terminal-controls" aria-hidden="true">
+          <span className="terminal-dot" />
+          <span className="terminal-dot" />
+          <span className="terminal-dot" />
+        </span>
+        <span className="terminal-titlebar">{username}@portfolio — bash</span>
+      </div>
+
+      <div className="terminal-body">
+        {commands.map((item, index) => {
+          const commandDelay = index * 2.2;
+          const outputDelay = commandDelay + 1.05;
+
+          return (
+            <div className="terminal-group" key={item.command}>
+              <div className="terminal-line">
+                <span className="terminal-prompt">{username}@portfolio:~$</span>
+                <span
+                  className="terminal-command"
+                  style={{
+                    "--characters": item.command.length,
+                    "--command-width": `${item.command.length}ch`,
+                    "--delay": `${commandDelay}s`,
+                  }}
+                >
+                  {item.command}
+                </span>
+              </div>
+
+              {item.outputs.map((output, outputIndex) => (
+                <div
+                  className="terminal-output"
+                  key={output}
+                  style={{
+                    "--output-delay": `${outputDelay + outputIndex * 0.22}s`,
+                  }}
+                >
+                  {output}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TerminalBand() {
+  return (
+    <div className="terminal-band" data-reveal>
+      <div className="container">
+        <div className="terminal-band-inner">
+          <div className="terminal-band-meta">
+            <span className="terminal-band-label">// live session</span>
+            <p className="terminal-band-desc">
+              A snapshot of the stack I work with — operations, recon, and
+              infrastructure.
+            </p>
+            <div className="terminal-band-tags">
+              {["Linux", "Go", "Docker", "Nmap", "Git"].map((t) => (
+                <span key={t}>{t}</span>
+              ))}
+            </div>
+          </div>
+          <AceternityTerminal />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Hero() {
+  return (
+    <section id="home" className="hero section">
+      <div className="container hero-grid">
+        <div>
+          <div className="availability">
+            SysAdmin · DevOps · PenTest · Industrial Electronics
+          </div>
+          <h1 className="hero-title">
+            Operating secure systems from{" "}
+            <span className="accent">hardware</span> to cloud.
+          </h1>
+          <p className="hero-lede">
+            Hi, I&apos;m Moehammad Alvaro Pirata Prayogo — an Industrial
+            Electronics Engineering student, Linux-focused SysAdmin, DevOps
+            learner, and penetration testing enthusiast from Bekasi, Indonesia.
+            I like building practical systems that are reliable, documented, and
+            defensible.
+          </p>
+
+          <div className="role-grid" aria-label="Core role focus">
+            {ROLE_CARDS.map((role, index) => (
+              <article
+                className="role-card"
+                data-reveal
+                key={role.title}
+                style={{
+                  "--role-accent": ACCENTS[role.accent],
+                  "--reveal-delay": `${index * 0.05}s`,
+                }}
+              >
+                <span>{role.kicker}</span>
+                <strong>{role.title}</strong>
+                <p>{role.description}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="hero-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => scrollToSection("experience")}
+            >
+              View experience →
+            </button>
+            <a
+              className="btn btn-secondary"
+              href={SOCIAL_LINKS.LinkedIn}
+              target="_blank"
+              rel="noreferrer"
+            >
+              LinkedIn profile
+            </a>
+          </div>
+
+          <div className="hero-stats" aria-label="Portfolio highlights">
+            <div className="stat-card" data-reveal>
+              <strong>5+</strong>
+              <span>projects shipped</span>
+            </div>
+            <div
+              className="stat-card"
+              data-reveal
+              style={{ "--reveal-delay": ".06s" }}
+            >
+              <strong>10</strong>
+              <span>certifications</span>
+            </div>
+            <div
+              className="stat-card"
+              data-reveal
+              style={{ "--reveal-delay": ".12s" }}
+            >
+              <strong>4</strong>
+              <span>focused tracks</span>
+            </div>
+          </div>
+        </div>
+
+        <aside className="profile-panel" aria-label="Profile summary">
+          <div className="profile-card">
+            <div className="profile-top">
+              <div className="profile-photo-wrap">
+                <img
+                  className="profile-photo"
+                  src={PROFILE_IMAGE}
+                  alt="Moehammad Alvaro Pirata Prayogo"
+                />
+                <div className="profile-badge-row" aria-label="Profile roles">
+                  <span className="profile-badge">SysAdmin</span>
+                  <span className="profile-badge">DevOps</span>
+                  <span className="profile-badge">PenTest</span>
+                </div>
+              </div>
+              <div>
+                <p className="profile-role">
+                  Industrial Electronics Engineering Student
+                </p>
+                <h2>Alvaro Prayogo</h2>
+              </div>
+            </div>
+            <div className="profile-bottom">
+              <div className="focus-item">
+                <span>Location</span>
+                <strong>Bekasi / Cikarang, ID</strong>
+              </div>
+              <div className="focus-item">
+                <span>Stack</span>
+                <strong>Linux, Go, Docker, Nginx</strong>
+              </div>
+              <div className="focus-item">
+                <span>Security</span>
+                <strong>Recon, hardening, bug bounty</strong>
+              </div>
+              <div className="focus-item">
+                <span>Status</span>
+                <strong>Open to opportunities</strong>
+              </div>
+              <div className="focus-item">
+                <span>Online</span>
+                <strong>@parothegreat</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-socials">
+            {Object.entries(SOCIAL_LINKS).map(([label, url]) => (
+              <a
+                key={label}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="profile-social-link"
+              >
+                <span>{label}</span>
+                <span className="profile-social-arrow">↗</span>
+              </a>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function About() {
+  return (
+    <section id="about" className="section">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">About</p>
+            <h2 className="section-title">
+              A portfolio built around operations, electronics, and security.
+            </h2>
+          </div>
+          <p className="section-copy">
+            I work across Linux administration, DevOps workflows, industrial
+            electronics, and penetration testing because real systems rarely fit
+            inside one box: hardware, networks, deployments, and security all
+            meet in production.
+          </p>
+        </div>
+
+        <div className="about-grid">
+          <article className="about-card" data-reveal>
+            <h3>
+              Curiosity turned into labs, hardware projects, and deployed
+              systems.
+            </h3>
+            <p>
+              I got into systems by asking how things work at every layer — from
+              sensors and RFID hardware to Linux services, network paths, and
+              web applications. That habit turned into labs, automation notes,
+              Go utilities, and school-deployed applications.
+            </p>
+            <p>
+              Right now I&apos;m studying Industrial Electronics Engineering,
+              improving my SysAdmin and DevOps workflow, and practicing
+              penetration testing with a focus on useful reports and
+              remediation.
+            </p>
+            <div className="org-highlight">
+              <span>Organization orientation</span>
+              <strong>
+                Saya bagian dari organisasi IT Mitra Industri Vocational High
+                School, dengan jobdesc sebagai System Administrator, Network
+                Engineer, Backend Developer, Network Security Engineer, dan
+                DevOps.
+              </strong>
+            </div>
+          </article>
+
+          <div className="info-grid">
+            {[
+              [
+                "Current focus",
+                "Linux hardening, CI/CD basics, electronics labs, Go-based security tooling",
+              ],
+              [
+                "Preferred work",
+                "SysAdmin, DevOps Engineer, Junior Penetration Tester, Infrastructure Engineer",
+              ],
+              [
+                "Project style",
+                "Practical, documented, measurable, deployable, and intentionally simple",
+              ],
+              [
+                "Community",
+                "teamitmivhs · SpacedCode · electronics, infra, and security tooling",
+              ],
+            ].map(([label, value], index) => (
+              <div
+                className="info-card"
+                data-reveal
+                key={label}
+                style={{ "--reveal-delay": `${index * 0.05}s` }}
+              >
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Experience() {
+  return (
+    <section id="experience" className="section">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Experience</p>
+            <h2 className="section-title">
+              Operational experience across school IT and manufacturing.
+            </h2>
+          </div>
+          <p className="section-copy">
+            This section highlights hands-on IT work: user support, system
+            maintenance, internal tools, network troubleshooting, security
+            basics, and operational documentation.
+          </p>
+        </div>
+
+        <div className="experience-grid">
+          {EXPERIENCES.map((experience) => (
+            <ExperienceCard
+              key={experience.organization}
+              experience={experience}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ExperienceCard({ experience }) {
+  const accent = ACCENTS[experience.accent] ?? ACCENTS.blue;
+
+  return (
+    <article
+      className="experience-card"
+      data-reveal
+      style={{ "--experience-accent": accent }}
+    >
+      <div className="experience-top">
+        <div className="experience-meta">
+          <span>{experience.organization}</span>
+          <span>{experience.location}</span>
+        </div>
+        <span className="experience-period">{experience.period}</span>
+      </div>
+
+      <h3>{experience.organization}</h3>
+      <p className="experience-role">{experience.role}</p>
+      <p className="experience-summary">{experience.summary}</p>
+
+      <ul className="experience-list">
+        {experience.responsibilities.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+
+      {experience.achievements?.length ? (
+        <div className="achievement-block">
+          <h4>Pencapaian & pengalaman</h4>
+          <ul className="experience-list">
+            {experience.achievements.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <div className="experience-tags">
+        {experience.tags.map((tag) => (
+          <span key={tag}>{tag}</span>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function Work() {
+  const featured = PROJECTS.filter((project) => project.featured);
+  const regular = PROJECTS.filter((project) => !project.featured);
+
+  return (
+    <section id="work" className="section">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Selected work</p>
+            <h2 className="section-title">
+              Projects with operational context.
+            </h2>
+          </div>
+          <p className="section-copy">
+            A mix of deployed institutional tools, infrastructure utilities, and
+            security-focused Go projects — presented as case studies instead of
+            random repository cards.
+          </p>
+        </div>
+
+        <div className="project-grid">
+          {[...featured, ...regular].map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProjectCard({ project }) {
+  const accent = ACCENTS[project.accent] ?? ACCENTS.blue;
+
+  return (
+    <article
+      className={`project-card ${project.featured ? "featured" : ""}`}
+      data-reveal
+      style={{ "--card-accent": accent }}
+    >
+      <div className="project-meta">
+        <span>{project.category}</span>
+        <span>{project.year}</span>
+      </div>
+      <h3>{project.title}</h3>
+      <p>{project.summary}</p>
+
+      <div className="tag-row">
+        {project.stack.map((item) => (
+          <span className="tag" key={item}>
+            {item}
+          </span>
+        ))}
+      </div>
+
+      <ul className="impact-list">
+        {project.impact.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+
+      <a
+        className="project-link"
+        href={project.repo}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Open repository →
+      </a>
+    </article>
+  );
+}
+
+function Skills() {
+  return (
+    <section id="skills" className="section">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Skills</p>
+            <h2 className="section-title">
+              Tools I use to operate, automate, and test systems.
+            </h2>
+          </div>
+          <p className="section-copy">
+            The stack leans practical: Linux operations, deployment automation,
+            penetration testing, and electronics fundamentals that help bridge
+            physical systems with software.
+          </p>
+        </div>
+
+        <div className="skills-grid">
+          {SKILLS.map((group) => {
+            const accent = ACCENTS[group.accent] ?? ACCENTS.blue;
+            return (
+              <article
+                className="skill-card"
+                data-reveal
+                key={group.category}
+                style={{ "--skill-accent": accent }}
+              >
+                <h3>{group.category}</h3>
+                <div className="skill-list">
+                  {group.items.map(([name, level]) => (
+                    <div key={name}>
+                      <div className="skill-head">
+                        <span>{name}</span>
+                        <span>{level}%</span>
+                      </div>
+                      <div className="skill-bar">
+                        <span style={{ width: `${level}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Certifications() {
+  return (
+    <section className="section" aria-labelledby="certifications-title">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Certifications</p>
+            <h2 id="certifications-title" className="section-title">
+              Proof of continuous learning.
+            </h2>
+          </div>
+          <p className="section-copy">
+            Certifications from Cisco, NDG, EC-Council, and Google support the
+            same direction: network fundamentals, Linux, cybersecurity, and
+            cloud basics.
+          </p>
+        </div>
+
+        <div className="cert-grid">
+          {CERTS.map(([name, issuer, accent]) => (
+            <article
+              className="cert-card"
+              data-reveal
+              key={`${issuer}-${name}`}
+              style={{ "--cert-accent": ACCENTS[accent] }}
+            >
+              <div>
+                <strong>{name}</strong>
+                <span>{issuer}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Contact() {
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState({ type: "idle", message: "" });
+  const [sending, setSending] = useState(false);
+
+  const updateForm = (key, value) =>
+    setForm((current) => ({ ...current, [key]: value }));
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      setStatus({ type: "error", message: "Fill the form first, please." });
+      return;
+    }
+
+    setSending(true);
+    setStatus({ type: "idle", message: "" });
+
+    try {
+      await emailjs.send(
+        "service_vmsghvn",
+        "template_hsc6m9u",
+        { from_name: form.name, from_email: form.email, message: form.message },
+        "sruNPf6oBWFdmDHtA",
+      );
+      setStatus({
+        type: "success",
+        message: "Message sent. I will respond within 24 hours.",
+      });
+      setForm({ name: "", email: "", message: "" });
+    } catch {
+      setStatus({
+        type: "error",
+        message: "Failed to send. Please email me directly.",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section id="contact" className="section">
+      <div className="container">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Contact</p>
+            <h2 className="section-title">
+              Let&apos;s build something reliable.
+            </h2>
+          </div>
+          <p className="section-copy">
+            Open to junior SysAdmin, DevOps, infrastructure, SOC, and
+            penetration testing opportunities — remote or hybrid.
+          </p>
+        </div>
+
+        <div className="contact-grid">
+          <aside className="contact-panel" data-reveal>
+            <p className="section-copy">
+              If you need someone who can learn fast, document clearly, and keep
+              systems practical, reach out through email or LinkedIn.
+            </p>
+
+            <div className="contact-list">
+              <div className="contact-row">
+                <span>Email</span>
+                <a href="mailto:alvaroprayogo38@gmail.com">
+                  alvaroprayogo38@gmail.com
+                </a>
+              </div>
+              <div className="contact-row">
+                <span>Location</span>
+                <a
+                  href="https://maps.google.com/?q=Cikarang%20Selatan%2C%20West%20Java"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Cikarang Selatan, West Java
+                </a>
+              </div>
+              <div className="contact-row">
+                <span>GitHub</span>
+                <a href={SOCIAL_LINKS.GitHub} target="_blank" rel="noreferrer">
+                  github.com/parothegreat
+                </a>
+              </div>
+              <div className="contact-row">
+                <span>LinkedIn</span>
+                <a
+                  href={SOCIAL_LINKS.LinkedIn}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Moehammad Alvaro Pirata Prayogo
+                </a>
+              </div>
+            </div>
+          </aside>
+
+          <form
+            className="contact-panel contact-form"
+            data-reveal
+            onSubmit={handleSubmit}
+          >
+            <div className="field">
+              <label htmlFor="name">Full name</label>
+              <input
+                id="name"
+                value={form.name}
+                onChange={(event) => updateForm("name", event.target.value)}
+                autoComplete="name"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="email">Email address</label>
+              <input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(event) => updateForm("email", event.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="message">Message</label>
+              <textarea
+                id="message"
+                rows="6"
+                value={form.message}
+                onChange={(event) => updateForm("message", event.target.value)}
+              />
+            </div>
+
+            {status.type === "success" ? (
+              <div className="success-box">{status.message}</div>
+            ) : (
+              <div className="form-note">{status.message}</div>
+            )}
+
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={sending}
+            >
+              {sending ? "Sending..." : "Send message →"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="container footer-inner">
+        <span>
+          © {new Date().getFullYear()} Moehammad Alvaro Pirata Prayogo
+        </span>
+        <span>
+          Built with React + Vite ·{" "}
+          <a href={SOCIAL_LINKS.GitHub}>@parothegreat</a>
+        </span>
+      </div>
+    </footer>
+  );
+}
+
+export default function Portfolio() {
+  const active = useActiveSection();
+  useRevealOnScroll();
+
+  return (
+    <div className="portfolio-app">
+      <GlobalStyles />
+      <OpeningSequence />
+      <Navbar active={active} />
+      <main>
+        <Hero />
+        <TerminalBand />
+        <About />
+        <Experience />
+        <Work />
+        <Skills />
+        <Certifications />
+        <Contact />
+      </main>
+      <Footer />
+    </div>
   );
 }
