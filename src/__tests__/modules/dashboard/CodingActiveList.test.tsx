@@ -40,6 +40,6 @@ test('combines coding categories and switches the mobile breakdown', async () =>
   expect(screen.queryByText('Building')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Languages breakdown')).toHaveClass(
     'hidden',
-    'sm:flex',
+    'sm:block',
   );
 });
