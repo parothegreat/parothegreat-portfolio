@@ -80,7 +80,7 @@ const CodingActiveList = ({ data }: CodingActiveListProps) => {
             aria-label={`${item.title} breakdown`}
             className={clsx(
               'min-w-0 border-t border-neutral-200 pt-5 dark:border-neutral-800',
-              activePanel === item.title ? 'flex' : 'hidden sm:flex',
+              activePanel === item.title ? 'block' : 'hidden sm:block',
             )}
           >
             <h3 className='text-base font-medium text-neutral-950 dark:text-neutral-100'>
