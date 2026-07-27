@@ -110,10 +110,14 @@ const CodingActive = () => {
               setRange(event.target.value);
             }
           }}
-          className='min-h-[44px] min-w-0 flex-1 bg-transparent text-right text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+          className='min-h-[44px] min-w-0 flex-1 bg-transparent text-right text-sm text-neutral-900 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-neutral-100'
         >
           {WAKATIME_RANGE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option
+              key={option.value}
+              value={option.value}
+              className='bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100'
+            >
               {option.label}
             </option>
           ))}
