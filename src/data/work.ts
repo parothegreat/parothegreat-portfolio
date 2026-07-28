@@ -17,8 +17,11 @@ export type WorkAccent =
   | 'networking';
 
 export type ArchitectureNodeType =
+  | 'user'
   | 'client'
+  | 'sensor'
   | 'network'
+  | 'cloud'
   | 'proxy'
   | 'service'
   | 'database'
@@ -27,6 +30,13 @@ export type ArchitectureNodeType =
   | 'monitoring'
   | 'security'
   | 'external';
+
+export type ArchitectureEdgeSemantic =
+  | 'data'
+  | 'control'
+  | 'telemetry'
+  | 'warning'
+  | 'planned';
 
 export interface ArchitectureNode {
   id: string;
@@ -46,6 +56,7 @@ export interface ArchitectureEdge {
   label?: string;
   protocol?: string;
   direction: 'forward' | 'bidirectional';
+  semantic: ArchitectureEdgeSemantic;
   animated?: boolean;
 }
 
@@ -108,6 +119,7 @@ export interface WorkItem {
   repositoryUrl?: string;
   liveUrl?: string;
   caseStudyAvailable: boolean;
+  mediaIds: string[];
   environment: string[];
   sections: WorkSection[];
   ownership: {
@@ -154,11 +166,11 @@ export const WORK_ACCENT_COLORS: Record<WorkAccent, string> = {
   networking: 'var(--circuit-400)',
 };
 
-export const WORK_ITEMS: WorkItem[] = [
+const WORK_REGISTRY: WorkItem[] = [
   {
     id: 'team-it-work-order',
     slug: 'team-it-work-order',
-    index: 1,
+    index: 2,
     title: 'Team IT Work Order System',
     shortDescription:
       'Operational workflow platform for school IT requests and technical work tracking.',
@@ -172,6 +184,7 @@ export const WORK_ITEMS: WorkItem[] = [
     accent: 'systems',
     featured: true,
     caseStudyAvailable: true,
+    mediaIds: ['team-it-work-order-interface'],
     environment: ['School IT operations', 'Linux server', 'Web application'],
     sections: [
       {
@@ -291,6 +304,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'nginx',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -299,6 +313,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'api',
           protocol: 'HTTP',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -307,6 +322,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'database',
           protocol: 'SQL',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -315,6 +331,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'tracker',
           label: 'planned',
           direction: 'forward',
+          semantic: 'planned',
         },
       ],
     },
@@ -422,7 +439,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'rfid-door-access',
     slug: 'rfid-door-access',
-    index: 2,
+    index: 3,
     title: 'RFID Door Access System',
     shortDescription:
       'RFID-based access control connecting embedded hardware, backend validation, and operational alerts.',
@@ -436,6 +453,7 @@ export const WORK_ITEMS: WorkItem[] = [
     accent: 'iot',
     featured: true,
     caseStudyAvailable: true,
+    mediaIds: ['rfid-door-access-hardware'],
     environment: [
       'Server-room access prototype',
       '12-volt magnetic lock',
@@ -582,6 +600,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'card',
           target: 'reader',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -589,6 +608,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'reader',
           target: 'controller',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -597,6 +617,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'api',
           protocol: 'HTTP',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -605,6 +626,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'database',
           protocol: 'SQL',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -613,6 +635,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'relay',
           label: 'decision',
           direction: 'forward',
+          semantic: 'control',
           animated: true,
         },
         {
@@ -621,6 +644,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'telegram',
           label: 'event',
           direction: 'forward',
+          semantic: 'warning',
         },
         {
           id: 'controller-camera',
@@ -628,6 +652,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'camera',
           protocol: 'ESP-NOW',
           direction: 'forward',
+          semantic: 'planned',
         },
       ],
     },
@@ -738,7 +763,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'school-cloud-service',
     slug: 'school-cloud-service',
-    index: 3,
+    index: 4,
     title: 'School Cloud Service',
     shortDescription:
       'Self-hosted collaboration service operated behind a reverse proxy and secure tunnel.',
@@ -758,6 +783,7 @@ export const WORK_ITEMS: WorkItem[] = [
     accent: 'infrastructure',
     featured: true,
     caseStudyAvailable: true,
+    mediaIds: ['school-cloud-service-interface'],
     environment: [
       'School Linux server',
       'Self-hosted collaboration',
@@ -884,6 +910,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'cloudflare',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -892,6 +919,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'nginx',
           label: 'tunnel',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -900,6 +928,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'apache',
           protocol: 'HTTP',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -907,6 +936,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'apache',
           target: 'nextcloud',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -914,6 +944,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'nextcloud',
           target: 'storage',
           direction: 'bidirectional',
+          semantic: 'data',
         },
       ],
     },
@@ -1019,7 +1050,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'monitoring-stack',
     slug: 'monitoring-stack',
-    index: 4,
+    index: 5,
     title: 'Monitoring Stack',
     shortDescription:
       'Linux infrastructure metrics collection and operational dashboards for school and lab systems.',
@@ -1032,6 +1063,7 @@ export const WORK_ITEMS: WorkItem[] = [
     documentationLevel: 'quick-brief',
     accent: 'observability',
     caseStudyAvailable: true,
+    mediaIds: ['monitoring-stack-dashboard'],
     environment: ['School monitoring', 'Linux servers', 'Home lab'],
     sections: [
       {
@@ -1125,6 +1157,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'host',
           target: 'exporter',
           direction: 'forward',
+          semantic: 'telemetry',
         },
         {
           id: 'exporter-prometheus',
@@ -1132,6 +1165,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'prometheus',
           protocol: 'HTTP scrape',
           direction: 'forward',
+          semantic: 'telemetry',
           animated: true,
         },
         {
@@ -1139,6 +1173,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'prometheus',
           target: 'grafana',
           direction: 'forward',
+          semantic: 'telemetry',
           animated: true,
         },
       ],
@@ -1225,7 +1260,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'recon-engine',
     slug: 'recon-engine',
-    index: 5,
+    index: 6,
     title: 'Recon Engine',
     shortDescription:
       'Automation workflow for scoped asset discovery, HTTP validation, crawling, and security checks.',
@@ -1238,6 +1273,7 @@ export const WORK_ITEMS: WorkItem[] = [
     documentationLevel: 'case-study',
     accent: 'security',
     caseStudyAvailable: true,
+    mediaIds: ['recon-engine-output'],
     environment: [
       'Authorized security research',
       'Controlled labs',
@@ -1374,6 +1410,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'scope',
           target: 'discovery',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1381,6 +1418,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'discovery',
           target: 'dns',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1388,6 +1426,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'dns',
           target: 'http',
           direction: 'forward',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1395,18 +1434,21 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'http',
           target: 'urls',
           direction: 'forward',
+          semantic: 'data',
         },
         {
           id: 'http-ports',
           source: 'http',
           target: 'ports',
           direction: 'forward',
+          semantic: 'data',
         },
         {
           id: 'http-checks',
           source: 'http',
           target: 'checks',
           direction: 'forward',
+          semantic: 'data',
         },
       ],
     },
@@ -1522,7 +1564,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'school-network-operations',
     slug: 'school-network-operations',
-    index: 6,
+    index: 7,
     title: 'School Network Operations',
     shortDescription:
       'Ongoing wireless monitoring, segmentation, switching, and connectivity troubleshooting.',
@@ -1541,6 +1583,7 @@ export const WORK_ITEMS: WorkItem[] = [
     documentationLevel: 'quick-brief',
     accent: 'networking',
     caseStudyAvailable: true,
+    mediaIds: ['school-network-operations-topology'],
     environment: [
       'Multi-building school network',
       'Managed wireless',
@@ -1668,6 +1711,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'omada',
           protocol: 'Wi-Fi',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1675,6 +1719,7 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'omada',
           target: 'switch',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1683,6 +1728,7 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'vlans',
           label: 'tagged / access',
           direction: 'bidirectional',
+          semantic: 'data',
           animated: true,
         },
         {
@@ -1690,12 +1736,14 @@ export const WORK_ITEMS: WorkItem[] = [
           source: 'vlans',
           target: 'mikrotik',
           direction: 'bidirectional',
+          semantic: 'data',
         },
         {
           id: 'vlans-services',
           source: 'vlans',
           target: 'services',
           direction: 'bidirectional',
+          semantic: 'data',
         },
       ],
     },
@@ -1805,7 +1853,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'mitra-coffeeshop',
     slug: 'mitra-coffeeshop',
-    index: 7,
+    index: 8,
     title: 'Mitra Coffeeshop',
     shortDescription:
       'Public website for the SMK Mitra Industri coffeeshop, menu, gallery, loyalty card, and ordering channels.',
@@ -1826,6 +1874,7 @@ export const WORK_ITEMS: WorkItem[] = [
     repositoryUrl: 'https://github.com/teamitmivhs/Mitra-Coffeeshop',
     liveUrl: 'https://coffeeshop.itmivhs.net',
     caseStudyAvailable: true,
+    mediaIds: ['mitra-coffeeshop-interface'],
     environment: ['Public website', 'SMK Mitra Industri', 'Bun application'],
     sections: [
       {
@@ -1945,6 +1994,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Browse',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'data',
         },
         {
           id: 'app-media',
@@ -1953,6 +2003,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Load',
           protocol: 'Static',
           direction: 'forward',
+          semantic: 'data',
         },
         {
           id: 'app-whatsapp',
@@ -1961,6 +2012,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Order',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'control',
         },
         {
           id: 'app-gofood',
@@ -1969,6 +2021,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Delivery',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'control',
         },
       ],
     },
@@ -2071,28 +2124,42 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: 'smart-green-hub',
     slug: 'smart-green-hub',
-    index: 8,
+    index: 1,
     title: 'Smart Green Hub',
     shortDescription:
       'IoT hydroponics monitoring and control with ESP32-S3 firmware, Firebase, a React dashboard, and cloud OTA.',
     outcome:
       'One operational flow for realtime crop telemetry, remote actuator control, alerts, reports, and firmware updates across different networks.',
-    category: 'IoT & Operations',
-    role: ['Firmware', 'Dashboard', 'Cloud'],
+    category: 'IoT / Embedded / Cloud',
+    role: ['Embedded Systems', 'Frontend', 'Cloud Integration'],
     stack: [
       'ESP32-S3',
       'C++',
+      'Arduino',
+      'PlatformIO',
       'FreeRTOS',
       'Firebase RTDB',
+      'Firebase Authentication',
       'React',
       'TypeScript',
-      'PlatformIO',
+      'Vite',
+      'Tailwind CSS',
+      'Recharts',
+      'GitHub Releases',
+      'Firebase Hosting',
     ],
     status: 'active',
-    documentationLevel: 'case-study',
+    documentationLevel: 'deep-dive',
     accent: 'iot',
     repositoryUrl: 'https://github.com/VARR-git/Smart-Green-Hub',
     caseStudyAvailable: true,
+    mediaIds: [
+      'smart-green-hub-dashboard',
+      'smart-green-hub-warning',
+      'smart-green-hub-report',
+      'smart-green-hub-settings',
+      'smart-green-hub-mark',
+    ],
     environment: [
       'Hydroponic system',
       'ESP32-S3 device',
@@ -2158,7 +2225,7 @@ export const WORK_ITEMS: WorkItem[] = [
         {
           id: 'sensors',
           label: 'Sensors',
-          type: 'hardware',
+          type: 'sensor',
           description:
             'pH, TDS, temperature, and humidity inputs for the hydroponic system.',
           x: 20,
@@ -2179,7 +2246,7 @@ export const WORK_ITEMS: WorkItem[] = [
         {
           id: 'firebase',
           label: 'Firebase RTDB',
-          type: 'database',
+          type: 'cloud',
           description:
             'Realtime state boundary for telemetry, commands, device health, and firmware version.',
           technology: 'Firebase',
@@ -2222,7 +2289,7 @@ export const WORK_ITEMS: WorkItem[] = [
         {
           id: 'operator',
           label: 'Operator',
-          type: 'client',
+          type: 'user',
           description:
             'Authorized user entering the PIN-only dashboard and operating the system.',
           x: 580,
@@ -2238,6 +2305,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Read',
           protocol: 'GPIO / ADC',
           direction: 'forward',
+          semantic: 'planned',
         },
         {
           id: 'esp32-firebase',
@@ -2245,15 +2313,39 @@ export const WORK_ITEMS: WorkItem[] = [
           target: 'firebase',
           label: 'Telemetry',
           protocol: 'HTTPS',
-          direction: 'bidirectional',
+          direction: 'forward',
+          semantic: 'telemetry',
+          animated: true,
         },
         {
-          id: 'dashboard-firebase',
-          source: 'dashboard',
-          target: 'firebase',
+          id: 'firebase-esp32-control',
+          source: 'firebase',
+          target: 'esp32',
+          label: 'Command',
+          protocol: 'HTTPS',
+          direction: 'forward',
+          semantic: 'control',
+          animated: true,
+        },
+        {
+          id: 'firebase-dashboard',
+          source: 'firebase',
+          target: 'dashboard',
           label: 'Realtime',
           protocol: 'Firebase SDK',
-          direction: 'bidirectional',
+          direction: 'forward',
+          semantic: 'telemetry',
+          animated: true,
+        },
+        {
+          id: 'dashboard-firebase-control',
+          source: 'dashboard',
+          target: 'firebase',
+          label: 'Command',
+          protocol: 'Firebase SDK',
+          direction: 'forward',
+          semantic: 'control',
+          animated: true,
         },
         {
           id: 'esp32-actuators',
@@ -2262,6 +2354,8 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Control',
           protocol: 'GPIO',
           direction: 'forward',
+          semantic: 'control',
+          animated: true,
         },
         {
           id: 'releases-esp32',
@@ -2270,6 +2364,8 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Firmware',
           protocol: 'HTTPS',
           direction: 'forward',
+          semantic: 'data',
+          animated: true,
         },
         {
           id: 'operator-dashboard',
@@ -2278,6 +2374,7 @@ export const WORK_ITEMS: WorkItem[] = [
           label: 'Operate',
           protocol: 'Browser',
           direction: 'forward',
+          semantic: 'control',
         },
       ],
     },
@@ -2414,6 +2511,10 @@ export const WORK_ITEMS: WorkItem[] = [
     ],
   },
 ];
+
+export const WORK_ITEMS = [...WORK_REGISTRY].sort(
+  (first, second) => first.index - second.index,
+);
 
 export const FEATURED_WORK = WORK_ITEMS.filter((item) => item.featured);
 
