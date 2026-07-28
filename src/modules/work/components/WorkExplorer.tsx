@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CSSProperties, useState } from 'react';
 import { FiArrowUpRight, FiChevronDown } from 'react-icons/fi';
@@ -26,6 +27,9 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
   if (!selected) return null;
 
   const selectedAccent = WORK_ACCENT_COLORS[selected.accent];
+  const selectedPreview = selected.evidence.find(
+    (item) => item.type === 'image' && item.source.startsWith('/'),
+  );
 
   return (
     <div>
@@ -111,11 +115,21 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                     className='absolute inset-x-0 top-0 h-0.5'
                     style={{ backgroundColor: selectedAccent }}
                   />
-                  <ArchitectureMap
-                    accent={selectedAccent}
-                    architecture={selected.architecture}
-                    variant='preview'
-                  />
+                  {selectedPreview ? (
+                    <Image
+                      src={selectedPreview.source}
+                      alt={selectedPreview.alt ?? selectedPreview.title}
+                      fill
+                      sizes='(min-width: 1024px) 38vw, 100vw'
+                      className='object-cover'
+                    />
+                  ) : (
+                    <ArchitectureMap
+                      accent={selectedAccent}
+                      architecture={selected.architecture}
+                      variant='preview'
+                    />
+                  )}
                 </div>
 
                 <div className='p-5'>
@@ -182,6 +196,10 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
         {items.map((item) => {
           const isExpanded = expandedId === item.id;
           const accent = WORK_ACCENT_COLORS[item.accent];
+          const preview = item.evidence.find(
+            (evidence) =>
+              evidence.type === 'image' && evidence.source.startsWith('/'),
+          );
           const panelId = `work-preview-${item.id}`;
 
           return (
@@ -246,11 +264,23 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                   >
                     <div className='mb-6 ml-9 overflow-hidden rounded-md border border-[var(--line-default)] bg-[var(--surface-1)]'>
                       <div className='h-40 bg-[var(--bg-layer)]'>
-                        <ArchitectureMap
-                          accent={accent}
-                          architecture={item.architecture}
-                          variant='preview'
-                        />
+                        {preview ? (
+                          <div className='relative h-full'>
+                            <Image
+                              src={preview.source}
+                              alt={preview.alt ?? preview.title}
+                              fill
+                              sizes='calc(100vw - 76px)'
+                              className='object-cover'
+                            />
+                          </div>
+                        ) : (
+                          <ArchitectureMap
+                            accent={accent}
+                            architecture={item.architecture}
+                            variant='preview'
+                          />
+                        )}
                       </div>
                       <div className='border-t border-[var(--line-soft)] p-4'>
                         <p className='text-sm leading-6 text-[var(--text-secondary)]'>
