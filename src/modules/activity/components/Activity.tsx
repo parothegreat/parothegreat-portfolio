@@ -21,25 +21,23 @@ const Activity = () => {
   return (
     <div className='space-y-16'>
       <section aria-labelledby='current-focus-heading'>
-        <p className='font-code text-xs font-medium uppercase text-blue-600 dark:text-blue-400'>
-          Current focus
-        </p>
+        <p className='signal-label'>Current focus</p>
         <h2
           id='current-focus-heading'
-          className='mt-3 text-2xl font-medium text-neutral-950 dark:text-neutral-100'
+          className='mt-3 text-2xl font-medium text-[var(--text-primary)]'
         >
           What I&apos;m working on now
         </h2>
-        <dl className='mt-7 border-y border-neutral-200 dark:border-neutral-800'>
+        <dl className='mt-7 border-y border-[var(--line-default)]'>
           {CURRENT_FOCUS.map((item) => (
             <div
               key={item.label}
-              className='grid gap-2 border-b border-neutral-200 py-4 last:border-b-0 dark:border-neutral-800 sm:grid-cols-[120px_minmax(0,1fr)]'
+              className='grid gap-2 border-b border-[var(--line-default)] py-4 last:border-b-0 sm:grid-cols-[120px_minmax(0,1fr)]'
             >
-              <dt className='font-code text-xs uppercase text-neutral-500'>
+              <dt className='font-code text-xs uppercase text-[var(--text-tertiary)]'>
                 {item.label}
               </dt>
-              <dd className='text-sm text-neutral-800 dark:text-neutral-200'>
+              <dd className='text-sm text-[var(--text-primary)]'>
                 {item.value}
               </dd>
             </div>
@@ -49,7 +47,7 @@ const Activity = () => {
 
       <div>
         <div
-          className='mb-8 grid grid-cols-2 gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-900 md:hidden'
+          className='mb-8 grid grid-cols-2 gap-1 rounded-md bg-[var(--surface-1)] p-1 md:hidden'
           role='tablist'
           aria-label='Activity source'
         >
@@ -68,10 +66,10 @@ const Activity = () => {
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveSource(source.id)}
                 className={clsx(
-                  'flex min-h-[44px] items-center justify-center gap-2 rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none',
+                  'flex min-h-[44px] items-center justify-center gap-2 rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none',
                   isActive
-                    ? 'bg-white text-neutral-950 shadow-sm dark:bg-neutral-800 dark:text-white'
-                    : 'text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800',
+                    ? 'bg-[var(--surface-3)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--surface-2)]',
                 )}
               >
                 <Icon aria-hidden='true' />
@@ -103,7 +101,7 @@ const Activity = () => {
         </div>
       </div>
 
-      <p className='border-t border-neutral-200 pt-5 text-xs leading-5 text-neutral-500 dark:border-neutral-800'>
+      <p className='border-t border-[var(--line-default)] pt-5 text-xs leading-5 text-[var(--text-tertiary)]'>
         Activity data comes from WakaTime and GitHub. Temporary source issues
         are shown instead of being hidden.
       </p>
