@@ -5,8 +5,6 @@ import { FiArrowUpRight, FiMail } from 'react-icons/fi';
 import { PROFILE } from '@/data/profile';
 import { SOCIAL_LINKS, SocialLinkIcon } from '@/data/social-links';
 
-import { InteractiveSurface } from '@/common/components/elements/InteractiveSurface';
-
 import ContactForm from './ContactForm';
 
 const SOCIAL_ICONS: Record<SocialLinkIcon, React.ComponentType> = {
@@ -29,11 +27,11 @@ const Contact = () => {
           technical collaboration opportunities.
         </p>
 
-        <InteractiveSurface className='mt-7 rounded-lg p-5'>
+        <div className='instrument-surface mt-7 rounded-lg p-5'>
           <div className='flex items-start gap-3'>
             <span
               aria-hidden='true'
-              className='mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--telemetry-500)] shadow-[0_0_14px_var(--telemetry-500)]'
+              className='mt-2 h-2 w-2 shrink-0 rounded-sm bg-[var(--telemetry-500)]'
             />
             <div>
               <p className='font-medium text-[var(--text-primary)]'>
@@ -44,7 +42,7 @@ const Contact = () => {
               </p>
             </div>
           </div>
-        </InteractiveSurface>
+        </div>
 
         <dl className='mt-8 border-y border-[var(--line-default)]'>
           <div className='border-b border-[var(--line-default)] py-4'>
