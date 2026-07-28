@@ -9,6 +9,7 @@ import {
   WORK_STATUS_LABELS,
   WorkItem,
 } from '@/data/work';
+import { getPrimaryWorkMedia } from '@/data/work-media';
 
 import { ArchitectureMap } from './ArchitectureExplorer';
 import ProjectVisual from './ProjectVisual';
@@ -28,6 +29,9 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
   if (!selected) return null;
 
   const selectedAccent = WORK_ACCENT_COLORS[selected.accent];
+  const selectedMedia = getPrimaryWorkMedia(selected.mediaIds);
+  const selectedHasRealMedia =
+    selectedMedia?.type === 'image' && Boolean(selectedMedia.src);
   const handleDesktopKeyDown = (
     event: KeyboardEvent<HTMLAnchorElement>,
     index: number,
@@ -120,10 +124,14 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                 transition={{ duration: reduceMotion ? 0.01 : 0.18 }}
               >
                 <div
-                  className={`relative grid overflow-hidden border-b border-[var(--line-default)] bg-[var(--bg-layer)] ${
-                    compact
-                      ? 'h-56 grid-rows-[1.3fr_0.7fr]'
-                      : 'h-[340px] grid-rows-[1.35fr_0.65fr]'
+                  className={`relative overflow-hidden border-b border-[var(--line-default)] bg-[var(--bg-layer)] ${
+                    selectedHasRealMedia
+                      ? compact
+                        ? 'grid h-56 grid-rows-[1.3fr_0.7fr]'
+                        : 'grid h-[340px] grid-rows-[1.35fr_0.65fr]'
+                      : compact
+                        ? 'h-56'
+                        : 'h-[340px]'
                   }`}
                 >
                   <div
@@ -131,17 +139,28 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                     className='absolute inset-x-0 top-0 h-0.5'
                     style={{ backgroundColor: selectedAccent }}
                   />
-                  <ProjectVisual
-                    project={selected}
-                    sizes='(min-width: 1024px) 38vw, 100vw'
-                  />
-                  <div className='min-h-0 border-t border-[var(--line-default)]'>
+                  {selectedHasRealMedia ? (
+                    <>
+                      <ProjectVisual
+                        media={selectedMedia}
+                        project={selected}
+                        sizes='(min-width: 1024px) 38vw, 100vw'
+                      />
+                      <div className='min-h-0 border-t border-[var(--line-default)]'>
+                        <ArchitectureMap
+                          accent={selectedAccent}
+                          architecture={selected.architecture}
+                          variant='preview'
+                        />
+                      </div>
+                    </>
+                  ) : (
                     <ArchitectureMap
                       accent={selectedAccent}
                       architecture={selected.architecture}
                       variant='preview'
                     />
-                  </div>
+                  )}
                 </div>
 
                 <div className='p-5'>
@@ -188,6 +207,16 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                         }
                       </dd>
                     </div>
+                    {selectedMedia?.type === 'placeholder' ? (
+                      <div className='grid grid-cols-[86px_minmax(0,1fr)] gap-3'>
+                        <dt className='font-code uppercase text-[var(--text-tertiary)]'>
+                          Visual
+                        </dt>
+                        <dd className='text-[var(--text-secondary)]'>
+                          {selectedMedia.placeholderLabel}
+                        </dd>
+                      </div>
+                    ) : null}
                   </dl>
 
                   <Link
@@ -207,6 +236,8 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
       <ol className='border-t border-[var(--line-default)] lg:hidden'>
         {items.map((item) => {
           const isExpanded = expandedId === item.id;
+          const media = getPrimaryWorkMedia(item.mediaIds);
+          const hasRealMedia = media?.type === 'image' && Boolean(media.src);
           const panelId = `work-preview-${item.id}`;
 
           return (
@@ -271,10 +302,19 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                   >
                     <div className='mb-6 ml-9 overflow-hidden rounded-md border border-[var(--line-default)] bg-[var(--surface-1)]'>
                       <div className='h-40 bg-[var(--bg-layer)]'>
-                        <ProjectVisual
-                          project={item}
-                          sizes='calc(100vw - 76px)'
-                        />
+                        {hasRealMedia ? (
+                          <ProjectVisual
+                            media={media}
+                            project={item}
+                            sizes='calc(100vw - 76px)'
+                          />
+                        ) : (
+                          <ArchitectureMap
+                            accent={WORK_ACCENT_COLORS[item.accent]}
+                            architecture={item.architecture}
+                            variant='preview'
+                          />
+                        )}
                       </div>
                       <div className='border-t border-[var(--line-soft)] p-4'>
                         <p className='text-sm leading-6 text-[var(--text-secondary)]'>
@@ -284,6 +324,11 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                           {item.role.join(' / ')} ·{' '}
                           {DOCUMENTATION_LEVEL_LABELS[item.documentationLevel]}
                         </p>
+                        {media?.type === 'placeholder' ? (
+                          <p className='mt-2 font-code text-[9px] uppercase text-[var(--text-tertiary)]'>
+                            Visual: {media.placeholderLabel}
+                          </p>
+                        ) : null}
                         <p className='mt-4 border-l border-[var(--line-strong)] pl-3 text-xs leading-5 text-[var(--text-secondary)]'>
                           {item.architecture.summary}
                         </p>
