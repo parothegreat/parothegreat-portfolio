@@ -10,8 +10,6 @@ import {
   WorkItem,
 } from '@/data/work';
 
-import { InteractiveSurface } from '@/common/components/elements/InteractiveSurface';
-
 import { ArchitectureMap } from './ArchitectureExplorer';
 
 interface WorkExplorerProps {
@@ -91,8 +89,8 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
         </ol>
 
         <aside className='self-start lg:sticky lg:top-6' aria-live='polite'>
-          <InteractiveSurface
-            className='overflow-hidden rounded-lg'
+          <div
+            className='instrument-surface overflow-hidden rounded-lg'
             style={{ '--project-accent': selectedAccent } as CSSProperties}
           >
             <AnimatePresence mode='wait' initial={false}>
@@ -116,6 +114,7 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                   <ArchitectureMap
                     accent={selectedAccent}
                     architecture={selected.architecture}
+                    variant='preview'
                   />
                 </div>
 
@@ -132,10 +131,9 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                     </div>
                     <span
                       aria-hidden='true'
-                      className='mt-1 h-2.5 w-2.5 shrink-0 rounded-full shadow-[0_0_18px_currentColor]'
+                      className='mt-1 h-2.5 w-2.5 shrink-0 rounded-sm'
                       style={{
                         backgroundColor: selectedAccent,
-                        color: selectedAccent,
                       }}
                     />
                   </div>
@@ -176,7 +174,7 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                 </div>
               </motion.div>
             </AnimatePresence>
-          </InteractiveSurface>
+          </div>
         </aside>
       </div>
 
@@ -251,6 +249,7 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                         <ArchitectureMap
                           accent={accent}
                           architecture={item.architecture}
+                          variant='preview'
                         />
                       </div>
                       <div className='border-t border-[var(--line-soft)] p-4'>
