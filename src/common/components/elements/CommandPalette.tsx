@@ -177,7 +177,7 @@ const CommandPalette = () => {
           leaveFrom='opacity-100'
           leaveTo='opacity-0'
         >
-          <Dialog.Overlay className='fixed inset-0 bg-neutral-600/90 dark:bg-neutral-900/90' />
+          <Dialog.Overlay className='fixed inset-0 bg-black/70' />
         </Transition.Child>
 
         <Dialog.Panel>
@@ -193,13 +193,13 @@ const CommandPalette = () => {
             <Combobox
               onChange={(menu: MenuOptionItemProps) => handleSelect(menu)}
               as='div'
-              className='shadow-3xl relative mx-auto max-w-xl overflow-hidden rounded-xl border-2 border-neutral-100 bg-white ring-1 ring-black/5 backdrop-blur dark:divide-neutral-600 dark:border-neutral-800 dark:bg-[#1b1b1b80]'
+              className='relative mx-auto max-w-xl overflow-hidden rounded-lg border border-[var(--line-strong)] bg-[var(--surface-1)]'
             >
-              <div className='flex items-center gap-3 border-b border-neutral-300 px-4 dark:border-neutral-800'>
+              <div className='flex items-center gap-3 border-b border-[var(--line-default)] px-4 text-[var(--text-tertiary)]'>
                 <SearchIcon size={22} />
                 <Combobox.Input
                   onChange={handleSearch}
-                  className='h-14 w-full border-0 bg-transparent  text-neutral-800 placeholder-neutral-500 focus:outline-none focus:ring-0 dark:text-neutral-200'
+                  className='h-14 w-full border-0 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-0'
                   placeholder={placeholder}
                 />
               </div>
@@ -213,7 +213,7 @@ const CommandPalette = () => {
                       'py-1',
                     )}
                   >
-                    <div className='my-2 px-5 text-xs font-medium text-neutral-500'>
+                    <div className='my-2 px-5 font-code text-[10px] font-medium uppercase text-[var(--text-tertiary)]'>
                       {menu?.title}
                     </div>
                     <Combobox.Options static className='space-y-1'>
@@ -223,19 +223,19 @@ const CommandPalette = () => {
                             <div
                               className={clsx(
                                 active || isActiveRoute(child?.href)
-                                  ? 'bg-neutral-200 text-neutral-600 dark:bg-neutral-700/60 dark:text-white'
-                                  : 'text-neutral-600 dark:text-neutral-300',
+                                  ? 'bg-[var(--surface-3)] text-[var(--text-primary)]'
+                                  : 'text-[var(--text-secondary)]',
                                 'group mx-2 flex cursor-pointer items-center justify-between gap-3 rounded-md px-4 py-2',
-                                'dark:hover:bg-[#ffffff14]',
+                                'hover:bg-[var(--surface-2)]',
                               )}
                             >
                               <div className='flex items-center gap-5'>
                                 {child?.icon && (
                                   <div
                                     className={clsx(
-                                      'transition-all duration-300 group-hover:-rotate-12',
+                                      'text-[var(--text-tertiary)]',
                                       isActiveRoute(child?.href) &&
-                                        '-rotate-12',
+                                        'text-[var(--text-primary)]',
                                     )}
                                   >
                                     {child?.icon}
@@ -247,13 +247,13 @@ const CommandPalette = () => {
                               </div>
                               <>
                                 {isActiveRoute(child?.href) ? (
-                                  <span className='animate-pulse  text-xs text-neutral-500'>
+                                  <span className='text-xs text-[var(--text-tertiary)]'>
                                     You are here
                                   </span>
                                 ) : (
                                   <>
                                     {child?.type && (
-                                      <div className='rounded-md border border-neutral-400 px-1.5 py-0.5  text-xs text-neutral-500 dark:border-neutral-500'>
+                                      <div className='rounded border border-[var(--line-default)] px-1.5 py-0.5 font-code text-[10px] text-[var(--text-tertiary)]'>
                                         {child?.type}
                                       </div>
                                     )}
