@@ -7,14 +7,22 @@ import Contact from '@/modules/contact';
 
 const PAGE_TITLE = 'Contact';
 const PAGE_DESCRIPTION =
-  "Feel free to get in touch and let's have a discussion about how we can work together.";
+  'Get in touch about infrastructure, DevOps, backend, security, and technical collaboration.';
 
 const ContactPage: NextPage = () => {
   return (
     <>
-      <NextSeo title={`${PAGE_TITLE} - Alvaro Prayogo`} />
-      <Container data-aos='fade-up'>
-        <PageHeading title={PAGE_TITLE} description={PAGE_DESCRIPTION} />
+      <NextSeo
+        title={`${PAGE_TITLE} - Alvaro Prayogo`}
+        description={PAGE_DESCRIPTION}
+        canonical='https://parothegreat.site/contact'
+      />
+      <Container>
+        <PageHeading
+          eyebrow='Get in touch'
+          title={PAGE_TITLE}
+          description={PAGE_DESCRIPTION}
+        />
         <Contact />
       </Container>
     </>
