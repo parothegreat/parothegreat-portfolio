@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CSSProperties } from 'react';
+import { CSSProperties, useEffect, useState } from 'react';
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -14,8 +14,10 @@ import {
   WORK_STATUS_LABELS,
   WorkItem,
 } from '@/data/work';
+import { getWorkMedia } from '@/data/work-media';
 
 import ArchitectureExplorer, { ArchitectureMap } from './ArchitectureExplorer';
+import ProjectVisual from './ProjectVisual';
 
 interface CaseStudyProps {
   project: WorkItem;
@@ -35,13 +37,37 @@ const CHAPTERS = [
 ] as const;
 
 const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
+  const [activeChapter, setActiveChapter] = useState('overview');
   const accent = WORK_ACCENT_COLORS[project.accent];
   const context = project.sections.find((section) => section.id === 'context');
   const problem = project.sections.find((section) => section.id === 'problem');
   const build = project.sections.find((section) => section.id === 'build');
-  const preview = project.evidence.find(
-    (item) => item.type === 'image' && item.source.startsWith('/'),
+  const media = getWorkMedia(project.mediaIds);
+  const linkedEvidence = project.evidence.filter(
+    (item) => !(item.type === 'image' && item.source.startsWith('/')),
   );
+
+  useEffect(() => {
+    const sections = CHAPTERS.map(({ id }) =>
+      document.getElementById(id),
+    ).filter((section): section is HTMLElement => Boolean(section));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (first, second) =>
+              Math.abs(first.boundingClientRect.top) -
+              Math.abs(second.boundingClientRect.top),
+          )[0];
+        if (visible) setActiveChapter(visible.target.id);
+      },
+      { rootMargin: '-20% 0px -65%', threshold: [0, 0.15, 0.5] },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [project.slug]);
 
   return (
     <article className='pb-20'>
@@ -147,47 +173,29 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
               className='absolute inset-x-0 top-0 z-10 h-0.5'
               style={{ backgroundColor: accent }}
             />
-            {preview ? (
-              <>
-                <div className='absolute inset-5 flex items-center lg:hidden'>
-                  <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)] bg-white'>
-                    <Image
-                      src={preview.source}
-                      alt={preview.alt ?? preview.title}
-                      fill
-                      sizes='calc(100vw - 80px)'
-                      className='object-cover'
-                      priority
-                    />
-                  </div>
-                </div>
-                <div className='absolute inset-0 hidden grid-rows-[0.7fr_1.3fr] lg:grid'>
-                  <div className='flex items-center border-b border-[var(--line-default)] p-5'>
-                    <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)] bg-white'>
-                      <Image
-                        src={preview.source}
-                        alt={preview.alt ?? preview.title}
-                        fill
-                        sizes='38vw'
-                        className='object-cover'
-                        priority
-                      />
-                    </div>
-                  </div>
-                  <ArchitectureMap
-                    accent={accent}
-                    architecture={project.architecture}
-                    variant='preview'
+            <>
+              <div className='absolute inset-5 flex items-center lg:hidden'>
+                <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)]'>
+                  <ProjectVisual
+                    priority
+                    project={project}
+                    sizes='calc(100vw - 80px)'
                   />
                 </div>
-              </>
-            ) : (
-              <ArchitectureMap
-                accent={accent}
-                architecture={project.architecture}
-                variant='preview'
-              />
-            )}
+              </div>
+              <div className='absolute inset-0 hidden grid-rows-[0.7fr_1.3fr] lg:grid'>
+                <div className='flex items-center border-b border-[var(--line-default)] p-5'>
+                  <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)]'>
+                    <ProjectVisual priority project={project} sizes='38vw' />
+                  </div>
+                </div>
+                <ArchitectureMap
+                  accent={accent}
+                  architecture={project.architecture}
+                  variant='preview'
+                />
+              </div>
+            </>
           </div>
         </div>
       </div>
@@ -201,7 +209,15 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
             <a
               key={chapter.id}
               href={`#${chapter.id}`}
-              className='inline-flex min-h-[48px] shrink-0 items-center border-b-2 border-transparent px-3 font-code text-[11px] uppercase text-[var(--text-tertiary)] outline-none transition-colors hover:border-[var(--circuit-500)] hover:text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none'
+              aria-current={
+                activeChapter === chapter.id ? 'location' : undefined
+              }
+              className={`inline-flex min-h-[48px] shrink-0 items-center border-b-2 px-3 font-code text-[11px] uppercase outline-none transition-colors hover:border-[var(--circuit-500)] hover:text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none ${
+                activeChapter === chapter.id
+                  ? 'border-[var(--circuit-500)] text-[var(--text-primary)]'
+                  : 'border-transparent text-[var(--text-tertiary)]'
+              }`}
+              onClick={() => setActiveChapter(chapter.id)}
             >
               {chapter.label}
             </a>
@@ -494,8 +510,47 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
         >
           Published technical artifacts
         </h2>
-        <div className='mt-8 grid gap-4 sm:grid-cols-2'>
-          {project.evidence.map((item) => (
+        {media.length ? (
+          <div className='mt-8 grid gap-4 sm:grid-cols-2'>
+            {media.map((item) => (
+              <figure
+                key={item.id}
+                className='instrument-surface overflow-hidden rounded-lg'
+              >
+                <div
+                  className='relative min-h-[190px] bg-[var(--bg-layer)]'
+                  style={{ aspectRatio: item.aspectRatio ?? '16/9' }}
+                >
+                  {item.type === 'image' && item.src ? (
+                    <Image
+                      src={item.src}
+                      alt={item.alt}
+                      fill
+                      sizes='(min-width: 640px) 44vw, calc(100vw - 40px)'
+                      className={
+                        item.src.endsWith('.svg')
+                          ? 'object-contain p-10'
+                          : 'object-cover'
+                      }
+                    />
+                  ) : (
+                    <ProjectVisual media={item} project={project} />
+                  )}
+                </div>
+                <figcaption className='border-t border-[var(--line-soft)] p-4 text-sm leading-6 text-[var(--text-secondary)]'>
+                  {item.caption ?? item.alt}
+                  {item.redacted ? (
+                    <span className='ml-2 font-code text-[9px] uppercase text-[var(--text-tertiary)]'>
+                      Sanitized
+                    </span>
+                  ) : null}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        ) : null}
+        <div className='mt-4 grid gap-4 sm:grid-cols-2'>
+          {linkedEvidence.map((item) => (
             <a
               key={item.id}
               href={item.source}
