@@ -1,4 +1,5 @@
-import { CSSProperties, KeyboardEvent, useId, useState } from 'react';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { CSSProperties, KeyboardEvent, useId, useRef, useState } from 'react';
 
 import {
   ArchitectureEdge,
@@ -7,14 +8,19 @@ import {
   WorkItem,
 } from '@/data/work';
 
+import useIsMobile from '@/common/hooks/useIsMobile';
+
 const MAP_WIDTH = 760;
 const MAP_HEIGHT = 360;
 const NODE_WIDTH = 122;
 const NODE_HEIGHT = 64;
 
 const NODE_CODES: Record<ArchitectureNode['type'], string> = {
+  user: 'USR',
   client: 'CLI',
+  sensor: 'SNS',
   network: 'NET',
+  cloud: 'CLD',
   proxy: 'PRX',
   service: 'SVC',
   database: 'DB',
@@ -24,6 +30,33 @@ const NODE_CODES: Record<ArchitectureNode['type'], string> = {
   security: 'SEC',
   external: 'EXT',
 };
+
+const EDGE_STYLES: Record<
+  ArchitectureEdge['semantic'],
+  { color: string; dash?: string; label: string }
+> = {
+  data: { color: 'var(--circuit-500)', label: 'Data' },
+  control: { color: 'var(--signal-500)', label: 'Control' },
+  telemetry: {
+    color: 'var(--telemetry-500)',
+    dash: '2 3',
+    label: 'Telemetry',
+  },
+  warning: {
+    color: 'var(--fault-500)',
+    dash: '3 3',
+    label: 'Warning',
+  },
+  planned: {
+    color: 'var(--text-tertiary)',
+    dash: '6 5',
+    label: 'Planned',
+  },
+};
+
+const EDGE_SEMANTICS = Object.keys(
+  EDGE_STYLES,
+) as ArchitectureEdge['semantic'][];
 
 const nodeCenter = (node: ArchitectureNode) => ({
   x: node.x + NODE_WIDTH / 2,
@@ -69,6 +102,10 @@ interface ArchitectureMapProps {
   accent: string;
   activeNodeId?: string;
   variant?: 'detail' | 'preview';
+  animatePaths?: boolean;
+  pathsVisible?: boolean;
+  showPackets?: boolean;
+  packetLimit?: number;
 }
 
 const getPreviewNodes = (architecture: WorkItem['architecture']) => {
@@ -263,9 +300,18 @@ export const ArchitectureMap = ({
   accent,
   activeNodeId,
   variant = 'detail',
+  animatePaths = false,
+  pathsVisible = true,
+  showPackets = false,
+  packetLimit = 6,
 }: ArchitectureMapProps) => {
+  const reduceMotion = useReducedMotion();
   const instanceId = useId().replace(/:/g, '');
   const markerId = `arrow-${instanceId}`;
+  const packetEdgeIds = architecture.edges
+    .filter((edge) => edge.animated && edge.semantic !== 'planned')
+    .slice(0, packetLimit)
+    .map((edge) => edge.id);
   const connectedNodeIds = new Set(
     architecture.edges.flatMap((edge) => {
       if (!activeNodeId) return [];
@@ -304,6 +350,20 @@ export const ArchitectureMap = ({
         >
           <path d='M 0 0 L 6 3 L 0 6 z' fill={accent} />
         </marker>
+        {EDGE_SEMANTICS.map((semantic) => (
+          <marker
+            key={semantic}
+            id={`${markerId}-${semantic}`}
+            markerHeight='6'
+            markerWidth='6'
+            orient='auto-start-reverse'
+            refX='5'
+            refY='3'
+            viewBox='0 0 6 6'
+          >
+            <path d='M 0 0 L 6 3 L 0 6 z' fill={EDGE_STYLES[semantic].color} />
+          </marker>
+        ))}
       </defs>
       {architecture.edges.map((edge) => {
         const geometry = edgeGeometry(edge, architecture.nodes);
@@ -313,6 +373,9 @@ export const ArchitectureMap = ({
           edge.source === activeNodeId ||
           edge.target === activeNodeId;
         const edgeLabel = edge.protocol ?? edge.label;
+        const edgeStyle = EDGE_STYLES[edge.semantic];
+        const packetIndex = packetEdgeIds.indexOf(edge.id);
+        const marker = `url(#${markerId}-${edge.semantic})`;
 
         return (
           <g key={edge.id} opacity={isActive ? 1 : 0.48}>
@@ -322,29 +385,58 @@ export const ArchitectureMap = ({
               stroke='var(--diagram-track)'
               strokeWidth='5'
             />
-            <path
+            <motion.path
+              data-architecture-edge={edge.id}
+              data-semantic={edge.semantic}
               d={geometry.path}
               fill='none'
-              markerEnd={`url(#${markerId})`}
-              markerStart={
-                edge.direction === 'bidirectional'
-                  ? `url(#${markerId})`
-                  : undefined
+              initial={
+                animatePaths && !reduceMotion
+                  ? { opacity: 0.35, pathLength: 0 }
+                  : false
               }
-              stroke={accent}
+              animate={{
+                opacity: pathsVisible ? 1 : 0.35,
+                pathLength: pathsVisible ? 1 : 0,
+              }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.8,
+                ease: 'easeInOut',
+              }}
+              markerEnd={marker}
+              markerStart={
+                edge.direction === 'bidirectional' ? marker : undefined
+              }
+              stroke={edgeStyle.color}
+              strokeDasharray={edgeStyle.dash}
               strokeWidth='1.5'
             />
-            {edgeLabel ? (
-              <text
-                fill='var(--text-tertiary)'
-                fontFamily='var(--firaCode-font)'
-                fontSize='7'
-                x={geometry.labelX}
-                y={geometry.labelY}
+            {showPackets && packetIndex >= 0 ? (
+              <circle
+                aria-hidden='true'
+                data-edge={edge.id}
+                className='architecture-packet'
+                fill={edgeStyle.color}
+                r='3'
               >
-                {edgeLabel.toUpperCase()}
-              </text>
+                <animateMotion
+                  begin={`${packetIndex * 0.35}s`}
+                  dur={`${2.8 + packetIndex * 0.16}s`}
+                  path={geometry.path}
+                  repeatCount='indefinite'
+                />
+              </circle>
             ) : null}
+            <text
+              fill='var(--text-tertiary)'
+              fontFamily='var(--firaCode-font)'
+              fontSize='7'
+              x={geometry.labelX}
+              y={geometry.labelY}
+            >
+              {edgeLabel ? `${edgeLabel.toUpperCase()} · ` : ''}
+              {edgeStyle.label.toUpperCase()}
+            </text>
           </g>
         );
       })}
@@ -440,6 +532,11 @@ interface ArchitectureExplorerProps {
 }
 
 const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
+  const schematicRef = useRef<HTMLDivElement>(null);
+  const pathsVisible = useInView(schematicRef, { amount: 0.28, once: true });
+  const schematicVisible = useInView(schematicRef, { amount: 0.05 });
+  const reduceMotion = useReducedMotion();
+  const isMobile = useIsMobile();
   const [activeNodeId, setActiveNodeId] = useState(
     project.architecture.nodes[0].id,
   );
@@ -450,6 +547,9 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
     project.architecture.nodes[0];
   const activeNodeIndex = project.architecture.nodes.findIndex(
     (node) => node.id === activeNode.id,
+  );
+  const activeConnections = project.architecture.edges.filter(
+    (edge) => edge.source === activeNode.id || edge.target === activeNode.id,
   );
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -479,6 +579,7 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
       </div>
 
       <div
+        ref={schematicRef}
         className='instrument-surface mt-7 overflow-hidden rounded-lg'
         style={{ '--project-accent': accent } as CSSProperties}
       >
@@ -491,24 +592,24 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
               Select a node to inspect its role and connections
             </p>
           </div>
-          <div className='flex flex-wrap gap-x-5 gap-y-2 font-code text-[9px] uppercase text-[var(--text-tertiary)]'>
+          <div className='flex flex-wrap gap-x-4 gap-y-2 font-code text-[9px] uppercase text-[var(--text-tertiary)]'>
             <span>{project.architecture.nodes.length} nodes</span>
             <span>{project.architecture.edges.length} links</span>
-            <span className='inline-flex items-center gap-2'>
-              <span
-                aria-hidden='true'
-                className='h-2 w-2 rounded-sm'
-                style={{ backgroundColor: accent }}
-              />
-              selected path
-            </span>
-            <span className='inline-flex items-center gap-2'>
-              <span
-                aria-hidden='true'
-                className='h-2 w-2 rounded-sm bg-[var(--signal-500)]'
-              />
-              planned
-            </span>
+            {EDGE_SEMANTICS.map((semantic) => (
+              <span key={semantic} className='inline-flex items-center gap-1.5'>
+                <span
+                  aria-hidden='true'
+                  className='w-4 border-t-2'
+                  style={{
+                    borderColor: EDGE_STYLES[semantic].color,
+                    borderStyle: EDGE_STYLES[semantic].dash
+                      ? 'dashed'
+                      : 'solid',
+                  }}
+                />
+                {EDGE_STYLES[semantic].label}
+              </span>
+            ))}
           </div>
         </div>
         <div className='scrollbar-thin overflow-x-auto'>
@@ -516,7 +617,11 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
             <ArchitectureMap
               accent={accent}
               activeNodeId={activeNodeId}
+              animatePaths
               architecture={project.architecture}
+              packetLimit={isMobile ? 3 : 6}
+              pathsVisible={pathsVisible || Boolean(reduceMotion)}
+              showPackets={schematicVisible && !reduceMotion}
             />
 
             {project.architecture.nodes.map((node) => {
@@ -586,6 +691,10 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
                 {activeNode.status === 'planned' ? ' · planned' : ''}
               </p>
             ) : null}
+            <p className='mt-2 font-code text-[10px] uppercase text-[var(--text-tertiary)]'>
+              {activeConnections.length}{' '}
+              {activeConnections.length === 1 ? 'connection' : 'connections'}
+            </p>
           </div>
         </div>
       </div>
@@ -594,6 +703,9 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
         <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-medium text-[var(--circuit-500)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'>
           Architecture text view
         </summary>
+        <p className='pb-4 pt-2 text-sm leading-6 text-[var(--text-secondary)]'>
+          {project.architecture.summary}
+        </p>
         <ol className='space-y-4 pb-4 pt-2'>
           {project.architecture.nodes.map((node) => (
             <li key={node.id}>
@@ -607,6 +719,31 @@ const ArchitectureExplorer = ({ project }: ArchitectureExplorerProps) => {
             </li>
           ))}
         </ol>
+        <h3 className='font-code text-[10px] uppercase text-[var(--text-tertiary)]'>
+          Connections
+        </h3>
+        <ul className='mt-3 space-y-2 pb-4'>
+          {project.architecture.edges.map((edge) => {
+            const source = project.architecture.nodes.find(
+              (node) => node.id === edge.source,
+            );
+            const target = project.architecture.nodes.find(
+              (node) => node.id === edge.target,
+            );
+
+            return (
+              <li
+                key={edge.id}
+                className='text-sm leading-6 text-[var(--text-secondary)]'
+              >
+                {source?.label} to {target?.label}:{' '}
+                {EDGE_STYLES[edge.semantic].label}
+                {edge.protocol ? ` over ${edge.protocol}` : ''}
+                {edge.semantic === 'planned' ? ' (planned)' : ''}.
+              </li>
+            );
+          })}
+        </ul>
       </details>
     </section>
   );
