@@ -11,7 +11,7 @@ const Layout = ({ children }: LayoutProps) => {
     <div className='min-h-screen'>
       <a
         href='#main-content'
-        className='fixed left-4 top-3 z-[1000] -translate-y-20 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-transform focus:translate-y-0 motion-reduce:transition-none'
+        className='fixed left-4 top-3 z-[1000] -translate-y-20 rounded-md bg-[var(--circuit-500)] px-4 py-2 text-sm font-medium text-[var(--accent-contrast)] transition-transform focus:translate-y-0 motion-reduce:transition-none'
       >
         Skip to content
       </a>
