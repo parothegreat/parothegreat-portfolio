@@ -7,7 +7,7 @@ import {
 
 describe('work case-study data', () => {
   test('uses unique stable ids and route-safe slugs', () => {
-    expect(WORK_ITEMS).toHaveLength(6);
+    expect(WORK_ITEMS).toHaveLength(7);
     expect(new Set(WORK_ITEMS.map((item) => item.id)).size).toBe(
       WORK_ITEMS.length,
     );
@@ -29,7 +29,17 @@ describe('work case-study data', () => {
       'monitoring-stack',
       'recon-engine',
       'school-network-operations',
+      'mitra-coffeeshop',
     ]);
+  });
+
+  test('publishes the Mitra Coffeeshop live and source links', () => {
+    const coffeeshop = getWorkBySlug('mitra-coffeeshop');
+
+    expect(coffeeshop?.liveUrl).toBe('https://coffeeshop.itmivhs.net');
+    expect(coffeeshop?.repositoryUrl).toBe(
+      'https://github.com/teamitmivhs/Mitra-Coffeeshop',
+    );
   });
 
   test('keeps every architecture edge connected to a real node', () => {
