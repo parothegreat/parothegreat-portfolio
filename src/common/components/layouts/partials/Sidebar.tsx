@@ -1,31 +1,86 @@
-import SearchBox from '../../elements/SearchBox';
-import ThemeToggleButton from '../../elements/ThemeToggleButton';
-import Navigation from '../../sidebar/Navigation';
-import ProfileHeader from '../../sidebar/ProfileHeader';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useTheme } from 'next-themes';
+import { useContext, useEffect, useState } from 'react';
+import { FiMoon, FiSearch, FiSun } from 'react-icons/fi';
+
+import { PROFILE } from '@/data/profile';
+
+import { MENU_ITEMS } from '@/common/constant/menu';
+import { CommandPaletteContext } from '@/common/context/CommandPaletteContext';
+
+import Dock, { DockItemData } from '../../elements/Dock';
 
 const Sidebar = () => {
+  const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
+  const { setIsOpen } = useContext(CommandPaletteContext);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const isDark = mounted && resolvedTheme === 'dark';
+  const navigationItems: DockItemData[] = MENU_ITEMS.filter(
+    (item) => item.isShow,
+  ).map((item) => ({
+    icon: item.icon,
+    label: item.title,
+    active:
+      item.href === '/'
+        ? router.pathname === '/'
+        : router.pathname.startsWith(item.href),
+    onClick: () => router.push(item.href),
+  }));
+  const items: DockItemData[] = [
+    ...navigationItems,
+    {
+      icon: <FiSearch className='h-5 w-5' />,
+      label: 'Search',
+      onClick: () => setIsOpen(true),
+      separatorBefore: true,
+    },
+    {
+      icon: isDark ? (
+        <FiSun className='h-5 w-5' />
+      ) : (
+        <FiMoon className='h-5 w-5' />
+      ),
+      label: isDark ? 'Light mode' : 'Dark mode',
+      onClick: () => setTheme(isDark ? 'light' : 'dark'),
+    },
+  ];
+
   return (
     <aside
       id='sidebar'
-      className='sticky top-0 flex h-screen flex-col py-10'
-      aria-label='Primary navigation'
+      className='sticky top-0 flex h-screen flex-col items-center py-6'
+      aria-label='Desktop navigation'
     >
-      <ProfileHeader />
-      <div className='mt-8'>
-        <SearchBox />
-      </div>
-      <div className='mt-5'>
-        <Navigation />
-      </div>
-      <div className='mt-auto space-y-5 border-t border-neutral-200 pt-5 dark:border-neutral-800'>
-        <div className='flex items-start gap-2 px-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400'>
-          <span
-            aria-hidden='true'
-            className='mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500'
+      <div className='relative'>
+        <Link
+          href='/'
+          aria-label={`${PROFILE.name} home`}
+          title={PROFILE.name}
+          className='block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+        >
+          <Image
+            src={PROFILE.profileImage}
+            alt={`${PROFILE.name} portrait`}
+            width={48}
+            height={48}
+            className='h-12 w-12 rounded-full object-cover'
+            priority
           />
-          <span>Open to junior infrastructure and DevOps opportunities.</span>
-        </div>
-        <ThemeToggleButton showLabel />
+        </Link>
+        <span
+          aria-hidden='true'
+          className='absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--background)] bg-emerald-500'
+        />
+        <span className='sr-only'>{PROFILE.availability}</span>
+      </div>
+      <div className='flex flex-1 items-center'>
+        <Dock items={items} />
       </div>
     </aside>
   );
