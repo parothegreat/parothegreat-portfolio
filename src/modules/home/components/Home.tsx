@@ -1,5 +1,16 @@
 import Link from 'next/link';
-import { FiArrowRight, FiCheckCircle, FiGithub, FiMail } from 'react-icons/fi';
+import {
+  FiArrowRight,
+  FiCheckCircle,
+  FiCloud,
+  FiCode,
+  FiCpu,
+  FiGitBranch,
+  FiGithub,
+  FiMail,
+  FiShield,
+  FiWifi,
+} from 'react-icons/fi';
 
 import { CURRENT_FOCUS } from '@/data/activity';
 import {
@@ -11,10 +22,22 @@ import {
 import { TOOLS } from '@/data/tools';
 import { FEATURED_WORK } from '@/data/work';
 
+import {
+  InteractiveSurface,
+  SignalText,
+} from '@/common/components/elements/InteractiveSurface';
 import ToolIcon from '@/modules/toolkit/components/ToolIcon';
-import WorkList from '@/modules/work/components/WorkList';
+import WorkExplorer from '@/modules/work/components/WorkExplorer';
 
 const CORE_TOOLS = TOOLS.filter((tool) => tool.featured).slice(0, 12);
+const CAPABILITY_ICONS = {
+  infrastructure: FiCloud,
+  devops: FiGitBranch,
+  networking: FiWifi,
+  backend: FiCode,
+  security: FiShield,
+  iot: FiCpu,
+} as const;
 
 const SectionHeader = ({
   eyebrow,
@@ -26,14 +49,12 @@ const SectionHeader = ({
   description?: string;
 }) => (
   <header className='max-w-2xl'>
-    <p className='font-code text-xs font-medium uppercase text-blue-600 dark:text-blue-400'>
-      {eyebrow}
-    </p>
-    <h2 className='mt-3 text-2xl font-medium leading-tight text-neutral-950 dark:text-neutral-100 sm:text-3xl'>
+    <p className='signal-label'>{eyebrow}</p>
+    <h2 className='mt-3 text-2xl font-medium leading-tight text-[var(--text-primary)] sm:text-3xl'>
       {title}
     </h2>
     {description ? (
-      <p className='mt-3 text-base leading-7 text-neutral-600 dark:text-neutral-400'>
+      <p className='mt-3 text-base leading-7 text-[var(--text-secondary)]'>
         {description}
       </p>
     ) : null}
@@ -47,76 +68,74 @@ const Home = () => {
         aria-labelledby='home-heading'
         className='relative lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)] lg:items-center lg:gap-12'
       >
-        <div className='border-l-2 border-blue-600 pl-5 dark:border-blue-400 sm:pl-7'>
-          <p className='font-code text-xs font-medium uppercase text-blue-600 dark:text-blue-400'>
-            DevOps · Systems · Security
+        <div className='border-l-2 border-[var(--circuit-500)] pl-5 sm:pl-7'>
+          <p className='signal-label'>
+            <SignalText>Systems online / GMT+7</SignalText>
           </p>
           <h1
             id='home-heading'
-            className='mt-4 text-4xl font-medium leading-[1.12] text-neutral-950 dark:text-white sm:text-5xl lg:text-[52px]'
+            className='mt-4 text-4xl font-medium leading-[1.12] text-[var(--text-primary)] sm:text-5xl lg:text-[52px]'
           >
             {PROFILE.headline}
           </h1>
-          <p className='mt-5 max-w-2xl text-base leading-7 text-neutral-600 dark:text-neutral-300 sm:text-lg sm:leading-8'>
+          <p className='mt-5 max-w-2xl text-base leading-7 text-[var(--text-secondary)] sm:text-lg sm:leading-8'>
             {PROFILE.shortBio}
           </p>
           <div className='mt-7 flex flex-col gap-3 min-[420px]:flex-row'>
             <Link
               href='/work'
-              className='inline-flex min-h-[46px] items-center justify-center gap-2 rounded-md bg-blue-600 px-5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-blue-500 dark:hover:bg-blue-400 dark:hover:text-neutral-950'
+              className='inline-flex min-h-[46px] items-center justify-center gap-2 rounded-md bg-[var(--circuit-500)] px-5 text-sm font-medium text-[var(--accent-contrast)] transition-colors hover:bg-[var(--accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none'
             >
               View selected work
               <FiArrowRight aria-hidden='true' />
             </Link>
             <Link
               href='/about'
-              className='inline-flex min-h-[46px] items-center justify-center rounded-md border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-900'
+              className='inline-flex min-h-[46px] items-center justify-center rounded-md border border-[var(--line-default)] px-5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--surface-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none'
             >
               About me
             </Link>
           </div>
-          <p className='mt-6 flex items-start gap-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400'>
+          <p className='mt-6 flex items-start gap-2 text-sm leading-6 text-[var(--text-secondary)]'>
             <FiCheckCircle
               aria-hidden='true'
-              className='mt-1 shrink-0 text-emerald-600 dark:text-emerald-400'
+              className='mt-1 shrink-0 text-[var(--telemetry-500)]'
             />
             {PROFILE.availability}
           </p>
         </div>
 
-        <aside
+        <InteractiveSurface
           aria-label='Current status'
-          className='mt-10 rounded-lg border border-neutral-200 bg-[var(--surface-raised)] p-5 shadow-sm dark:border-neutral-800 lg:mt-0'
+          className='mt-10 rounded-lg p-5 lg:mt-0'
         >
-          <p className='font-code text-xs font-medium uppercase text-neutral-500'>
+          <p className='font-code text-xs font-medium uppercase text-[var(--signal-500)]'>
             Current status
           </p>
-          <dl className='mt-4 divide-y divide-neutral-200 dark:divide-neutral-800'>
+          <dl className='mt-4 divide-y divide-[var(--line-soft)]'>
             {PROFILE_STATUS.map((item) => (
               <div
                 key={item.label}
                 className='grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-3 text-sm first:pt-0 last:pb-0'
               >
-                <dt className='text-neutral-500'>{item.label}</dt>
-                <dd className='min-w-0 break-words text-neutral-800 dark:text-neutral-200'>
+                <dt className='text-[var(--text-tertiary)]'>{item.label}</dt>
+                <dd className='min-w-0 break-words text-[var(--text-primary)]'>
                   {item.value}
                 </dd>
               </div>
             ))}
           </dl>
-        </aside>
+        </InteractiveSurface>
       </section>
 
       <section aria-label='Practical experience'>
-        <ul className='grid grid-cols-2 border-y border-neutral-200 dark:border-neutral-800 sm:grid-cols-4'>
+        <ul className='grid grid-cols-2 border-y border-[var(--line-default)] sm:grid-cols-4'>
           {PROOF_POINTS.map((point, index) => (
             <li
               key={point}
-              className={`flex min-h-[88px] items-center px-3 py-4 text-sm leading-5 text-neutral-700 dark:text-neutral-300 sm:px-4 ${
-                index % 2 === 0
-                  ? 'border-r border-neutral-200 dark:border-neutral-800'
-                  : ''
-              } ${index < 2 ? 'border-b border-neutral-200 dark:border-neutral-800 sm:border-b-0' : ''} ${
+              className={`flex min-h-[88px] items-center px-3 py-4 text-sm leading-5 text-[var(--text-secondary)] sm:px-4 ${
+                index % 2 === 0 ? 'border-r border-[var(--line-default)]' : ''
+              } ${index < 2 ? 'border-b border-[var(--line-default)] sm:border-b-0' : ''} ${
                 index === 1 ? 'sm:border-r' : ''
               }`}
             >
@@ -137,14 +156,14 @@ const Home = () => {
           </div>
           <Link
             href='/work'
-            className='inline-flex min-h-[44px] shrink-0 items-center gap-2 text-sm font-medium text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-400'
+            className='inline-flex min-h-[44px] shrink-0 items-center gap-2 text-sm font-medium text-[var(--circuit-500)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
           >
             View all work
             <FiArrowRight aria-hidden='true' />
           </Link>
         </div>
         <div className='mt-7'>
-          <WorkList items={FEATURED_WORK} compact />
+          <WorkExplorer items={FEATURED_WORK} compact />
         </div>
       </section>
 
@@ -156,27 +175,42 @@ const Home = () => {
           />
         </div>
         <ol className='mt-7 grid gap-x-10 md:grid-cols-2'>
-          {CAPABILITIES.map((capability, index) => (
-            <li
-              key={capability.id}
-              className='grid grid-cols-[32px_minmax(0,1fr)] gap-3 border-t border-neutral-200 py-6 dark:border-neutral-800'
-            >
-              <span className='font-code text-xs text-blue-600 dark:text-blue-400'>
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <div>
-                <h3 className='font-medium text-neutral-950 dark:text-neutral-100'>
-                  {capability.title}
-                </h3>
-                <p className='mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400'>
-                  {capability.description}
-                </p>
-                <p className='mt-3 font-code text-[11px] leading-5 text-neutral-500'>
-                  Evidence: {capability.evidence}
-                </p>
-              </div>
-            </li>
-          ))}
+          {CAPABILITIES.map((capability, index) => {
+            const Icon =
+              CAPABILITY_ICONS[capability.id as keyof typeof CAPABILITY_ICONS];
+
+            return (
+              <li
+                key={capability.id}
+                className='grid grid-cols-[40px_minmax(0,1fr)] gap-4 border-t border-[var(--line-default)] py-6'
+              >
+                <div className='flex flex-col items-center gap-2'>
+                  <Icon
+                    aria-hidden='true'
+                    className={`h-5 w-5 ${
+                      capability.id === 'iot'
+                        ? 'text-[var(--signal-500)]'
+                        : 'text-[var(--circuit-500)]'
+                    }`}
+                  />
+                  <span className='font-code text-[10px] text-[var(--text-tertiary)]'>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                </div>
+                <div>
+                  <h3 className='font-medium text-[var(--text-primary)]'>
+                    {capability.title}
+                  </h3>
+                  <p className='mt-2 text-sm leading-6 text-[var(--text-secondary)]'>
+                    {capability.description}
+                  </p>
+                  <p className='mt-3 font-code text-[11px] leading-5 text-[var(--text-tertiary)]'>
+                    Evidence: {capability.evidence}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </section>
 
@@ -190,24 +224,24 @@ const Home = () => {
           </div>
           <Link
             href='/toolkit'
-            className='inline-flex min-h-[44px] shrink-0 items-center gap-2 text-sm font-medium text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-400'
+            className='inline-flex min-h-[44px] shrink-0 items-center gap-2 text-sm font-medium text-[var(--circuit-500)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
           >
             Explore full toolkit
             <FiArrowRight aria-hidden='true' />
           </Link>
         </div>
-        <ul className='mt-7 grid grid-cols-2 border-y border-neutral-200 dark:border-neutral-800 sm:grid-cols-3 lg:grid-cols-4'>
+        <ul className='mt-7 grid grid-cols-2 border-y border-[var(--line-default)] sm:grid-cols-3 lg:grid-cols-4'>
           {CORE_TOOLS.map((tool) => (
             <li
               key={tool.id}
-              className='flex min-h-[72px] min-w-0 items-center gap-3 border-b border-r border-neutral-200 px-3 py-4 last:border-b-0 dark:border-neutral-800 sm:px-4'
+              className='flex min-h-[72px] min-w-0 items-center gap-3 border-b border-r border-[var(--line-default)] px-3 py-4 last:border-b-0 sm:px-4'
             >
               <ToolIcon name={tool.icon} />
               <div className='min-w-0'>
-                <p className='truncate text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                <p className='truncate text-sm font-medium text-[var(--text-primary)]'>
                   {tool.name}
                 </p>
-                <p className='mt-1 truncate font-code text-[10px] text-neutral-500'>
+                <p className='mt-1 truncate font-code text-[10px] text-[var(--text-tertiary)]'>
                   {tool.domain}
                 </p>
               </div>
@@ -218,7 +252,7 @@ const Home = () => {
 
       <section
         aria-labelledby='activity-preview-heading'
-        className='grid gap-8 border-y border-neutral-200 py-8 dark:border-neutral-800 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'
+        className='grid gap-8 border-y border-[var(--line-default)] py-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'
       >
         <div id='activity-preview-heading'>
           <SectionHeader
@@ -228,22 +262,22 @@ const Home = () => {
           />
           <Link
             href='/activity'
-            className='mt-5 inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-400'
+            className='mt-5 inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-[var(--circuit-500)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
           >
             View activity
             <FiArrowRight aria-hidden='true' />
           </Link>
         </div>
-        <dl className='divide-y divide-neutral-200 dark:divide-neutral-800'>
+        <dl className='divide-y divide-[var(--line-default)]'>
           {CURRENT_FOCUS.map((item) => (
             <div
               key={item.label}
               className='grid grid-cols-[100px_minmax(0,1fr)] gap-4 py-4 first:pt-0 last:pb-0'
             >
-              <dt className='font-code text-xs uppercase text-neutral-500'>
+              <dt className='font-code text-xs uppercase text-[var(--text-tertiary)]'>
                 {item.label}
               </dt>
-              <dd className='text-sm text-neutral-800 dark:text-neutral-200'>
+              <dd className='text-sm text-[var(--text-primary)]'>
                 {item.value}
               </dd>
             </div>
@@ -251,24 +285,24 @@ const Home = () => {
         </dl>
       </section>
 
-      <section
+      <InteractiveSurface
         aria-labelledby='home-contact-heading'
-        className='rounded-lg border border-neutral-200 bg-[var(--surface-raised)] p-6 shadow-sm dark:border-neutral-800 sm:p-8'
+        className='rounded-lg p-6 sm:p-8'
       >
         <h2
           id='home-contact-heading'
-          className='text-2xl font-medium text-neutral-950 dark:text-neutral-100'
+          className='text-2xl font-medium text-[var(--text-primary)]'
         >
           Let&apos;s build something reliable.
         </h2>
-        <p className='mt-3 max-w-2xl text-base leading-7 text-neutral-600 dark:text-neutral-400'>
+        <p className='mt-3 max-w-2xl text-base leading-7 text-[var(--text-secondary)]'>
           I&apos;m open to infrastructure, DevOps, backend, security, and
           technical collaboration opportunities.
         </p>
         <div className='mt-6 flex flex-wrap gap-3'>
           <Link
             href='mailto:alvaroprayogo38@gmail.com'
-            className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-400 dark:hover:text-neutral-950'
+            className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[var(--circuit-500)] px-4 text-sm font-medium text-[var(--accent-contrast)] hover:bg-[var(--accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-1)]'
           >
             <FiMail aria-hidden='true' />
             Email me
@@ -277,13 +311,13 @@ const Home = () => {
             href='https://github.com/parothegreat'
             target='_blank'
             rel='noopener noreferrer'
-            className='inline-flex min-h-[44px] items-center gap-2 rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-800 hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-600'
+            className='inline-flex min-h-[44px] items-center gap-2 rounded-md border border-[var(--line-default)] px-4 text-sm font-medium text-[var(--text-primary)] hover:border-[var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
           >
             <FiGithub aria-hidden='true' />
             View GitHub
           </Link>
         </div>
-      </section>
+      </InteractiveSurface>
     </div>
   );
 };
