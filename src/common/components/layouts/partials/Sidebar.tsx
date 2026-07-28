@@ -60,7 +60,7 @@ const Sidebar = () => {
       <Link
         href='/'
         aria-label={`${PROFILE.name} home`}
-        className='flex flex-col items-center rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+        className='flex flex-col items-center rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
       >
         <span className='relative'>
           <Image
@@ -73,13 +73,13 @@ const Sidebar = () => {
           />
           <span
             aria-hidden='true'
-            className='absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--background)] bg-emerald-500'
+            className='absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--background)] bg-[var(--telemetry-500)]'
           />
         </span>
-        <span className='mt-3 whitespace-nowrap text-sm font-medium text-neutral-950 dark:text-neutral-100'>
+        <span className='mt-3 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]'>
           {PROFILE.name}
         </span>
-        <span className='mt-0.5 text-xs text-neutral-500'>
+        <span className='mt-0.5 text-xs text-[var(--text-tertiary)]'>
           @{PROFILE.username}
         </span>
       </Link>
