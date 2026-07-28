@@ -1,7 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
-import { CSSProperties, useState } from 'react';
+import { CSSProperties, KeyboardEvent, useRef, useState } from 'react';
 import { FiArrowUpRight, FiChevronDown } from 'react-icons/fi';
 
 import {
@@ -12,6 +11,7 @@ import {
 } from '@/data/work';
 
 import { ArchitectureMap } from './ArchitectureExplorer';
+import ProjectVisual from './ProjectVisual';
 
 interface WorkExplorerProps {
   items: WorkItem[];
@@ -21,21 +21,31 @@ interface WorkExplorerProps {
 const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
   const [selectedId, setSelectedId] = useState(items[0]?.id);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const desktopRows = useRef<Array<HTMLAnchorElement | null>>([]);
   const reduceMotion = useReducedMotion();
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
 
   if (!selected) return null;
 
   const selectedAccent = WORK_ACCENT_COLORS[selected.accent];
-  const selectedPreview = selected.evidence.find(
-    (item) => item.type === 'image' && item.source.startsWith('/'),
-  );
+  const handleDesktopKeyDown = (
+    event: KeyboardEvent<HTMLAnchorElement>,
+    index: number,
+  ) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+
+    event.preventDefault();
+    const offset = event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex = (index + offset + items.length) % items.length;
+    setSelectedId(items[nextIndex].id);
+    desktopRows.current[nextIndex]?.focus();
+  };
 
   return (
     <div>
       <div className='hidden gap-8 lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]'>
         <ol className='border-t border-[var(--line-default)]'>
-          {items.map((item) => {
+          {items.map((item, index) => {
             const isSelected = item.id === selected.id;
             const accent = WORK_ACCENT_COLORS[item.accent];
 
@@ -52,11 +62,15 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                   />
                 ) : null}
                 <Link
+                  ref={(element) => {
+                    desktopRows.current[index] = element;
+                  }}
                   href={`/work/${item.slug}`}
                   aria-label={`Open ${item.title} case study`}
                   aria-current={isSelected ? 'true' : undefined}
                   className='group grid min-h-[148px] grid-cols-[42px_minmax(0,1fr)] gap-3 py-6 pl-4 pr-2 outline-none transition-colors duration-200 hover:bg-[color:var(--surface-1)] focus-visible:bg-[var(--surface-1)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none'
                   onFocus={() => setSelectedId(item.id)}
+                  onKeyDown={(event) => handleDesktopKeyDown(event, index)}
                   onMouseEnter={() => setSelectedId(item.id)}
                 >
                   <span className='pt-1 font-code text-[11px] text-[var(--text-tertiary)]'>
@@ -106,8 +120,10 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                 transition={{ duration: reduceMotion ? 0.01 : 0.18 }}
               >
                 <div
-                  className={`relative overflow-hidden border-b border-[var(--line-default)] bg-[var(--bg-layer)] ${
-                    compact ? 'h-44' : 'h-56'
+                  className={`relative grid overflow-hidden border-b border-[var(--line-default)] bg-[var(--bg-layer)] ${
+                    compact
+                      ? 'h-56 grid-rows-[1.3fr_0.7fr]'
+                      : 'h-[340px] grid-rows-[1.35fr_0.65fr]'
                   }`}
                 >
                   <div
@@ -115,21 +131,17 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                     className='absolute inset-x-0 top-0 h-0.5'
                     style={{ backgroundColor: selectedAccent }}
                   />
-                  {selectedPreview ? (
-                    <Image
-                      src={selectedPreview.source}
-                      alt={selectedPreview.alt ?? selectedPreview.title}
-                      fill
-                      sizes='(min-width: 1024px) 38vw, 100vw'
-                      className='object-cover'
-                    />
-                  ) : (
+                  <ProjectVisual
+                    project={selected}
+                    sizes='(min-width: 1024px) 38vw, 100vw'
+                  />
+                  <div className='min-h-0 border-t border-[var(--line-default)]'>
                     <ArchitectureMap
                       accent={selectedAccent}
                       architecture={selected.architecture}
                       variant='preview'
                     />
-                  )}
+                  </div>
                 </div>
 
                 <div className='p-5'>
@@ -195,11 +207,6 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
       <ol className='border-t border-[var(--line-default)] lg:hidden'>
         {items.map((item) => {
           const isExpanded = expandedId === item.id;
-          const accent = WORK_ACCENT_COLORS[item.accent];
-          const preview = item.evidence.find(
-            (evidence) =>
-              evidence.type === 'image' && evidence.source.startsWith('/'),
-          );
           const panelId = `work-preview-${item.id}`;
 
           return (
@@ -264,23 +271,10 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                   >
                     <div className='mb-6 ml-9 overflow-hidden rounded-md border border-[var(--line-default)] bg-[var(--surface-1)]'>
                       <div className='h-40 bg-[var(--bg-layer)]'>
-                        {preview ? (
-                          <div className='relative h-full'>
-                            <Image
-                              src={preview.source}
-                              alt={preview.alt ?? preview.title}
-                              fill
-                              sizes='calc(100vw - 76px)'
-                              className='object-cover'
-                            />
-                          </div>
-                        ) : (
-                          <ArchitectureMap
-                            accent={accent}
-                            architecture={item.architecture}
-                            variant='preview'
-                          />
-                        )}
+                        <ProjectVisual
+                          project={item}
+                          sizes='calc(100vw - 76px)'
+                        />
                       </div>
                       <div className='border-t border-[var(--line-soft)] p-4'>
                         <p className='text-sm leading-6 text-[var(--text-secondary)]'>
@@ -289,6 +283,9 @@ const WorkExplorer = ({ items, compact = false }: WorkExplorerProps) => {
                         <p className='mt-3 font-code text-[10px] text-[var(--text-tertiary)]'>
                           {item.role.join(' / ')} ·{' '}
                           {DOCUMENTATION_LEVEL_LABELS[item.documentationLevel]}
+                        </p>
+                        <p className='mt-4 border-l border-[var(--line-strong)] pl-3 text-xs leading-5 text-[var(--text-secondary)]'>
+                          {item.architecture.summary}
                         </p>
                         <Link
                           href={`/work/${item.slug}`}
