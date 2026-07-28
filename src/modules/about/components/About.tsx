@@ -15,11 +15,11 @@ const formatMonth = (value: string) =>
 
 const About = () => {
   const quickFacts = [
-    PROFILE.location,
-    'Industrial Electronics Engineering',
-    'DevOps, Systems, Security',
-    'Primary environment: Linux',
-    'Open to junior opportunities',
+    { label: 'Location', value: PROFILE.location },
+    { label: 'Education', value: 'Industrial Electronics Engineering' },
+    { label: 'Focus', value: 'DevOps, Systems, Security' },
+    { label: 'Environment', value: 'Linux' },
+    { label: 'Availability', value: 'Open to junior opportunities' },
   ];
 
   return (
@@ -27,28 +27,28 @@ const About = () => {
       <section
         id='intro'
         aria-labelledby='about-intro-heading'
-        className='grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]'
+        className='grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]'
       >
-        <div>
-          <Image
-            src={PROFILE.profileImage}
-            alt={`${PROFILE.name} portrait`}
-            width={240}
-            height={300}
-            className='aspect-[4/5] w-full max-w-[240px] rounded-lg object-cover object-top'
-            priority
-          />
-          <ul className='mt-6 border-y border-[var(--line-default)] py-2'>
+        <aside>
+          <p className='font-code text-xs font-medium uppercase text-[var(--text-primary)]'>
+            At a glance
+          </p>
+          <dl className='mt-4 border-y border-[var(--line-default)]'>
             {quickFacts.map((fact) => (
-              <li
-                key={fact}
-                className='border-b border-[var(--line-default)] py-3 text-sm leading-5 text-[var(--text-secondary)] last:border-b-0'
+              <div
+                key={fact.label}
+                className='border-b border-[var(--line-default)] py-3 last:border-b-0'
               >
-                {fact}
-              </li>
+                <dt className='font-code text-[10px] uppercase text-[var(--text-tertiary)]'>
+                  {fact.label}
+                </dt>
+                <dd className='mt-1 text-sm leading-5 text-[var(--text-secondary)]'>
+                  {fact.value}
+                </dd>
+              </div>
             ))}
-          </ul>
-        </div>
+          </dl>
+        </aside>
 
         <div>
           <p className='signal-label'>Introduction</p>
@@ -62,33 +62,21 @@ const About = () => {
             <p>
               I&apos;m {PROFILE.fullName}, also known online as{' '}
               <span className='font-medium'>@{PROFILE.username}</span>. I study
-              Industrial Electronics Engineering in Bekasi and focus on system
-              administration, DevOps, networking, backend services, and
-              cybersecurity.
+              Industrial Electronics Engineering in Bekasi and work across
+              Linux, DevOps, networking, backend services, and cybersecurity.
             </p>
             <p>
-              My work sits around Linux infrastructure, network fundamentals,
-              automation, operational APIs, and controlled security testing. I
-              prefer systems that are understandable, observable, and repairable
-              under real constraints.
-            </p>
-            <p>
-              At IT Mitra Industri Vocational High School, I contribute to
-              infrastructure, networking, backend, network security, and DevOps
-              work. My internship at Denso Manufacturing added practical
-              experience with network monitoring, troubleshooting, and daily IT
+              My school work covers infrastructure, network operations, backend
+              systems, and DevOps. An internship at Denso Manufacturing added
+              practical experience in monitoring, troubleshooting, and daily IT
               operations.
             </p>
             <p>
-              I&apos;m looking for junior opportunities where I can keep
-              learning while contributing to infrastructure, operations,
-              backend, or security work.
+              I prefer systems that are understandable, observable, and
+              repairable under real constraints, and I&apos;m looking for junior
+              opportunities where I can keep building that discipline.
             </p>
           </div>
-          <blockquote className='mt-8 border-l-2 border-[var(--signal-500)] pl-5 text-lg leading-8 text-[var(--text-primary)]'>
-            Infrastructure only becomes useful when it is understandable,
-            observable, and defensible.
-          </blockquote>
         </div>
       </section>
 
