@@ -148,10 +148,10 @@ export const DOCUMENTATION_LEVEL_LABELS: Record<DocumentationLevel, string> = {
 export const WORK_ACCENT_COLORS: Record<WorkAccent, string> = {
   systems: 'var(--circuit-500)',
   iot: 'var(--signal-500)',
-  infrastructure: 'var(--circuit-400)',
+  infrastructure: 'var(--circuit-600)',
   observability: 'var(--telemetry-500)',
   security: 'var(--fault-500)',
-  networking: '#7b83ff',
+  networking: 'var(--circuit-400)',
 };
 
 export const WORK_ITEMS: WorkItem[] = [
