@@ -109,6 +109,32 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
             <p className='mt-6 break-words font-code text-[11px] leading-5 text-[var(--text-tertiary)]'>
               {project.stack.join(' · ')}
             </p>
+            {project.liveUrl || project.repositoryUrl ? (
+              <div className='mt-6 flex flex-wrap gap-3'>
+                {project.liveUrl ? (
+                  <a
+                    href={project.liveUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[var(--circuit-500)] px-4 text-sm font-medium text-[var(--bg-void)] outline-none hover:bg-[var(--circuit-400)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
+                  >
+                    Live site
+                    <FiArrowUpRight aria-hidden='true' />
+                  </a>
+                ) : null}
+                {project.repositoryUrl ? (
+                  <a
+                    href={project.repositoryUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='inline-flex min-h-[44px] items-center gap-2 rounded-md border border-[var(--line-strong)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
+                  >
+                    GitHub repository
+                    <FiArrowUpRight aria-hidden='true' />
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
           </header>
 
           <div className='relative min-h-[260px] border-t border-[var(--line-default)] bg-[var(--bg-layer)] lg:border-l lg:border-t-0'>
