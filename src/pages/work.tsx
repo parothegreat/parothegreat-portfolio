@@ -62,7 +62,8 @@ const WorkPage: NextPage = () => {
               Case studies
             </dt>
             <dd className='mt-2 text-lg font-medium text-[var(--text-primary)]'>
-              {documentationCounts['case-study']}
+              {documentationCounts['case-study'] +
+                documentationCounts['deep-dive']}
             </dd>
           </div>
           <div className='px-3 py-4 sm:px-5'>
