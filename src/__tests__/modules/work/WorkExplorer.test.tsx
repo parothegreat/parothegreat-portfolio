@@ -52,6 +52,26 @@ describe('WorkExplorer', () => {
     expect(firstLink).toHaveAttribute('aria-current', 'true');
   });
 
+  test('uses architecture instead of a clipped placeholder in previews', async () => {
+    const user = userEvent.setup();
+    render(<WorkExplorer compact items={items} />);
+
+    await user.hover(
+      screen.getByRole('link', {
+        name: `Open ${items[1].title} case study`,
+      }),
+    );
+
+    expect(
+      await screen.findByText('INTERFACE CAPTURE PENDING'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('img', {
+        name: /Team IT Work Order System. interface capture pending/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   test('expands a mobile preview and exposes an explicit case-study link', async () => {
     const user = userEvent.setup();
     render(<WorkExplorer items={items} />);
