@@ -1,3 +1,3 @@
-import WorkList from './components/WorkList';
+import WorkExplorer from './components/WorkExplorer';
 
-export default WorkList;
+export default WorkExplorer;
