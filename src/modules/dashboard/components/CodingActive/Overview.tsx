@@ -111,33 +111,33 @@ const Overview = ({ data, totalLabel }: OverviewProps) => {
   ];
 
   return (
-    <div className='mt-8 border-y border-neutral-200 dark:border-neutral-800 lg:grid lg:grid-cols-[1.1fr_1fr]'>
+    <div className='mt-8 border-y border-[var(--line-default)] lg:grid lg:grid-cols-[1.1fr_1fr]'>
       <div className='py-7 lg:pr-10'>
-        <p className='font-code text-xs uppercase text-neutral-500'>
+        <p className='font-code text-xs uppercase text-[var(--text-tertiary)]'>
           {totalLabel} coding time
         </p>
-        <p className='mt-3 text-4xl font-medium text-neutral-950 dark:text-neutral-50 sm:text-5xl'>
+        <p className='mt-3 text-4xl font-medium text-[var(--text-primary)] sm:text-5xl'>
           {total}
         </p>
-        <p className='mt-3 text-sm text-neutral-500'>{dateRange}</p>
+        <p className='mt-3 text-sm text-[var(--text-tertiary)]'>{dateRange}</p>
       </div>
 
-      <dl className='grid grid-cols-2 border-t border-neutral-200 dark:border-neutral-800 lg:border-l lg:border-t-0'>
+      <dl className='grid grid-cols-2 border-t border-[var(--line-default)] lg:border-l lg:border-t-0'>
         {secondaryMetrics.map((metric, index) => (
           <div
             key={metric.label}
             className={[
               'min-w-0 px-4 py-5 sm:px-5',
-              index === 0
-                ? 'border-r border-neutral-200 dark:border-neutral-800'
-                : '',
+              index === 0 ? 'border-r border-[var(--line-default)]' : '',
               index === 2
-                ? 'col-span-2 border-t border-neutral-200 dark:border-neutral-800'
+                ? 'col-span-2 border-t border-[var(--line-default)]'
                 : '',
             ].join(' ')}
           >
-            <dt className='text-xs text-neutral-500'>{metric.label}</dt>
-            <dd className='mt-2 flex items-center gap-2 break-words text-sm font-medium text-neutral-900 dark:text-neutral-100 sm:text-base'>
+            <dt className='text-xs text-[var(--text-tertiary)]'>
+              {metric.label}
+            </dt>
+            <dd className='mt-2 flex items-center gap-2 break-words text-sm font-medium text-[var(--text-primary)] sm:text-base'>
               {metric.language
                 ? (() => {
                     const languageIcon = LANGUAGE_ICONS[
