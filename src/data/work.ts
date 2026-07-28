@@ -2068,6 +2068,351 @@ export const WORK_ITEMS: WorkItem[] = [
       'Existing ordering platforms can remove the need to build and secure a custom checkout system.',
     ],
   },
+  {
+    id: 'smart-green-hub',
+    slug: 'smart-green-hub',
+    index: 8,
+    title: 'Smart Green Hub',
+    shortDescription:
+      'IoT hydroponics monitoring and control with ESP32-S3 firmware, Firebase, a React dashboard, and cloud OTA.',
+    outcome:
+      'One operational flow for realtime crop telemetry, remote actuator control, alerts, reports, and firmware updates across different networks.',
+    category: 'IoT & Operations',
+    role: ['Firmware', 'Dashboard', 'Cloud'],
+    stack: [
+      'ESP32-S3',
+      'C++',
+      'FreeRTOS',
+      'Firebase RTDB',
+      'React',
+      'TypeScript',
+      'PlatformIO',
+    ],
+    status: 'active',
+    documentationLevel: 'case-study',
+    accent: 'iot',
+    repositoryUrl: 'https://github.com/VARR-git/Smart-Green-Hub',
+    caseStudyAvailable: true,
+    environment: [
+      'Hydroponic system',
+      'ESP32-S3 device',
+      'Firebase cloud',
+      'Browser dashboard',
+    ],
+    sections: [
+      {
+        id: 'context',
+        eyebrow: 'Context',
+        title: 'One control plane for a distributed hydroponic system',
+        paragraphs: [
+          'Smart Green Hub joins field firmware and a browser dashboard through Firebase Realtime Database. The ESP32-S3 publishes crop conditions and listens for pump, lamp, and fan commands without requiring a public device IP.',
+          'The dashboard turns that stream into readable status, trends, alerts, daily reports, settings, and actuator controls.',
+        ],
+        points: [
+          'Telemetry: pH, TDS, temperature, humidity, and device heartbeat',
+          'Controls: pump, lamp, and fan',
+          'Update paths: USB, local-network OTA, and cloud OTA',
+        ],
+      },
+      {
+        id: 'problem',
+        eyebrow: 'Problem',
+        title: 'Field devices need visibility and updates after deployment',
+        paragraphs: [
+          'A hydroponic controller becomes difficult to operate when its readings, actuator state, and device health are only visible over a local serial connection.',
+          'Firmware updates also need a recovery path for the bench and a remote path for a device that may be deployed on another network.',
+        ],
+      },
+      {
+        id: 'build',
+        eyebrow: 'Build',
+        title: 'Firmware, cloud state, and dashboard share explicit boundaries',
+        paragraphs: [
+          'The ESP32-S3 runs sensor and cloud tasks across FreeRTOS cores, maintains a realtime Firebase stream, reports a five-second heartbeat, and applies actuator state from the database.',
+          'The React and TypeScript dashboard uses authenticated Firebase access for live monitoring and control. GitHub Releases carries versioned firmware binaries for remote HTTP updates.',
+        ],
+      },
+    ],
+    ownership: {
+      owned: [
+        'ESP32-S3 firmware and FreeRTOS task structure',
+        'Firebase Realtime Database integration',
+        'React dashboard and authenticated admin flow',
+        'USB, local OTA, and cloud OTA release workflow',
+      ],
+      contributed: [
+        'Hydroponic monitoring and actuator-control model',
+        'Alert, reporting, threshold, and plant-profile interfaces',
+        'Firmware and dashboard operational documentation',
+      ],
+      boundaries: [
+        'Sensor channels remain placeholders until the physical probes are wired and calibrated.',
+        'Cloud OTA currently relaxes certificate verification and should embed a trusted root CA before higher-risk deployment.',
+      ],
+    },
+    architecture: {
+      title: 'Hydroponic telemetry and control flow',
+      summary:
+        'Sensors feed the ESP32-S3, Firebase carries telemetry and commands, the dashboard provides the operator interface, and GitHub Releases supplies versioned firmware.',
+      nodes: [
+        {
+          id: 'sensors',
+          label: 'Sensors',
+          type: 'hardware',
+          description:
+            'pH, TDS, temperature, and humidity inputs for the hydroponic system.',
+          x: 20,
+          y: 50,
+          status: 'planned',
+        },
+        {
+          id: 'esp32',
+          label: 'ESP32-S3',
+          type: 'hardware',
+          description:
+            'Runs sensor logic, cloud synchronization, actuator control, heartbeat, and OTA.',
+          technology: 'C++ / FreeRTOS',
+          x: 200,
+          y: 50,
+          status: 'active',
+        },
+        {
+          id: 'firebase',
+          label: 'Firebase RTDB',
+          type: 'database',
+          description:
+            'Realtime state boundary for telemetry, commands, device health, and firmware version.',
+          technology: 'Firebase',
+          x: 380,
+          y: 50,
+          status: 'active',
+        },
+        {
+          id: 'dashboard',
+          label: 'React Dashboard',
+          type: 'client',
+          description:
+            'Authenticated interface for monitoring, trends, alerts, reports, settings, and controls.',
+          technology: 'React / TypeScript',
+          x: 580,
+          y: 50,
+          status: 'active',
+        },
+        {
+          id: 'actuators',
+          label: 'Actuators',
+          type: 'hardware',
+          description:
+            'Pump, lamp, and fan outputs controlled by the firmware.',
+          x: 200,
+          y: 235,
+          status: 'active',
+        },
+        {
+          id: 'releases',
+          label: 'GitHub Releases',
+          type: 'external',
+          description:
+            'Stores versioned firmware binaries used by the cloud OTA path.',
+          technology: 'GitHub',
+          x: 20,
+          y: 235,
+          status: 'active',
+        },
+        {
+          id: 'operator',
+          label: 'Operator',
+          type: 'client',
+          description:
+            'Authorized user entering the PIN-only dashboard and operating the system.',
+          x: 580,
+          y: 235,
+          status: 'active',
+        },
+      ],
+      edges: [
+        {
+          id: 'sensors-esp32',
+          source: 'sensors',
+          target: 'esp32',
+          label: 'Read',
+          protocol: 'GPIO / ADC',
+          direction: 'forward',
+        },
+        {
+          id: 'esp32-firebase',
+          source: 'esp32',
+          target: 'firebase',
+          label: 'Telemetry',
+          protocol: 'HTTPS',
+          direction: 'bidirectional',
+        },
+        {
+          id: 'dashboard-firebase',
+          source: 'dashboard',
+          target: 'firebase',
+          label: 'Realtime',
+          protocol: 'Firebase SDK',
+          direction: 'bidirectional',
+        },
+        {
+          id: 'esp32-actuators',
+          source: 'esp32',
+          target: 'actuators',
+          label: 'Control',
+          protocol: 'GPIO',
+          direction: 'forward',
+        },
+        {
+          id: 'releases-esp32',
+          source: 'releases',
+          target: 'esp32',
+          label: 'Firmware',
+          protocol: 'HTTPS',
+          direction: 'forward',
+        },
+        {
+          id: 'operator-dashboard',
+          source: 'operator',
+          target: 'dashboard',
+          label: 'Operate',
+          protocol: 'Browser',
+          direction: 'forward',
+        },
+      ],
+    },
+    decisions: [
+      {
+        title: 'Use Firebase as the shared device and dashboard boundary',
+        why: 'Both sides can exchange realtime state across networks without exposing the ESP32 directly.',
+        tradeOff:
+          'Availability and authorization depend on Firebase configuration and security rules.',
+      },
+      {
+        title: 'Separate sensor and cloud work across FreeRTOS cores',
+        why: 'Cloud synchronization should not block the hydroponic control loop.',
+        tradeOff:
+          'Shared state needs deliberate synchronization and clearer debugging.',
+      },
+      {
+        title: 'Maintain three firmware update paths',
+        why: 'USB supports recovery, ArduinoOTA supports bench work, and GitHub Releases support remote deployment.',
+        tradeOff:
+          'Version, release tag, binary, and database trigger must remain synchronized.',
+      },
+      {
+        title:
+          'Keep the dashboard PIN-only while verifying it through Firebase Auth',
+        why: 'Operators get a simple interface without exposing an account-management screen or client-only PIN check.',
+        tradeOff:
+          'The trusted administrator identity still needs secure lifecycle management in Firebase.',
+      },
+    ],
+    timeline: [
+      {
+        title: 'Device and cloud path established',
+        description:
+          'ESP32-S3 firmware began publishing state and receiving control changes through Firebase RTDB.',
+        state: 'milestone',
+      },
+      {
+        title: 'Operational dashboard built',
+        description:
+          'Realtime monitoring, controls, trends, alerts, reports, and settings were added in React.',
+        state: 'milestone',
+      },
+      {
+        title: 'Cloud OTA verified',
+        description:
+          'Versioned GitHub release binaries and the database version trigger formed the remote update path.',
+        state: 'milestone',
+      },
+      {
+        title: 'Admin access hardened',
+        description:
+          'The PIN-only UI now authenticates against a trusted Firebase administrator session.',
+        state: 'current',
+      },
+    ],
+    operations: [
+      { label: 'Device', value: 'ESP32-S3 with dual-core FreeRTOS tasks' },
+      {
+        label: 'Heartbeat',
+        value: 'Device status and last ping every 5 seconds',
+      },
+      {
+        label: 'Cloud state',
+        value: 'Firebase Realtime Database under /hidroponik',
+      },
+      {
+        label: 'Dashboard',
+        value: 'React, TypeScript, Vite, Tailwind CSS, and Recharts',
+      },
+      {
+        label: 'Firmware delivery',
+        value: 'PlatformIO, ArduinoOTA, and GitHub Releases',
+      },
+    ],
+    security: [
+      {
+        label: 'Operator access',
+        value:
+          'The PIN-only interface is backed by Firebase Email/Password authentication and rejects unauthenticated sessions.',
+      },
+      {
+        label: 'Device access',
+        value:
+          'The firmware authenticates separately and RTDB rules require an authenticated session.',
+      },
+      {
+        label: 'Secrets',
+        value:
+          'Wi-Fi and Firebase firmware credentials live in a gitignored secrets header.',
+      },
+      {
+        label: 'OTA limitation',
+        value:
+          'Firmware downloads use HTTPS, but certificate verification is currently relaxed and remains a documented hardening item.',
+      },
+    ],
+    evidence: [
+      {
+        id: 'smart-green-hub-dashboard',
+        type: 'image',
+        title: 'Realtime hydroponic dashboard',
+        description:
+          'Live pH, nutrient, temperature, humidity, actuator, summary, and trend interface.',
+        source: '/images/work/smart-green-hub/main-dashboard.png',
+        alt: 'Smart Green Hub dashboard showing hydroponic readings, actuator controls, and trend charts',
+      },
+      {
+        id: 'smart-green-hub-source',
+        type: 'code',
+        title: 'Public source repository',
+        description:
+          'ESP32-S3 firmware, Firebase integration, React dashboard, security rules, and deployment files.',
+        source: 'https://github.com/VARR-git/Smart-Green-Hub',
+      },
+      {
+        id: 'smart-green-hub-architecture',
+        type: 'diagram',
+        title: 'Device, cloud, and dashboard architecture',
+        description:
+          'The public diagram separates field hardware, cloud state, operator access, and firmware delivery.',
+        source: '#architecture',
+        alt: 'Sensors and ESP32 connected to Firebase, React dashboard, actuators, and GitHub Releases',
+      },
+    ],
+    currentState:
+      'Active development. Firmware version 1.0.6, authenticated dashboard access, realtime controls, reports, and the cloud OTA path are present in the current source; physical sensor channels still require probe wiring and calibration.',
+    lessons: [
+      'A cloud data boundary lets field hardware remain private while still supporting remote operation.',
+      'Firmware release tags, binaries, running versions, and database triggers must agree exactly.',
+      'A simple PIN interface still needs server-verified authentication behind it.',
+      'Hardware placeholders should stay explicit until real probes are wired and calibrated.',
+      'Remote update convenience does not remove the need for certificate verification and a recovery path.',
+    ],
+  },
 ];
 
 export const FEATURED_WORK = WORK_ITEMS.filter((item) => item.featured);
