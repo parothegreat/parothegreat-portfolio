@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { CSSProperties } from 'react';
 import {
@@ -38,6 +39,9 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
   const context = project.sections.find((section) => section.id === 'context');
   const problem = project.sections.find((section) => section.id === 'problem');
   const build = project.sections.find((section) => section.id === 'build');
+  const preview = project.evidence.find(
+    (item) => item.type === 'image' && item.source.startsWith('/'),
+  );
 
   return (
     <article className='pb-20'>
@@ -143,11 +147,47 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
               className='absolute inset-x-0 top-0 z-10 h-0.5'
               style={{ backgroundColor: accent }}
             />
-            <ArchitectureMap
-              accent={accent}
-              architecture={project.architecture}
-              variant='preview'
-            />
+            {preview ? (
+              <>
+                <div className='absolute inset-5 flex items-center lg:hidden'>
+                  <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)] bg-white'>
+                    <Image
+                      src={preview.source}
+                      alt={preview.alt ?? preview.title}
+                      fill
+                      sizes='calc(100vw - 80px)'
+                      className='object-cover'
+                      priority
+                    />
+                  </div>
+                </div>
+                <div className='absolute inset-0 hidden grid-rows-[0.7fr_1.3fr] lg:grid'>
+                  <div className='flex items-center border-b border-[var(--line-default)] p-5'>
+                    <div className='relative aspect-video w-full overflow-hidden rounded-md border border-[var(--line-default)] bg-white'>
+                      <Image
+                        src={preview.source}
+                        alt={preview.alt ?? preview.title}
+                        fill
+                        sizes='38vw'
+                        className='object-cover'
+                        priority
+                      />
+                    </div>
+                  </div>
+                  <ArchitectureMap
+                    accent={accent}
+                    architecture={project.architecture}
+                    variant='preview'
+                  />
+                </div>
+              </>
+            ) : (
+              <ArchitectureMap
+                accent={accent}
+                architecture={project.architecture}
+                variant='preview'
+              />
+            )}
           </div>
         </div>
       </div>
