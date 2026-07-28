@@ -33,3 +33,5 @@ next-env.d.ts
 # generated SEO files
 /public/robots.txt
 /public/sitemap*.xml
+/Agent
+/.swc
