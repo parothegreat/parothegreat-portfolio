@@ -8,11 +8,11 @@ const Progress = ({ data }: ProgressProps) => {
 
   return (
     <div className='grid grid-cols-[minmax(0,8rem)_minmax(3rem,1fr)_2.75rem] items-center gap-3'>
-      <div className='min-w-0 break-words text-sm text-neutral-800 dark:text-neutral-200'>
+      <div className='min-w-0 break-words text-sm text-[var(--text-primary)]'>
         {name}
       </div>
       <div
-        className='h-1.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800'
+        className='h-1.5 overflow-hidden rounded-full bg-[var(--surface-3)]'
         role='progressbar'
         aria-label={`${name} activity`}
         aria-valuemin={0}
@@ -20,11 +20,11 @@ const Progress = ({ data }: ProgressProps) => {
         aria-valuenow={Math.round(normalizedPercent)}
       >
         <span
-          className='block h-full rounded-full bg-blue-600 transition-[width] duration-200 motion-reduce:transition-none dark:bg-blue-400'
+          className='block h-full rounded-full bg-[var(--circuit-500)] transition-[width] duration-200 motion-reduce:transition-none'
           style={{ width: `${normalizedPercent}%` }}
         />
       </div>
-      <div className='text-right font-code text-xs text-neutral-500'>
+      <div className='text-right font-code text-xs text-[var(--text-tertiary)]'>
         {normalizedPercent.toFixed(0)}%
       </div>
     </div>
