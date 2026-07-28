@@ -47,7 +47,7 @@ const CodingActiveList = ({ data }: CodingActiveListProps) => {
   return (
     <div className='mt-10'>
       <div
-        className='mb-6 grid grid-cols-2 gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-900 sm:hidden'
+        className='mb-6 grid grid-cols-2 gap-1 rounded-md bg-[var(--surface-1)] p-1 sm:hidden'
         role='group'
         aria-label='Coding statistics breakdown'
       >
@@ -61,10 +61,10 @@ const CodingActiveList = ({ data }: CodingActiveListProps) => {
               aria-pressed={isActive}
               onClick={() => setActivePanel(item.title)}
               className={clsx(
-                'min-h-[44px] rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none',
+                'min-h-[44px] rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none',
                 isActive
-                  ? 'bg-white text-neutral-950 shadow-sm dark:bg-neutral-800 dark:text-white'
-                  : 'text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800',
+                  ? 'bg-[var(--surface-3)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--surface-2)]',
               )}
             >
               {item.title}
@@ -79,11 +79,11 @@ const CodingActiveList = ({ data }: CodingActiveListProps) => {
             key={item.title}
             aria-label={`${item.title} breakdown`}
             className={clsx(
-              'min-w-0 border-t border-neutral-200 pt-5 dark:border-neutral-800',
+              'min-w-0 border-t border-[var(--line-default)] pt-5',
               activePanel === item.title ? 'block' : 'hidden sm:block',
             )}
           >
-            <h3 className='text-base font-medium text-neutral-950 dark:text-neutral-100'>
+            <h3 className='text-base font-medium text-[var(--text-primary)]'>
               {item.title}
             </h3>
 
@@ -96,7 +96,7 @@ const CodingActiveList = ({ data }: CodingActiveListProps) => {
                 ))}
               </ul>
             ) : (
-              <p className='mt-4 text-sm text-neutral-500'>
+              <p className='mt-4 text-sm text-[var(--text-tertiary)]'>
                 No breakdown data available.
               </p>
             )}
