@@ -15,7 +15,7 @@ const Layout = ({ children }: LayoutProps) => {
       >
         Skip to content
       </a>
-      <div className='mx-auto max-w-[1088px] lg:grid lg:grid-cols-[96px_minmax(0,960px)] lg:gap-8 lg:px-6'>
+      <div className='mx-auto max-w-[1120px] lg:grid lg:grid-cols-[128px_minmax(0,960px)] lg:gap-8 lg:px-6'>
         <HeaderSidebar />
         <main id='main-content' className='min-w-0' tabIndex={-1}>
           {children}
