@@ -22,7 +22,7 @@ export default function Document() {
           href='/favicon/favicon-16x16.png'
         />
         <link rel='manifest' href='/favicon/site.webmanifest' />
-        <meta name='theme-color' content='#121212' />
+        <meta name='theme-color' content='#0f1113' />
       </Head>
       <body>
         <Main />
