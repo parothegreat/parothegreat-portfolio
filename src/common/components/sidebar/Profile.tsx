@@ -62,7 +62,7 @@ const Profile = () => {
               className='h-9 w-9 shrink-0 rounded-full object-cover'
               priority
             />
-            <span className='truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-100'>
+            <span className='truncate text-[15px] font-medium text-[var(--text-primary)]'>
               {routeTitle ?? PROFILE.name}
             </span>
           </div>
@@ -73,7 +73,7 @@ const Profile = () => {
               aria-expanded={isOpen}
               aria-controls='mobile-navigation'
               aria-label='Open navigation'
-              className='flex h-11 w-11 items-center justify-center rounded-md text-neutral-700 transition-colors hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:text-neutral-200 dark:hover:bg-neutral-800'
+              className='flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none'
               onClick={() => setIsOpen(true)}
             >
               <FiMenu aria-hidden='true' className='h-6 w-6' />
@@ -114,13 +114,13 @@ const Profile = () => {
               className='fixed inset-y-0 right-0 flex w-full max-w-sm flex-col overflow-y-auto bg-[var(--background)] px-5 pb-6 pt-4 shadow-2xl'
             >
               <div className='flex min-h-[48px] items-center justify-between'>
-                <Dialog.Title className='text-sm font-medium text-neutral-500'>
+                <Dialog.Title className='text-sm font-medium text-[var(--text-tertiary)]'>
                   Navigation
                 </Dialog.Title>
                 <button
                   type='button'
                   aria-label='Close navigation'
-                  className='flex h-11 w-11 items-center justify-center rounded-md text-neutral-700 hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-neutral-200 dark:hover:bg-neutral-800'
+                  className='flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
                   onClick={() => setIsOpen(false)}
                 >
                   <FiX aria-hidden='true' className='h-6 w-6' />
@@ -136,10 +136,10 @@ const Profile = () => {
                   className='h-14 w-14 rounded-full object-cover'
                 />
                 <div>
-                  <p className='font-medium text-neutral-950 dark:text-neutral-100'>
+                  <p className='font-medium text-[var(--text-primary)]'>
                     {PROFILE.name}
                   </p>
-                  <p className='mt-1 text-sm text-neutral-500'>
+                  <p className='mt-1 text-sm text-[var(--text-tertiary)]'>
                     @{PROFILE.username}
                   </p>
                 </div>
@@ -152,11 +152,11 @@ const Profile = () => {
                 <Navigation />
               </nav>
 
-              <div className='mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800'>
-                <div className='flex items-start gap-3 text-sm leading-6 text-neutral-600 dark:text-neutral-400'>
+              <div className='mt-8 border-t border-[var(--line-default)] pt-6'>
+                <div className='flex items-start gap-3 text-sm leading-6 text-[var(--text-secondary)]'>
                   <span
                     aria-hidden='true'
-                    className='mt-2 h-2 w-2 shrink-0 rounded-full bg-emerald-500'
+                    className='mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--telemetry-500)]'
                   />
                   <span>{PROFILE.availability}</span>
                 </div>
@@ -168,8 +168,10 @@ const Profile = () => {
                         key={item.id}
                         href={item.href}
                         aria-label={item.label}
-                        className='flex h-11 w-11 items-center justify-center rounded-md border border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-blue-400'
-                        target={item.href.startsWith('http') ? '_blank' : undefined}
+                        className='flex h-11 w-11 items-center justify-center rounded-md border border-[var(--line-default)] text-[var(--text-secondary)] hover:border-[var(--line-strong)] hover:text-[var(--circuit-500)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
+                        target={
+                          item.href.startsWith('http') ? '_blank' : undefined
+                        }
                         rel={
                           item.href.startsWith('http')
                             ? 'noopener noreferrer'
