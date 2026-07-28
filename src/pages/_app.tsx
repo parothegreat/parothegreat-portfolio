@@ -1,12 +1,9 @@
-import AOS from 'aos';
 import type { AppProps } from 'next/app';
 import dynamic from 'next/dynamic';
 import { DefaultSeo } from 'next-seo';
 import { ThemeProvider } from 'next-themes';
-import { useEffect } from 'react';
 
 import 'tailwindcss/tailwind.css';
-import 'aos/dist/aos.css';
 import '@/common/styles/globals.css';
 
 import CommandPalette from '@/common/components/elements/CommandPalette';
@@ -22,13 +19,6 @@ const ProgressBar = dynamic(
 );
 
 const App = ({ Component, pageProps }: AppProps) => {
-  useEffect(() => {
-    AOS.init({
-      duration: 800,
-      delay: 50,
-    });
-  }, []);
-
   return (
     <>
       <style jsx global>
