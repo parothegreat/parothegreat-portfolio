@@ -4,29 +4,29 @@
 
 :root {
   color-scheme: light;
-  --bg-void: #eaf0f5;
-  --bg-base: #f2f6f9;
-  --bg-layer: #e7edf2;
-  --surface-1: #ffffff;
-  --surface-2: #f3f7fa;
-  --surface-3: #e9f0f5;
-  --line-soft: #d7e0e7;
-  --line-default: #bdcbd6;
-  --line-strong: #93a7b6;
-  --text-primary: #0e1822;
-  --text-secondary: #435463;
-  --text-tertiary: #71818d;
-  --circuit-400: #3289dc;
-  --circuit-500: #176fce;
-  --circuit-600: #0e5dac;
-  --signal-400: #d77a16;
-  --signal-500: #b76409;
-  --signal-600: #934d07;
-  --telemetry-400: #219b77;
-  --telemetry-500: #147d61;
-  --fault-400: #dd5961;
-  --fault-500: #c73d47;
-  --focus-ring: #176fce;
+  --bg-void: #ecefed;
+  --bg-base: #f4f6f4;
+  --bg-layer: #e9ecea;
+  --surface-1: #fbfcfb;
+  --surface-2: #f0f2f1;
+  --surface-3: #e4e8e5;
+  --line-soft: #d8ddda;
+  --line-default: #c1c9c4;
+  --line-strong: #89968f;
+  --text-primary: #1a201d;
+  --text-secondary: #4c5953;
+  --text-tertiary: #707c76;
+  --circuit-400: #5f7f8f;
+  --circuit-500: #486a7b;
+  --circuit-600: #385867;
+  --signal-400: #b38449;
+  --signal-500: #966b35;
+  --signal-600: #795429;
+  --telemetry-400: #57846d;
+  --telemetry-500: #3f7059;
+  --fault-400: #b76a6e;
+  --fault-500: #9e5156;
+  --focus-ring: #486a7b;
   --background: var(--bg-base);
   --surface-subtle: var(--bg-layer);
   --surface-raised: var(--surface-1);
@@ -40,8 +40,7 @@
   --success: var(--telemetry-500);
   --warning: var(--signal-500);
   --danger: var(--fault-500);
-  --page-circuit-glow: rgb(23 111 206 / 9%);
-  --page-signal-glow: rgb(183 100 9 / 4%);
+  --diagram-track: #d6dcd8;
 }
 
 html {
@@ -53,20 +52,6 @@ html {
 body {
   min-height: 100vh;
   background-color: var(--background);
-  background-image:
-    radial-gradient(
-      circle at 78% 10%,
-      var(--page-circuit-glow),
-      transparent 34rem
-    ),
-    radial-gradient(
-      circle at 16% 72%,
-      var(--page-signal-glow),
-      transparent 28rem
-    ),
-    linear-gradient(var(--bg-base), var(--bg-void));
-  background-repeat: no-repeat;
-  background-size: auto;
   color: var(--text-primary);
 }
 
@@ -80,29 +65,29 @@ a {
 
 .dark {
   color-scheme: dark;
-  --bg-void: #06080c;
-  --bg-base: #090d13;
-  --bg-layer: #0d141d;
-  --surface-1: #111a25;
-  --surface-2: #162231;
-  --surface-3: #1b2a3a;
-  --line-soft: #1b2936;
-  --line-default: #263747;
-  --line-strong: #385064;
-  --text-primary: #edf4fa;
-  --text-secondary: #a5b2bf;
-  --text-tertiary: #71808e;
-  --circuit-400: #79b8ff;
-  --circuit-500: #4b91ff;
-  --circuit-600: #2d72df;
-  --signal-400: #ffc46b;
-  --signal-500: #f3a83b;
-  --signal-600: #c77d18;
-  --telemetry-400: #68e0b4;
-  --telemetry-500: #3fc596;
-  --fault-400: #ff8585;
-  --fault-500: #ef5f67;
-  --focus-ring: #87c2ff;
+  --bg-void: #0c0e10;
+  --bg-base: #0f1113;
+  --bg-layer: #121518;
+  --surface-1: #161a1d;
+  --surface-2: #1b2024;
+  --surface-3: #21272b;
+  --line-soft: #252b2f;
+  --line-default: #343d42;
+  --line-strong: #58636a;
+  --text-primary: #ecefed;
+  --text-secondary: #aeb7bc;
+  --text-tertiary: #79848a;
+  --circuit-400: #9aafbb;
+  --circuit-500: #7893a2;
+  --circuit-600: #627f8f;
+  --signal-400: #d0aa72;
+  --signal-500: #b78c52;
+  --signal-600: #96713f;
+  --telemetry-400: #91ad9e;
+  --telemetry-500: #789b88;
+  --fault-400: #ca8b8d;
+  --fault-500: #b67174;
+  --focus-ring: #a9bdc8;
   --background: var(--bg-base);
   --surface-subtle: var(--bg-layer);
   --surface-raised: var(--surface-1);
@@ -116,8 +101,7 @@ a {
   --success: var(--telemetry-500);
   --warning: var(--signal-500);
   --danger: var(--fault-500);
-  --page-circuit-glow: rgb(75 145 255 / 12%);
-  --page-signal-glow: rgb(243 168 59 / 5.5%);
+  --diagram-track: #293136;
 }
 
 ::selection {
@@ -127,25 +111,7 @@ a {
 
 .instrument-surface {
   border: 1px solid var(--line-default);
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 3%), transparent 45%),
-    var(--surface-1);
-  box-shadow:
-    inset 0 1px rgb(255 255 255 / 4%),
-    0 20px 50px rgb(0 0 0 / 10%);
-}
-
-.interactive-surface {
-  --spotlight-x: 50%;
-  --spotlight-y: 0%;
-  background:
-    radial-gradient(
-      22rem circle at var(--spotlight-x) var(--spotlight-y),
-      color-mix(in srgb, var(--circuit-500) 14%, transparent),
-      transparent 62%
-    ),
-    linear-gradient(135deg, rgb(255 255 255 / 3%), transparent 45%),
-    var(--surface-1);
+  background: var(--surface-1);
 }
 
 .signal-label {
@@ -155,16 +121,6 @@ a {
   font-weight: 500;
   letter-spacing: 0;
   text-transform: uppercase;
-}
-
-.architecture-flow {
-  animation: architecture-flow 3s linear infinite;
-}
-
-@keyframes architecture-flow {
-  to {
-    stroke-dashoffset: -36;
-  }
 }
 
 #nprogress .bar {
