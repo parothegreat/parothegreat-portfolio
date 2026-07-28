@@ -23,6 +23,7 @@ describe('work case-study data', () => {
     });
 
     expect(WORK_ITEMS.map((item) => item.slug)).toEqual([
+      'smart-green-hub',
       'team-it-work-order',
       'rfid-door-access',
       'school-cloud-service',
@@ -30,7 +31,6 @@ describe('work case-study data', () => {
       'recon-engine',
       'school-network-operations',
       'mitra-coffeeshop',
-      'smart-green-hub',
     ]);
   });
 
@@ -49,6 +49,8 @@ describe('work case-study data', () => {
     expect(smartGreenHub?.repositoryUrl).toBe(
       'https://github.com/VARR-git/Smart-Green-Hub',
     );
+    expect(smartGreenHub?.index).toBe(1);
+    expect(smartGreenHub?.documentationLevel).toBe('deep-dive');
     expect(smartGreenHub?.evidence[0]).toMatchObject({
       type: 'image',
       source: '/images/work/smart-green-hub/main-dashboard.png',
@@ -64,8 +66,26 @@ describe('work case-study data', () => {
       item.architecture.edges.forEach((edge) => {
         expect(nodeIds.has(edge.source)).toBe(true);
         expect(nodeIds.has(edge.target)).toBe(true);
+        expect([
+          'data',
+          'control',
+          'telemetry',
+          'warning',
+          'planned',
+        ]).toContain(edge.semantic);
       });
     });
+  });
+
+  test('does not publish credentials or private-address evidence', () => {
+    const serialized = JSON.stringify(WORK_ITEMS);
+
+    expect(serialized).not.toMatch(
+      /(?:waka_[a-z0-9-]+|AIza[a-z0-9_-]+|-----BEGIN [A-Z ]+PRIVATE KEY-----)/i,
+    );
+    expect(serialized).not.toMatch(
+      /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/,
+    );
   });
 
   test('publishes honest minimum documentation for every project', () => {
