@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   FiArrowRight,
@@ -22,10 +23,6 @@ import {
 import { TOOLS } from '@/data/tools';
 import { FEATURED_WORK } from '@/data/work';
 
-import {
-  InteractiveSurface,
-  SignalText,
-} from '@/common/components/elements/InteractiveSurface';
 import ToolIcon from '@/modules/toolkit/components/ToolIcon';
 import WorkExplorer from '@/modules/work/components/WorkExplorer';
 
@@ -66,12 +63,10 @@ const Home = () => {
     <div className='space-y-16 sm:space-y-20'>
       <section
         aria-labelledby='home-heading'
-        className='relative lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)] lg:items-center lg:gap-12'
+        className='relative lg:grid lg:grid-cols-[minmax(0,1.2fr)_340px] lg:items-start lg:gap-12'
       >
-        <div className='border-l-2 border-[var(--circuit-500)] pl-5 sm:pl-7'>
-          <p className='signal-label'>
-            <SignalText>Systems online / GMT+7</SignalText>
-          </p>
+        <div className='border-l-2 border-[var(--line-strong)] pl-5 sm:pl-7'>
+          <p className='signal-label'>Systems / GMT+7</p>
           <h1
             id='home-heading'
             className='mt-4 text-4xl font-medium leading-[1.12] text-[var(--text-primary)] sm:text-5xl lg:text-[52px]'
@@ -105,27 +100,45 @@ const Home = () => {
           </p>
         </div>
 
-        <InteractiveSurface
-          aria-label='Current status'
-          className='mt-10 rounded-lg p-5 lg:mt-0'
+        <aside
+          aria-label='Profile and current status'
+          className='mt-10 overflow-hidden rounded-md border border-[var(--line-default)] bg-[var(--surface-1)] lg:mt-0'
         >
-          <p className='font-code text-xs font-medium uppercase text-[var(--signal-500)]'>
-            Current status
-          </p>
-          <dl className='mt-4 divide-y divide-[var(--line-soft)]'>
-            {PROFILE_STATUS.map((item) => (
-              <div
-                key={item.label}
-                className='grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-3 text-sm first:pt-0 last:pb-0'
-              >
-                <dt className='text-[var(--text-tertiary)]'>{item.label}</dt>
-                <dd className='min-w-0 break-words text-[var(--text-primary)]'>
-                  {item.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </InteractiveSurface>
+          <div className='relative aspect-[5/4] border-b border-[var(--line-default)] bg-[var(--bg-layer)]'>
+            <Image
+              src={PROFILE.profileImage}
+              alt={`${PROFILE.name} at Google for Developers`}
+              fill
+              sizes='(min-width: 1024px) 340px, (min-width: 640px) 50vw, calc(100vw - 40px)'
+              className='object-cover object-top'
+              fetchPriority='high'
+              priority
+            />
+          </div>
+          <div className='p-5'>
+            <div className='flex items-center justify-between gap-4'>
+              <p className='font-code text-xs font-medium uppercase text-[var(--text-primary)]'>
+                Current status
+              </p>
+              <span className='font-code text-[10px] uppercase text-[var(--text-tertiary)]'>
+                Profile / 01
+              </span>
+            </div>
+            <dl className='mt-4 divide-y divide-[var(--line-soft)] border-t border-[var(--line-default)]'>
+              {PROFILE_STATUS.map((item) => (
+                <div
+                  key={item.label}
+                  className='grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-3 text-sm last:pb-0'
+                >
+                  <dt className='text-[var(--text-tertiary)]'>{item.label}</dt>
+                  <dd className='min-w-0 break-words text-[var(--text-primary)]'>
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </aside>
       </section>
 
       <section aria-label='Practical experience'>
@@ -285,21 +298,24 @@ const Home = () => {
         </dl>
       </section>
 
-      <InteractiveSurface
+      <section
         aria-labelledby='home-contact-heading'
-        className='rounded-lg p-6 sm:p-8'
+        className='grid gap-6 border-y border-[var(--line-default)] py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end'
       >
-        <h2
-          id='home-contact-heading'
-          className='text-2xl font-medium text-[var(--text-primary)]'
-        >
-          Let&apos;s build something reliable.
-        </h2>
-        <p className='mt-3 max-w-2xl text-base leading-7 text-[var(--text-secondary)]'>
-          I&apos;m open to infrastructure, DevOps, backend, security, and
-          technical collaboration opportunities.
-        </p>
-        <div className='mt-6 flex flex-wrap gap-3'>
+        <div>
+          <p className='signal-label'>Contact</p>
+          <h2
+            id='home-contact-heading'
+            className='mt-3 text-2xl font-medium text-[var(--text-primary)]'
+          >
+            Let&apos;s build something reliable.
+          </h2>
+          <p className='mt-3 max-w-2xl text-base leading-7 text-[var(--text-secondary)]'>
+            Infrastructure, DevOps, backend, security, and technical
+            collaboration.
+          </p>
+        </div>
+        <div className='flex flex-wrap gap-3'>
           <Link
             href='mailto:alvaroprayogo38@gmail.com'
             className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[var(--circuit-500)] px-4 text-sm font-medium text-[var(--accent-contrast)] hover:bg-[var(--accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-1)]'
@@ -317,7 +333,7 @@ const Home = () => {
             View GitHub
           </Link>
         </div>
-      </InteractiveSurface>
+      </section>
     </div>
   );
 };
