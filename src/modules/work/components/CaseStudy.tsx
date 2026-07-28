@@ -14,11 +14,6 @@ import {
   WorkItem,
 } from '@/data/work';
 
-import {
-  InteractiveSurface,
-  SignalText,
-} from '@/common/components/elements/InteractiveSurface';
-
 import ArchitectureExplorer, { ArchitectureMap } from './ArchitectureExplorer';
 
 interface CaseStudyProps {
@@ -54,17 +49,15 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
         Work index
       </Link>
 
-      <InteractiveSurface
+      <div
         id='overview'
-        className='mt-5 scroll-mt-24 overflow-hidden rounded-lg'
+        className='instrument-surface mt-5 scroll-mt-24 overflow-hidden rounded-lg'
         style={{ '--project-accent': accent } as CSSProperties}
       >
         <div className='grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]'>
           <header className='p-6 sm:p-8 lg:p-10'>
             <p className='signal-label'>
-              <SignalText>
-                {`${String(project.index).padStart(2, '0')} / ${project.category}`}
-              </SignalText>
+              {`${String(project.index).padStart(2, '0')} / ${project.category}`}
             </p>
             <h1 className='mt-4 text-3xl font-medium leading-tight text-[var(--text-primary)] sm:text-5xl'>
               {project.title}
@@ -81,8 +74,8 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
                 <dd className='mt-2 inline-flex items-center gap-2 text-sm text-[var(--text-primary)]'>
                   <span
                     aria-hidden='true'
-                    className='h-2 w-2 rounded-full shadow-[0_0_16px_currentColor]'
-                    style={{ backgroundColor: accent, color: accent }}
+                    className='h-2 w-2 rounded-sm'
+                    style={{ backgroundColor: accent }}
                   />
                   {WORK_STATUS_LABELS[project.status]}
                 </dd>
@@ -127,10 +120,11 @@ const CaseStudy = ({ project, previous, next }: CaseStudyProps) => {
             <ArchitectureMap
               accent={accent}
               architecture={project.architecture}
+              variant='preview'
             />
           </div>
         </div>
-      </InteractiveSurface>
+      </div>
 
       <nav
         aria-label='Case study chapters'
