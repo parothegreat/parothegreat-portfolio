@@ -28,13 +28,7 @@ export const EXPERIENCE: ExperienceItem[] = [
       'Assist with maintaining internal services, troubleshooting network issues, and improving operational reliability.',
       'Build practical tools and automations to support technical workflows inside the organization.',
     ],
-    technologies: [
-      'Linux',
-      'MikroTik',
-      'TP-Link Omada',
-      'Go',
-      'Docker',
-    ],
+    technologies: ['Linux', 'MikroTik', 'TP-Link Omada', 'Go', 'Docker'],
   },
   {
     id: 'denso-intern',
