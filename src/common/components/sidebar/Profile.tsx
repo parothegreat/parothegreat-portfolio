@@ -45,10 +45,8 @@ const Profile = () => {
     <MenuContext.Provider value={{ hideNavbar: () => setIsOpen(false) }}>
       <div
         className={clsx(
-          'fixed inset-x-0 top-0 z-40 h-16 border-b bg-[var(--background)] transition-shadow duration-200 motion-reduce:transition-none',
-          isScrolled
-            ? 'border-[var(--border-subtle)] shadow-sm'
-            : 'border-transparent',
+          'fixed inset-x-0 top-0 z-40 h-16 border-b bg-[var(--background)] transition-colors duration-200 motion-reduce:transition-none',
+          isScrolled ? 'border-[var(--border-subtle)]' : 'border-transparent',
         )}
       >
         <div className='flex h-full items-center justify-between px-5'>
@@ -111,7 +109,7 @@ const Profile = () => {
           >
             <Dialog.Panel
               id='mobile-navigation'
-              className='fixed inset-y-0 right-0 flex w-full max-w-sm flex-col overflow-y-auto bg-[var(--background)] px-5 pb-6 pt-4 shadow-2xl'
+              className='fixed inset-y-0 right-0 flex w-full max-w-sm flex-col overflow-y-auto border-l border-[var(--line-default)] bg-[var(--background)] px-5 pb-6 pt-4'
             >
               <div className='flex min-h-[48px] items-center justify-between'>
                 <Dialog.Title className='text-sm font-medium text-[var(--text-tertiary)]'>
