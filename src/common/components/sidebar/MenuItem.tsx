@@ -24,10 +24,8 @@ const MenuItem = ({
       ? router.pathname === '/'
       : !isExternalUrl && router.pathname.startsWith(href);
 
-  const activeClasses = `group relative flex min-h-[48px] items-center gap-3 rounded-md px-3 text-neutral-700 transition-colors duration-200 hover:bg-neutral-200 hover:text-neutral-950 motion-reduce:transition-none dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 lg:min-h-[44px] lg:text-[15px] ${
-    isActiveRoute
-      ? 'bg-neutral-200 text-neutral-950 dark:bg-neutral-800 dark:!text-neutral-100'
-      : ''
+  const activeClasses = `group relative flex min-h-[48px] items-center gap-3 rounded-md px-3 text-[var(--text-secondary)] transition-colors duration-200 hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] motion-reduce:transition-none lg:min-h-[44px] lg:text-[15px] ${
+    isActiveRoute ? 'bg-[var(--surface-3)] text-[var(--text-primary)]' : ''
   }`;
 
   const handleClick = () => {
@@ -45,7 +43,7 @@ const MenuItem = ({
         {isActiveRoute ? (
           <span
             aria-hidden='true'
-            className='absolute inset-y-2 left-0 w-0.5 rounded-full bg-blue-600 dark:bg-blue-400'
+            className='absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--circuit-500)]'
           />
         ) : null}
         {!hideIcon && (
@@ -67,7 +65,11 @@ const MenuItem = ({
   };
 
   return isHashLink ? (
-    <button className='w-full cursor-pointer' onClick={handleClick} type='button'>
+    <button
+      className='w-full cursor-pointer'
+      onClick={handleClick}
+      type='button'
+    >
       {itemComponent()}
     </button>
   ) : (
