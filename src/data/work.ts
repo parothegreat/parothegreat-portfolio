@@ -1802,6 +1802,272 @@ export const WORK_ITEMS: WorkItem[] = [
       'Permission boundaries are part of responsible network operations.',
     ],
   },
+  {
+    id: 'mitra-coffeeshop',
+    slug: 'mitra-coffeeshop',
+    index: 7,
+    title: 'Mitra Coffeeshop',
+    shortDescription:
+      'Public website for the SMK Mitra Industri coffeeshop, menu, gallery, loyalty card, and ordering channels.',
+    outcome:
+      'A responsive storefront where visitors can explore the cafe, browse its menu, and continue an order through WhatsApp or GoFood.',
+    category: 'Web Experience',
+    role: ['Frontend', 'Deployment'],
+    stack: [
+      'Bun',
+      'TanStack Start',
+      'React 19',
+      'Tailwind CSS 4',
+      'Framer Motion',
+    ],
+    status: 'maintained',
+    documentationLevel: 'quick-brief',
+    accent: 'systems',
+    repositoryUrl: 'https://github.com/teamitmivhs/Mitra-Coffeeshop',
+    liveUrl: 'https://coffeeshop.itmivhs.net',
+    caseStudyAvailable: true,
+    environment: ['Public website', 'SMK Mitra Industri', 'Bun application'],
+    sections: [
+      {
+        id: 'context',
+        eyebrow: 'Context',
+        title: 'A public digital front door for a school coffeeshop',
+        paragraphs: [
+          'Mitra Coffeeshop needed one public destination for its identity, menu, cafe atmosphere, and ordering channels at SMK Mitra Industri.',
+          'The site serves visitors on both mobile and desktop while keeping the path from discovery to ordering direct.',
+        ],
+        points: [
+          'Routes: home, menu, gallery, and contact',
+          'Ordering handoff: WhatsApp and GoFood',
+          'Public host: coffeeshop.itmivhs.net',
+        ],
+      },
+      {
+        id: 'problem',
+        eyebrow: 'Problem',
+        title: 'Product discovery and ordering needed one coherent flow',
+        paragraphs: [
+          'Menu items, cafe photos, contact details, and external ordering channels are more useful when visitors can reach them from one responsive interface.',
+          'The experience also needed to retain the coffeeshop identity without making motion or large media interfere with navigation and ordering actions.',
+        ],
+      },
+      {
+        id: 'build',
+        eyebrow: 'Build',
+        title: 'A typed React application with optimized visual assets',
+        paragraphs: [
+          'TanStack Start and React provide file-based routes and rendered page metadata, while Tailwind CSS defines the responsive visual system.',
+          'Bun drives development and production builds. WebP media, reduced-motion handling, and focused Framer Motion interactions support the visual experience without replacing the content.',
+        ],
+      },
+    ],
+    ownership: {
+      owned: [
+        'Frontend implementation and route structure',
+        'Responsive interaction and visual system',
+        'Production build and persistent service deployment',
+      ],
+      contributed: [
+        'Menu and gallery presentation',
+        'WhatsApp and GoFood ordering handoff',
+        'SEO metadata and structured cafe information',
+      ],
+      boundaries: [
+        'Orders and payments remain on WhatsApp or GoFood rather than a custom commerce backend.',
+        'Published menu, contact, and cafe information follow the organization content provided for the site.',
+      ],
+    },
+    architecture: {
+      title: 'Visitor and ordering flow',
+      summary:
+        'Visitors load the TanStack Start application and its bundled media, then move to WhatsApp or GoFood when they are ready to order.',
+      nodes: [
+        {
+          id: 'visitor',
+          label: 'Visitor',
+          type: 'client',
+          description:
+            'Mobile or desktop visitor browsing the coffeeshop website.',
+          x: 25,
+          y: 148,
+          status: 'active',
+        },
+        {
+          id: 'web-app',
+          label: 'TanStack App',
+          type: 'service',
+          description:
+            'Rendered React routes for the home, menu, gallery, and contact experience.',
+          technology: 'TanStack Start',
+          x: 220,
+          y: 148,
+          status: 'active',
+        },
+        {
+          id: 'media',
+          label: 'WebP Media',
+          type: 'storage',
+          description:
+            'Bundled menu, gallery, logo, and loyalty-card visual assets.',
+          technology: 'WebP',
+          x: 445,
+          y: 42,
+          status: 'active',
+        },
+        {
+          id: 'whatsapp',
+          label: 'WhatsApp',
+          type: 'external',
+          description:
+            'External ordering conversation opened from calls to action.',
+          technology: 'WhatsApp',
+          x: 445,
+          y: 148,
+          status: 'active',
+        },
+        {
+          id: 'gofood',
+          label: 'GoFood',
+          type: 'external',
+          description:
+            'External delivery channel linked from the public website.',
+          technology: 'GoFood',
+          x: 445,
+          y: 254,
+          status: 'active',
+        },
+      ],
+      edges: [
+        {
+          id: 'visitor-app',
+          source: 'visitor',
+          target: 'web-app',
+          label: 'Browse',
+          protocol: 'HTTPS',
+          direction: 'forward',
+        },
+        {
+          id: 'app-media',
+          source: 'web-app',
+          target: 'media',
+          label: 'Load',
+          protocol: 'Static',
+          direction: 'forward',
+        },
+        {
+          id: 'app-whatsapp',
+          source: 'web-app',
+          target: 'whatsapp',
+          label: 'Order',
+          protocol: 'HTTPS',
+          direction: 'forward',
+        },
+        {
+          id: 'app-gofood',
+          source: 'web-app',
+          target: 'gofood',
+          label: 'Delivery',
+          protocol: 'HTTPS',
+          direction: 'forward',
+        },
+      ],
+    },
+    decisions: [
+      {
+        title: 'Use TanStack Start for the public application',
+        why: 'Typed file-based routes keep the menu, gallery, contact, and metadata structure explicit.',
+        tradeOff:
+          'The runtime is more involved than a purely static HTML website.',
+      },
+      {
+        title: 'Keep ordering on established external channels',
+        why: 'WhatsApp and GoFood already provide the customer handoff needed by the coffeeshop.',
+        tradeOff: 'The final ordering experience depends on external services.',
+      },
+      {
+        title: 'Ship visual content as optimized WebP assets',
+        why: 'Menu and gallery photography remain central while transfer size stays controlled.',
+        tradeOff:
+          'Updating bundled media requires a new application deployment.',
+      },
+    ],
+    timeline: [
+      {
+        title: 'Public experience structured',
+        description:
+          'Home, menu, gallery, and contact routes established the main visitor journey.',
+        state: 'milestone',
+      },
+      {
+        title: 'Ordering channels connected',
+        description:
+          'WhatsApp and GoFood actions were placed at relevant decision points.',
+        state: 'milestone',
+      },
+      {
+        title: 'Persistent deployment prepared',
+        description:
+          'The production build was configured to run as a persistent service on the public domain.',
+        state: 'milestone',
+      },
+      {
+        title: 'Public site maintained',
+        description: 'The site remains available at coffeeshop.itmivhs.net.',
+        state: 'current',
+      },
+    ],
+    operations: [
+      { label: 'Runtime', value: 'Bun' },
+      { label: 'Application', value: 'TanStack Start and React 19' },
+      { label: 'Public host', value: 'coffeeshop.itmivhs.net' },
+      { label: 'Routes', value: 'Home, menu, gallery, and contact' },
+      { label: 'Media', value: 'Bundled WebP assets' },
+    ],
+    security: [
+      {
+        label: 'Host boundary',
+        value:
+          'The application configuration allows the intended coffeeshop.itmivhs.net host.',
+      },
+      {
+        label: 'Customer data',
+        value:
+          'The public website does not collect checkout or payment credentials.',
+      },
+      {
+        label: 'External handoff',
+        value:
+          'Ordering leaves the site through explicit HTTPS links to WhatsApp and GoFood.',
+      },
+    ],
+    evidence: [
+      {
+        id: 'mitra-coffeeshop-live',
+        type: 'image',
+        title: 'Live Mitra Coffeeshop website',
+        description:
+          'Production experience with menu, gallery, contact, and ordering routes.',
+        source: 'https://coffeeshop.itmivhs.net',
+        alt: 'Mitra Coffeeshop public website',
+      },
+      {
+        id: 'mitra-coffeeshop-source',
+        type: 'code',
+        title: 'Public source repository',
+        description:
+          'TanStack Start, React, Tailwind CSS, motion, routes, and media assets.',
+        source: 'https://github.com/teamitmivhs/Mitra-Coffeeshop',
+      },
+    ],
+    currentState:
+      'Maintained and publicly available. The website serves the coffeeshop identity, menu, gallery, and external ordering paths from its school domain.',
+    lessons: [
+      'A hospitality website should shorten the path from visual discovery to a clear ordering action.',
+      'A small public site still benefits from explicit routes, metadata, and structured content.',
+      'Visual motion works best when reduced-motion behavior and direct navigation remain intact.',
+      'Existing ordering platforms can remove the need to build and secure a custom checkout system.',
+    ],
+  },
 ];
 
 export const FEATURED_WORK = WORK_ITEMS.filter((item) => item.featured);
