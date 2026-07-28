@@ -31,6 +31,27 @@ describe('WorkExplorer', () => {
     expect(await screen.findByText(items[0].outcome)).toBeInTheDocument();
   });
 
+  test('moves desktop selection with Arrow Up and Arrow Down', async () => {
+    const user = userEvent.setup();
+    render(<WorkExplorer items={items} />);
+
+    const firstLink = screen.getByRole('link', {
+      name: `Open ${items[0].title} case study`,
+    });
+    const secondLink = screen.getByRole('link', {
+      name: `Open ${items[1].title} case study`,
+    });
+
+    firstLink.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(secondLink).toHaveFocus();
+    expect(secondLink).toHaveAttribute('aria-current', 'true');
+
+    await user.keyboard('{ArrowUp}');
+    expect(firstLink).toHaveFocus();
+    expect(firstLink).toHaveAttribute('aria-current', 'true');
+  });
+
   test('expands a mobile preview and exposes an explicit case-study link', async () => {
     const user = userEvent.setup();
     render(<WorkExplorer items={items} />);
