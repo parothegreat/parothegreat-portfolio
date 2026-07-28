@@ -67,11 +67,11 @@ const ToolsSection = () => {
 
   return (
     <section className='space-y-14 tracking-normal'>
-      <dl className='flex flex-wrap gap-x-5 gap-y-2 border-y border-neutral-200 py-4 text-sm text-neutral-600 dark:border-neutral-800 dark:text-neutral-400'>
+      <dl className='flex flex-wrap gap-x-5 gap-y-2 border-y border-[var(--line-default)] py-4 text-sm text-[var(--text-secondary)]'>
         <div className='flex items-baseline gap-1.5'>
           <dt className='sr-only'>Domains</dt>
           <dd>
-            <strong className='font-code font-medium text-neutral-900 dark:text-neutral-200'>
+            <strong className='font-code font-medium text-[var(--text-primary)]'>
               {domainCount}
             </strong>{' '}
             domains
@@ -80,7 +80,7 @@ const ToolsSection = () => {
         <div className='flex items-baseline gap-1.5'>
           <dt className='sr-only'>Tools and technologies</dt>
           <dd>
-            <strong className='font-code font-medium text-neutral-900 dark:text-neutral-200'>
+            <strong className='font-code font-medium text-[var(--text-primary)]'>
               {TOOLS.length}
             </strong>{' '}
             tools and technologies
@@ -96,11 +96,11 @@ const ToolsSection = () => {
         <div className='flex items-center justify-between gap-3'>
           <h3
             id='core-stack-heading'
-            className='text-xl font-medium text-neutral-900 dark:text-neutral-200'
+            className='text-xl font-medium text-[var(--text-primary)]'
           >
             Core Stack
           </h3>
-          <span className='font-code text-xs text-neutral-500'>
+          <span className='font-code text-xs text-[var(--text-tertiary)]'>
             {FEATURED_TOOLS.length} tools
           </span>
         </div>
@@ -120,14 +120,14 @@ const ToolsSection = () => {
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <h3
             id='all-tools-heading'
-            className='text-xl font-medium text-neutral-900 dark:text-neutral-200'
+            className='text-xl font-medium text-[var(--text-primary)]'
           >
             All Tools &amp; Technologies
           </h3>
           <p
             aria-atomic='true'
             aria-live='polite'
-            className='font-code text-xs text-neutral-500'
+            className='font-code text-xs text-[var(--text-tertiary)]'
           >
             {resultLabel}
           </p>
@@ -149,10 +149,10 @@ const ToolsSection = () => {
                       key={option.value}
                       aria-pressed={isActive}
                       className={cn(
-                        'inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none dark:focus-visible:ring-offset-[#121212]',
+                        'inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none',
                         isActive
-                          ? 'border-neutral-400 bg-neutral-900 text-white dark:border-neutral-500 dark:bg-neutral-100 dark:text-neutral-950'
-                          : 'border-neutral-300 bg-neutral-50 text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-neutral-100',
+                          ? 'border-[var(--circuit-500)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
+                          : 'border-[var(--line-default)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:border-[var(--line-strong)] hover:text-[var(--text-primary)]',
                       )}
                       onClick={() => handleDomainChange(option.value)}
                       type='button'
@@ -174,11 +174,11 @@ const ToolsSection = () => {
             </label>
             <FiSearch
               aria-hidden='true'
-              className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500'
+              className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]'
             />
             <input
               id='tool-search'
-              className='min-h-[44px] w-full rounded-md border border-neutral-300 bg-neutral-50 py-2 pl-10 pr-12 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-neutral-100 dark:focus:border-blue-400'
+              className='min-h-[44px] w-full rounded-md border border-[var(--line-default)] bg-[var(--surface-1)] py-2 pl-10 pr-12 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--circuit-500)] focus:ring-2 focus:ring-[var(--accent-soft)]'
               onChange={(event) => handleQueryChange(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder='Search tools, domains, or projects...'
@@ -188,7 +188,7 @@ const ToolsSection = () => {
             {query ? (
               <button
                 aria-label='Clear tool search'
-                className='absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400 dark:hover:text-neutral-100'
+                className='absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]'
                 onClick={() => handleQueryChange('')}
                 title='Clear search'
                 type='button'
@@ -220,15 +220,15 @@ const ToolsSection = () => {
             ))}
           </ul>
         ) : (
-          <div className='border-y border-neutral-300 py-12 text-center dark:border-neutral-800'>
-            <h4 className='text-lg font-medium text-neutral-900 dark:text-neutral-100'>
+          <div className='border-y border-[var(--line-default)] py-12 text-center'>
+            <h4 className='text-lg font-medium text-[var(--text-primary)]'>
               No matching tools
             </h4>
-            <p className='mt-2 text-sm text-neutral-600 dark:text-neutral-400'>
+            <p className='mt-2 text-sm text-[var(--text-secondary)]'>
               Try another keyword or reset the active filter.
             </p>
             <button
-              className='mx-auto mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-md border border-neutral-300 bg-neutral-100 px-4 py-2 text-sm text-neutral-800 hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200'
+              className='mx-auto mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-md border border-[var(--line-default)] bg-[var(--surface-2)] px-4 py-2 text-sm text-[var(--text-primary)] hover:border-[var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
               onClick={resetFilters}
               type='button'
             >
@@ -239,14 +239,14 @@ const ToolsSection = () => {
         )}
 
         {filteredTools.length > TOOL_BATCH_SIZE ? (
-          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-neutral-300 pt-4 dark:border-neutral-800'>
-            <p className='font-code text-xs text-neutral-500'>
+          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line-default)] pt-4'>
+            <p className='font-code text-xs text-[var(--text-tertiary)]'>
               Showing {visibleTools.length} of {filteredTools.length}
             </p>
             <div className='flex items-center gap-2'>
               {visibleCount > TOOL_BATCH_SIZE ? (
                 <button
-                  className='inline-flex min-h-[44px] items-center gap-2 rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-100'
+                  className='inline-flex min-h-[44px] items-center gap-2 rounded-md border border-[var(--line-default)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:border-[var(--line-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
                   onClick={() => {
                     setVisibleCount(TOOL_BATCH_SIZE);
                     setExpandedToolId(null);
@@ -260,7 +260,7 @@ const ToolsSection = () => {
               {hasMoreTools ? (
                 <button
                   aria-controls='tool-results'
-                  className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 dark:bg-neutral-100 dark:text-neutral-950 dark:hover:bg-white'
+                  className='inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[var(--circuit-500)] px-4 py-2 text-sm text-[var(--accent-contrast)] hover:bg-[var(--accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]'
                   onClick={() =>
                     setVisibleCount((current) => current + TOOL_BATCH_SIZE)
                   }
