@@ -7,7 +7,7 @@ import {
 
 describe('work case-study data', () => {
   test('uses unique stable ids and route-safe slugs', () => {
-    expect(WORK_ITEMS).toHaveLength(7);
+    expect(WORK_ITEMS).toHaveLength(8);
     expect(new Set(WORK_ITEMS.map((item) => item.id)).size).toBe(
       WORK_ITEMS.length,
     );
@@ -30,6 +30,7 @@ describe('work case-study data', () => {
       'recon-engine',
       'school-network-operations',
       'mitra-coffeeshop',
+      'smart-green-hub',
     ]);
   });
 
@@ -40,6 +41,18 @@ describe('work case-study data', () => {
     expect(coffeeshop?.repositoryUrl).toBe(
       'https://github.com/teamitmivhs/Mitra-Coffeeshop',
     );
+  });
+
+  test('publishes the Smart Green Hub source and dashboard preview', () => {
+    const smartGreenHub = getWorkBySlug('smart-green-hub');
+
+    expect(smartGreenHub?.repositoryUrl).toBe(
+      'https://github.com/VARR-git/Smart-Green-Hub',
+    );
+    expect(smartGreenHub?.evidence[0]).toMatchObject({
+      type: 'image',
+      source: '/images/work/smart-green-hub/main-dashboard.png',
+    });
   });
 
   test('keeps every architecture edge connected to a real node', () => {
