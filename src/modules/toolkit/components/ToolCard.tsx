@@ -13,8 +13,8 @@ import ToolIcon from './ToolIcon';
 
 const DOMAIN_ACCENTS: Record<ToolDomain, string> = {
   development: 'var(--circuit-500)',
-  infrastructure: 'var(--circuit-400)',
-  networking: '#7b83ff',
+  infrastructure: 'var(--circuit-600)',
+  networking: 'var(--circuit-400)',
   security: 'var(--fault-500)',
   observability: 'var(--telemetry-500)',
   iot: 'var(--signal-500)',
