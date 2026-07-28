@@ -54,16 +54,15 @@ const Sidebar = () => {
   return (
     <aside
       id='sidebar'
-      className='sticky top-0 flex h-screen flex-col items-center py-6'
+      className='sticky top-0 flex h-screen flex-col items-center py-8'
       aria-label='Desktop navigation'
     >
-      <div className='relative'>
-        <Link
-          href='/'
-          aria-label={`${PROFILE.name} home`}
-          title={PROFILE.name}
-          className='block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
-        >
+      <Link
+        href='/'
+        aria-label={`${PROFILE.name} home`}
+        className='flex flex-col items-center rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+      >
+        <span className='relative'>
           <Image
             src={PROFILE.profileImage}
             alt={`${PROFILE.name} portrait`}
@@ -72,14 +71,20 @@ const Sidebar = () => {
             className='h-12 w-12 rounded-full object-cover'
             priority
           />
-        </Link>
-        <span
-          aria-hidden='true'
-          className='absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--background)] bg-emerald-500'
-        />
-        <span className='sr-only'>{PROFILE.availability}</span>
-      </div>
-      <div className='flex flex-1 items-center'>
+          <span
+            aria-hidden='true'
+            className='absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--background)] bg-emerald-500'
+          />
+        </span>
+        <span className='mt-3 whitespace-nowrap text-sm font-medium text-neutral-950 dark:text-neutral-100'>
+          {PROFILE.name}
+        </span>
+        <span className='mt-0.5 text-xs text-neutral-500'>
+          @{PROFILE.username}
+        </span>
+      </Link>
+      <span className='sr-only'>{PROFILE.availability}</span>
+      <div className='mt-8'>
         <Dock items={items} />
       </div>
     </aside>
