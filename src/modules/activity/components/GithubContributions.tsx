@@ -78,17 +78,15 @@ const GithubContributions = () => {
     <section aria-labelledby='github-activity-heading' aria-busy={isValidating}>
       <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-end'>
         <div>
-          <p className='font-code text-xs font-medium uppercase text-blue-600 dark:text-blue-400'>
-            GitHub
-          </p>
+          <p className='signal-label'>GitHub</p>
           <h2
             id='github-activity-heading'
-            className='mt-3 flex items-center gap-2 text-2xl font-medium text-neutral-950 dark:text-neutral-100'
+            className='mt-3 flex items-center gap-2 text-2xl font-medium text-[var(--text-primary)]'
           >
             <BsGithub aria-hidden='true' className='h-5 w-5' />
             Contributions
           </h2>
-          <p className='mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400'>
+          <p className='mt-2 text-sm leading-6 text-[var(--text-secondary)]'>
             Public contribution activity from the last year.
           </p>
         </div>
@@ -96,47 +94,50 @@ const GithubContributions = () => {
           href='https://github.com/parothegreat'
           target='_blank'
           rel='noopener noreferrer'
-          className='text-sm text-neutral-500 hover:text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400'
+          className='text-sm text-[var(--text-tertiary)] hover:text-[var(--circuit-500)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
         >
           @parothegreat
         </Link>
       </div>
 
       {isLoading && !data ? (
-        <p className='mt-8 border-y border-neutral-200 py-8 text-sm text-neutral-500 dark:border-neutral-800'>
+        <p className='mt-8 border-y border-[var(--line-default)] py-8 text-sm text-[var(--text-tertiary)]'>
           Loading GitHub contributions…
         </p>
       ) : null}
 
       {error && !data ? (
-        <div role='status' className='mt-8 border-l-2 border-amber-500 pl-4'>
-          <p className='font-medium text-neutral-900 dark:text-neutral-100'>
+        <div
+          role='status'
+          className='mt-8 border-l-2 border-[var(--signal-500)] pl-4'
+        >
+          <p className='font-medium text-[var(--text-primary)]'>
             GitHub activity is temporarily unavailable.
           </p>
-          <p className='mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400'>
+          <p className='mt-2 text-sm leading-6 text-[var(--text-secondary)]'>
             Visit the public profile to view the latest contribution history.
           </p>
         </div>
       ) : null}
 
       {error && data ? (
-        <p className='mt-5 text-sm text-amber-700 dark:text-amber-300'>
+        <p className='mt-5 text-sm text-[var(--signal-500)]'>
           Showing the last available GitHub data while the source refreshes.
         </p>
       ) : null}
 
       {data ? (
         <>
-          <div className='mt-8 border-y border-neutral-200 dark:border-neutral-800'>
+          <div className='mt-8 border-y border-[var(--line-default)]'>
             <div className='py-6'>
-              <p className='font-code text-xs uppercase text-neutral-500'>
+              <p className='font-code text-xs uppercase text-[var(--text-tertiary)]'>
                 Last year
               </p>
-              <p className='mt-2 text-3xl font-medium text-neutral-950 dark:text-neutral-50 sm:text-4xl'>
+              <p className='mt-2 text-3xl font-medium text-[var(--text-primary)] sm:text-4xl'>
                 {data.totalContributions.toLocaleString('en-US')} contributions
               </p>
             </div>
-            <dl className='grid grid-cols-3 border-t border-neutral-200 dark:border-neutral-800'>
+            <dl className='grid grid-cols-3 border-t border-[var(--line-default)]'>
               {[
                 { label: 'This week', value: thisWeek },
                 { label: 'Best day', value: bestDay },
@@ -146,12 +147,14 @@ const GithubContributions = () => {
                   key={metric.label}
                   className={
                     index
-                      ? 'min-w-0 border-l border-neutral-200 px-3 py-4 dark:border-neutral-800 sm:px-5'
+                      ? 'min-w-0 border-l border-[var(--line-default)] px-3 py-4 sm:px-5'
                       : 'min-w-0 px-3 py-4 sm:px-5'
                   }
                 >
-                  <dt className='text-xs text-neutral-500'>{metric.label}</dt>
-                  <dd className='mt-2 break-words text-sm font-medium text-neutral-900 dark:text-neutral-100 sm:text-base'>
+                  <dt className='text-xs text-[var(--text-tertiary)]'>
+                    {metric.label}
+                  </dt>
+                  <dd className='mt-2 break-words text-sm font-medium text-[var(--text-primary)] sm:text-base'>
                     {metric.value}
                   </dd>
                 </div>
@@ -164,11 +167,11 @@ const GithubContributions = () => {
             tabIndex={0}
             role='img'
             aria-label={`${data.totalContributions} GitHub contributions in the last year. Best day: ${bestDay} contributions.`}
-            className='mt-8 overflow-x-auto pb-3 scrollbar-hide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+            className='mt-8 overflow-x-auto pb-3 scrollbar-hide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]'
           >
             <div className='w-max min-w-[720px]'>
               <div
-                className='ml-8 grid h-5 gap-[3px] font-code text-[10px] text-neutral-500'
+                className='ml-8 grid h-5 gap-[3px] font-code text-[10px] text-[var(--text-tertiary)]'
                 style={{
                   gridTemplateColumns: `repeat(${weeks.length}, 10px)`,
                 }}
@@ -186,7 +189,7 @@ const GithubContributions = () => {
 
               <div className='flex gap-2'>
                 <div
-                  className='grid w-6 gap-[3px] font-code text-[9px] text-neutral-500'
+                  className='grid w-6 gap-[3px] font-code text-[9px] text-[var(--text-tertiary)]'
                   style={{ gridTemplateRows: 'repeat(7, 10px)' }}
                   aria-hidden='true'
                 >
@@ -221,7 +224,7 @@ const GithubContributions = () => {
             </div>
           </div>
 
-          <div className='mt-2 flex items-center justify-between gap-4 text-xs text-neutral-500'>
+          <div className='mt-2 flex items-center justify-between gap-4 text-xs text-[var(--text-tertiary)]'>
             <span>Swipe to review the full year</span>
             <span className='flex items-center gap-1' aria-hidden='true'>
               Less
