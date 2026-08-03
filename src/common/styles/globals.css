@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: #f7f7f6;
+  --surface-subtle: #f0f1f1;
+  --surface-raised: #ffffff;
+  --surface-active: #e9eef6;
+  --border-subtle: #dedfdf;
+  --border-strong: #a8abad;
+  --text-primary: #17191a;
+  --text-secondary: #555b5f;
+  --text-tertiary: #7c8286;
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --success: #168451;
+  --warning: #a16207;
+  --danger: #b42318;
+}
+
+html {
+  scroll-behavior: smooth;
+  letter-spacing: 0;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+input,
+textarea,
+button,
+select,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #101112;
+  --surface-subtle: #161819;
+  --surface-raised: #1b1d1f;
+  --surface-active: #192334;
+  --border-subtle: #2a2d2f;
+  --border-strong: #50565a;
+  --text-primary: #f1f3f4;
+  --text-secondary: #a9afb3;
+  --text-tertiary: #747b80;
+  --accent: #60a5fa;
+  --accent-soft: #17243a;
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #f87171;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+#nprogress .bar {
+  background: var(--accent) !important;
+  height: 2px !important;
+  z-index: 9999999 !important;
+}
+
+#nprogress .bar {
+  position: fixed !important;
+}
+
+::-webkit-scrollbar {
+  @apply w-1;
+}
+
+::-webkit-scrollbar-track {
+  @apply rounded-[3px] bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
